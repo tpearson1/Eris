@@ -1,3 +1,3 @@
-[submodule "rapidjson"]
-	path = rapidjson
+[submodule "mods/rapidjson"]
+	path = mods/rapidjson
 	url = https://github.com/tpearson1/rapidjson.git
