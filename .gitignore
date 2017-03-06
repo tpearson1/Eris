@@ -1,0 +1,9 @@
+**/*.d
+**/*.o
+**/*.so
+**/*~
+**/*.bak
+**/*.sw[abcdefghijklmnop]
+/mods/**/lib/
+load
+tags

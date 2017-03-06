@@ -1,0 +1,115 @@
+{
+  "nodes": [
+    "NNode",
+    {
+      "visible": true,
+      "transform": {
+        "location": [
+          -5.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "children": [
+          "NNode",
+          {
+            "visible": true,
+            "transform": {
+              "location": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "scale": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "children": []
+            }
+          }
+        ]
+      }
+    },
+    "NNode",
+    {
+      "visible": true,
+      "transform": {
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          9.0,
+          9.0,
+          9.0
+        ],
+        "children": []
+      }
+    },
+    "NCamera",
+    {
+      "NNode": {
+        "visible": true,
+        "transform": {
+          "location": [
+            0.0,
+            0.0,
+            -5.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "children": []
+        }
+      },
+      "active": true,
+      "perspective": false,
+      "min-zoom": 0.10000000149011612,
+      "max-zoom": 500.0,
+      "zoom": 20.0,
+      "near": 0.10000000149011612,
+      "far": 100.0999984741211
+    },
+    "Model",
+    {
+      "path": "mods/base/res/objs/monk.obj",
+      "texture": "mods/test/rest/tex/main.png",
+      "shader": {
+        "vertex": "mods/base/res/shaders/default-unlit.vs",
+        "fragment": "mods/base/res/shaders/default-unlit.frag"
+      }
+    }
+  ]
+}
