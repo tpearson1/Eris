@@ -1,0 +1,56 @@
+{
+  "nodes": [
+    "Tagged",
+    [
+      { "tag": "model" },
+      "Model",
+      {
+        "path": "mods/json-load/res/monk.blend",
+        "texture": "mods/json-load/res/tex/monk.png",
+        "shader": {
+          "vertex": "mods/base/res/shaders/default-unlit.vs",
+          "fragment": "mods/base/res/shaders/default-unlit.frag"
+        },
+        "NNode": {
+          "transform": {
+            "location": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          }
+        }
+      }
+    ],
+    "Tagged",
+    [
+      { "tag": "shape" },
+      "Model",
+      {
+        "path": "mods/json-load/res/shape.blend",
+        "texture": "mods/json-load/res/tex/shape.png",
+        "shader": {
+          "vertex": "mods/base/res/shaders/default-unlit.vs",
+          "fragment": "mods/base/res/shaders/default-unlit.frag"
+        },
+        "NNode": {
+          "transform": {
+            "location": [5, 0, 0],
+            "rotation": [0, 0, 0]
+          }
+        }
+      }
+    ],
+    "NCamera",
+    {
+      "active": true,
+      "near": 0.1,
+      "far": 500.1,
+      "perspective": true,
+      "fov": 70,
+      "NNode": {
+        "transform": {
+          "location": [0, 0, -10],
+          "rotation": [0, 180, 0]
+        }
+      }
+    }
+  ]
+}

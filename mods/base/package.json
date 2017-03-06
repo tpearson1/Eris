@@ -1,0 +1,11 @@
+{
+  "author": "Thomas Pearson",
+  "version": "0.0.1",
+  "playable": false,
+  "uses-c++": true,
+  "depend": [
+    "core",
+    "math"
+  ],
+  "link-options": "-lassimp"
+}
