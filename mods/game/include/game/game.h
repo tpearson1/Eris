@@ -29,23 +29,11 @@ SOFTWARE.
 
 #include <base/window.h>
 #include <base/resourcemanager.h>
-#include <scene/scene.h>
 
 class NNode;
 
-template <typename T>
-static bool RemoveFirst(std::forward_list<T> &container, T value) {
-  auto it = container.before_begin(), nit = std::next(it);
-  while (nit != container.end()) {
-    if (*nit == value) { container.erase_after(it); return true; }
-    it = nit++;
-  }
-
-  return false;
-}
-
 class Game {
-  std::forward_list<NNode *> tickNodes;
+  std::list<NNode *> tickNodes;
 
 protected:
   virtual void Initialize() {}
@@ -57,13 +45,18 @@ public:
 
   void RegisterTick(NNode *node)
     { tickNodes.push_front(node); }
-  void UnregisterTick(NNode *node)
-    { RemoveFirst(tickNodes, node); }
+  void UnregisterTick(NNode *node) {
+    for (auto it = tickNodes.begin(); it != tickNodes.end(); it++) {
+      if (*it == node) {
+        tickNodes.erase(it);
+        return;
+      }
+    }
+  }
 
   void Start();
 
   Ref<Window> window;
-  Scene scene;
 };
 
 #endif // _GAME__GAME_H

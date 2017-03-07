@@ -27,15 +27,19 @@ SOFTWARE.
 #include <game/game.h>
 #include <core/file.h>
 #include <input/input.h>
+#include <scene/scene.h>
 #include <scene/camera.h>
 #include <scene/tagmanager.h>
 
 class MyGame : public Game {
+  Scene scene;
   NNode *tagged, *shape;
 public:
   MyGame();
   void Tick(float delta) override {
     glClearColor(0.1f, 0.6f, 0.9f, 1.0f);
+    scene.Render();  
+
     tagged->transform.ChangeScale(0.1f * delta, 0.1f * delta, 0.1f * delta);
     shape->transform.Translate(delta, 0.0f, 0.0f);
     shape->transform.Rotate(30.0f * delta, 60.0f * delta, 0.0f);
@@ -82,7 +86,6 @@ void OnMouseMove(double xPos, double yPos) {
 }
 
 MyGame::MyGame() {
-  Input::SetCursor("mods/input/res/tex/cursor.png");
   Input::RegisterMouseScrollCallback(OnMouseScroll);
   Input::RegisterMouseMoveCallback(OnMouseMove);
   Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
@@ -98,6 +101,8 @@ MyGame::MyGame() {
   
   JSONTypeManager manager;
   RegisterSceneTypeAssociations(manager);
+
+  scene.SetActive();
 
   std::string json;
   File::Read("mods/json-load/res/scene.json", json);

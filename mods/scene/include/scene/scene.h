@@ -34,15 +34,19 @@ SOFTWARE.
 #include <unordered_map>
 
 class Scene : public SaveLoad {
-  Renderer nodes;
+  Ref<Renderer> renderer;
 
 public:
   Scene() {
-    nodes.nodes = &nodes;
+    renderer = Ref<Renderer>::Create();
+  }
+
+  void SetActive() {
+    Renderer::active = renderer;
   }
 
   void Render() {
-    nodes.Render();
+    renderer->Render(); 
   }
 
   void LoadFromJSON(const std::string &json, JSONTypeManager &manager);

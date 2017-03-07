@@ -53,17 +53,19 @@ class NMeshRenderer : public NNode {
   }
 
   RenderRequirements requirements;
+  RenderRegistration registration;
 
 public:
   MeshRenderer renderer;
 
+  const RenderRequirements &GetRequirements() const { return requirements; };
+
   void SetRequirements(const RenderRequirements &r) {
-    Renderer::nodes->UpdateRequirements(this, r, requirements);
-    requirements = r;
+    Renderer::active->UpdateRequirements(registration, requirements = r);
   }
 
   NMeshRenderer(const RenderRequirements &r) {
-    Renderer::nodes->Register([this] { this->Draw(); }, this, requirements = r);
+    registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements = r);
   }
 };
 

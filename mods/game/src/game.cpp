@@ -64,8 +64,6 @@ void Game::Start() {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    scene.Render();
-
     delta = glfwGetTime();
     glfwSetTime(0.0);
     // Any nodes that are removed from the list during a 'Tick' call

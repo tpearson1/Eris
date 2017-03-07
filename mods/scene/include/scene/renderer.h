@@ -28,8 +28,9 @@ SOFTWARE.
 #define _SCENE__RENDERER_H
 
 #include <tuple>
-#include <forward_list>
+#include <list>
 #include <functional>
+#include <base/ref.h>
 #include <scene/renderrequirements.h>
 
 class Renderable;
@@ -38,26 +39,39 @@ using RenderTuple = std::tuple<std::function<void()>, Renderable *>;
 
 struct RenderItem2 {
   Ref<Texture> same;
-  std::forward_list<RenderTuple> items;
+  std::list<RenderTuple> items;
 };
 
 struct RenderItem {
   Ref<Shader> same;
-  std::forward_list<RenderItem2> items;
+  std::list<RenderItem2> items;
+};
+
+struct RenderRegistration {
+  RenderRegistration() {}
+  friend class Renderer;
+
+private:
+  RenderRegistration(std::list<RenderItem>::iterator s, std::list<RenderItem2>::iterator t, std::list<RenderTuple>::iterator r)
+    : shaderGroup(s), textureGroup(t), renderTuple(r) {}
+
+  std::list<RenderItem>::iterator shaderGroup;
+  std::list<RenderItem2>::iterator textureGroup;
+  std::list<RenderTuple>::iterator renderTuple;
 };
 
 class Renderer {
-  std::forward_list<RenderItem> renderOrder;
+  std::list<RenderItem> renderOrder;
 
 public:
+  static Ref<Renderer> active;
+
   // A single class instance SHOULD NOT register two functions with the same requirements!
-  void Register(std::function<void()> func, Renderable *node, const RenderRequirements &r);
+  RenderRegistration Register(std::function<void()> func, Renderable *renderable, const RenderRequirements &r);
 
-  void Unregister(Renderable *node, const RenderRequirements &r);
+  void Unregister(const RenderRegistration &registration);
 
-  static Renderer *nodes, *canvas;
-
-  void UpdateRequirements(Renderable *node, const RenderRequirements &cur, const RenderRequirements &old);
+  RenderRegistration UpdateRequirements(const RenderRegistration &registration, const RenderRequirements &updated);
 
   void Render();
 };
