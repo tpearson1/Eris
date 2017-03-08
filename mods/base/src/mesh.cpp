@@ -45,6 +45,9 @@ void Mesh::Setup(const std::vector<GLfloat> &verts, const std::vector<GLuint> &i
 }
 
 void Mesh::Draw() const {
+  if (preRenderFunc)
+    preRenderFunc();
+
   vao.Use();
 
   vertices.Enable();
