@@ -30,21 +30,14 @@ SOFTWARE.
 #include <unordered_map>
 #include <string>
 #include <base/ref.h>
+#include <core/mapping.h>
 #include <core/saveload.h>
 
-class TagManager {
-  std::unordered_map<std::string, SaveLoad *> taggedObjects;
-
+class TagManager : public Mapping<std::string, SaveLoad *> {
 public:
-  SaveLoad *Get(const std::string &key) const
-    { return taggedObjects.at(key); }
-
   template <typename T>
   T *Get(const std::string &key) const
-    { return (T *)taggedObjects.at(key); }
-
-  void Register(const std::string &key, SaveLoad *value)
-    { taggedObjects[key] = value; }
+    { return (T *)map.at(key); }
   
   static Ref<TagManager> active;
 };

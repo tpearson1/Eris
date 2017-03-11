@@ -9,7 +9,8 @@
         "texture": "mods/json-load/res/tex/monk.png",
         "shader": {
           "vertex": "mods/base/res/shaders/default-unlit.vs",
-          "fragment": "mods/base/res/shaders/default-unlit.frag"
+          "fragment": "mods/base/res/shaders/default-unlit.frag",
+          "prerender-func": "Test"
         },
         "NNode": {
           "transform": {

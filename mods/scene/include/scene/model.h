@@ -31,7 +31,7 @@ SOFTWARE.
 #include <assimp/scene.h>
 #include <scene/scene.h>
 
-NNode *LoadModel(const std::string &path, const RenderRequirements &rr);
+NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::function<void()> preRenderFunc);
 
 /*
  * Function that can be registered for the ability to load models as shown below:
@@ -43,7 +43,8 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr);
  *     "texture": "mods/mod/res/tex/texture.png",
  *     "shader": {
  *       "vertex": "mods/base/res/shaders/default-unlit.vs",
- *       "fragment": "mods/base/res/shaders/default-unlit.frag"
+ *       "fragment": "mods/base/res/shaders/default-unlit.frag",
+ *       "prerender-func": "Default"
  *     },
  *     "NNode": { ... }
  *   }

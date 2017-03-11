@@ -64,7 +64,7 @@ bool Scene::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
     // Call a function depending on what the value of the string is.
     // This function returns a newly created node pointer using the JSON data.
     // This is then parented to the root node
-    const auto &func = manager.GetAssociatedFunction(string);
+    const auto &func = manager.Get(string);
     ((NNode *)func(*it, manager))->transform.Parent(&root);
   }
 
@@ -72,8 +72,8 @@ bool Scene::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
 }
 
 void RegisterSceneTypeAssociations(JSONTypeManager &manager) {
-  manager.RegisterType("NNode", DefaultTypeRegistration<NNode>);
-  manager.RegisterType("NCamera", DefaultTypeRegistration<NCamera>);
-  manager.RegisterType("Tagged", TagRegistration);
-  manager.RegisterType("Model", ModelRegistration);
+  manager.Register("NNode", DefaultTypeRegistration<NNode>);
+  manager.Register("NCamera", DefaultTypeRegistration<NCamera>);
+  manager.Register("Tagged", TagRegistration);
+  manager.Register("Model", ModelRegistration);
 }

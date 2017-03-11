@@ -27,6 +27,7 @@ SOFTWARE.
 #ifndef _CORE__SAVE_LOAD_H
 #define _CORE__SAVE_LOAD_H
 
+#include <string>
 #include <iostream>
 #include <unordered_map>
 #include <functional>
@@ -60,17 +61,20 @@ SOFTWARE.
 
 #define ERROR(string) std::cerr << "> " << string << '\n';
 
-class JSONTypeManager {
-  using LoadFunc = std::function<struct SaveLoad *(const rapidjson::Value &, JSONTypeManager &)>;
-  std::unordered_map<std::string, LoadFunc> typeFuncs;
+template <typename K, typename Hash = std::hash<K>>
+class FunctionalSelfMapping {
+  using LoadFunc = std::function<struct SaveLoad *(const rapidjson::Value &, FunctionalSelfMapping &)>;
+  std::unordered_map<K, LoadFunc, Hash> map; 
 
 public:
-  void RegisterType(const std::string &type, const LoadFunc &loadFunc)
-    { typeFuncs[type] = loadFunc; }
-
-  const LoadFunc &GetAssociatedFunction(const std::string &key) const
-    { return typeFuncs.at(key); }
+  void Register(const K &key, LoadFunc func)
+    { map[key] = func; }
+  
+  LoadFunc Get(const K &key) const
+    { return map.at(key); } 
 };
+
+using JSONTypeManager = FunctionalSelfMapping<std::string>;
 
 struct Save {
   using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;

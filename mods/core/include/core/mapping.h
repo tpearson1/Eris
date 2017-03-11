@@ -24,47 +24,20 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__RESOURCE_MANAGER_H
-#define _BASE__RESOURCE_MANAGER_H
+#ifndef _CORE__MAPPING_H
+#define _CORE__MAPPING_H
 
-#include <unordered_map>
-#include <base/ref.h>
-#include <base/texture.h>
-#include <base/shader.h>
-#include <core/mapping.h>
-
-template <typename T, typename Key = std::string, typename Hash = std::hash<Key>>
-class ResourceManager {
-  std::unordered_map<Key, Ref<T>, Hash> resources;
+template <typename K, typename V, typename Hash = std::hash<K>>
+class Mapping {
+protected:
+  std::unordered_map<K, V, Hash> map;
 
 public:
-  Ref<T> Get(const Key &key) const {
-    auto val = resources.find(key);
-    if (val == resources.end())
-      return Ref<T>(); // nullptr
-    else
-      return val->second;
-  }
+  void Register(const K &key, V val)
+    { map[key] = val; }
 
-  void Add(const Key &key, const Ref<T> &value)
-    { resources[key] = value; }
+  V Get(const K &key) const
+    { return map.at(key); }
 };
 
-struct HashShaderTuple {
-  size_t operator()(const std::tuple<std::string, std::string> &t) const {
-    size_t seed = std::hash<std::string>()(std::get<0>(t)) + 0x9e3779b9;
-    return seed ^ (std::hash<std::string>()(std::get<1>(t)) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
-  }
-};
-
-struct Resources {
-  ResourceManager<Texture> textures;
-  // Key is tuple of vertex shader and fragment shader paths
-  ResourceManager<Shader, std::tuple<std::string, std::string>, HashShaderTuple> shaders;
-
-  Mapping<std::string, std::function<void()>> preRenderMeshFuncs;
-
-  static Ref<Resources> active;
-};
-
-#endif // _BASE__RESOURCE_MANAGER_H
+#endif // _CORE__MAPPING_H

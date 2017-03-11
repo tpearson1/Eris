@@ -43,7 +43,7 @@ SaveLoad *TagRegistration(const rapidjson::Value &val, JSONTypeManager &manager)
   const auto &tag = tagData["tag"];
   CHECK_RETURN(tag.IsString(), "The 'Tagged' object's 'tag' member must be of type string", nullptr)
 
-  auto *object = manager.GetAssociatedFunction(typeString)(array[2], manager);
+  auto *object = manager.Get(typeString)(array[2], manager);
 
   if (TagManager::active)
     TagManager::active->Register(tag.GetString(), object);

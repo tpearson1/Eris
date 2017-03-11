@@ -86,6 +86,7 @@ void OnMouseMove(double xPos, double yPos) {
 }
 
 MyGame::MyGame() {
+  std::cout << "Hello!\n";
   Input::RegisterMouseScrollCallback(OnMouseScroll);
   Input::RegisterMouseMoveCallback(OnMouseMove);
   Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
@@ -103,6 +104,10 @@ MyGame::MyGame() {
   RegisterSceneTypeAssociations(manager);
 
   scene.SetActive();
+
+  Resources::active->preRenderMeshFuncs.Register("Test", [] {
+    std::cout << '.' << std::flush;    
+  });
 
   std::string json;
   File::Read("mods/json-load/res/scene.json", json);

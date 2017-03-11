@@ -21,7 +21,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 */
 
 #include <model.h>
@@ -30,7 +30,7 @@ SOFTWARE.
 #include <scene/meshrenderer.h>
 #include <base/resourcemanager.h>
 
-NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr) {
+NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
 
@@ -83,23 +83,24 @@ NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const Rend
       }
     );
   }
-
+  meshPtr->preRenderFunc = preRenderFunc;
+ 
   auto *mr = new NMeshRenderer(rr);
   mr->renderer.Set(meshPtr);
   return mr;
 }
 
-void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const RenderRequirements &rr) {
+static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
   for (auto i = 0u; i < node->mNumMeshes; i++) {
     auto mesh = scene->mMeshes[node->mMeshes[i]];
-    ProcessMesh(mesh, scene, rr)->transform.Parent(parent);
+    ProcessMesh(mesh, scene, rr, preRenderFunc)->transform.Parent(parent);
   }
 
   for (auto i = 0u; i < node->mNumChildren; i++)
-    ProcessNode(node->mChildren[i], scene, parent, rr);
+    ProcessNode(node->mChildren[i], scene, parent, rr, preRenderFunc);
 }
 
-NNode *LoadModel(const std::string &path, const RenderRequirements &rr) {
+NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
   Assimp::Importer importer;
   const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
   if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -108,7 +109,7 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr) {
   }
 
   auto *root = new NNode;
-  ProcessNode(scene->mRootNode, scene, root, rr);
+  ProcessNode(scene->mRootNode, scene, root, rr, preRenderFunc);
 
   return root;
 }
@@ -141,6 +142,13 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
   const auto &fragmentShader = shaderObj["fragment"];
   CHECK_RETURN(fragmentShader.IsString(), "Member 'fragment' in member 'shader' of 'Model' must be of type string", nullptr)
 
+  std::function<void()> preRenderFunction;
+  if (shaderObj.HasMember("prerender-func")) {
+    const auto &preRenderFunc = shaderObj["prerender-func"];
+    CHECK_RETURN(preRenderFunc.IsString(), "Member 'prerender-func' in member 'shader' of 'Model' must be of type string", nullptr)
+    preRenderFunction = Resources::active->preRenderMeshFuncs.Get(preRenderFunc.GetString()); 
+  }
+
   RenderRequirements rr;
 
   auto texturePath = texture.GetString();
@@ -167,7 +175,7 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
   }
 
   // TODO: Assets for shader and texture support?
-  auto model = LoadModel(path.GetString(), rr);
+  auto model = LoadModel(path.GetString(), rr, preRenderFunction); 
   model->LoadFromJSON(node, manager);
   return model;
 }
