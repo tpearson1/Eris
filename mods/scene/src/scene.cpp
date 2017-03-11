@@ -31,7 +31,7 @@ SOFTWARE.
 
 void Scene::LoadFromJSON(const std::string &json, JSONTypeManager &manager) {
   rapidjson::Document parser;
-  parser.Parse(json.c_str());
+  parser.Parse<JSON_FLAGS>(json.c_str());
 
   LoadFromJSON(parser.GetObject(), manager);
 }

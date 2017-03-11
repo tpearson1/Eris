@@ -36,17 +36,10 @@ SOFTWARE.
 #include <library.h>
 #include <file.h>
 #include <termcolor.h>
+#include <saveload.h>
 
 std::vector<Package *> Package::all;
 Package *Package::active = nullptr;
-
-#define FAIL_IF(expr, failMessage) {\
-if (expr) {\
-  std::cerr << "> JSON: Package '" << name << "' error: " << (failMessage) << '\n';\
-  return false;\
-}}
-
-#define CHECK(expr, failMessage) FAIL_IF(!(expr), failMessage)
 
 bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
   std::string jsonPath = path + "package.json";
@@ -55,9 +48,7 @@ bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
   File::Read(jsonPath, jsonText);
 
   rapidjson::Document json;
-  json.Parse<rapidjson::kParseCommentsFlag
-             | rapidjson::kParseTrailingCommasFlag
-             | rapidjson::kParseNanAndInfFlag>(jsonText.c_str());
+  json.Parse<JSON_FLAGS>(jsonText.c_str());
 
   // Error checking
   CHECK(json.IsObject(), "There is no root object")
@@ -82,7 +73,7 @@ bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
   usesCPP = json["uses-c++"].GetBool();
   playable = json["playable"].GetBool();
 
-  FAIL_IF(!usesCPP && playable, "'playable' member is set to true and therefore the package must use C++")
+  PARSE_FAIL_IF(!usesCPP && playable, "'playable' member is set to true and therefore the package must use C++")
 
   author = json["author"].GetString();
   version = json["version"].GetString();

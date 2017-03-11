@@ -76,6 +76,10 @@ public:
 
 using JSONTypeManager = FunctionalSelfMapping<std::string>;
 
+#define JSON_FLAGS rapidjson::kParseCommentsFlag |\
+             rapidjson::kParseTrailingCommasFlag |\
+             rapidjson::kParseNanAndInfFlag
+
 struct Save {
   using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
 

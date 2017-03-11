@@ -61,11 +61,13 @@ void Game::Start() {
   float delta = 0.0f;
   glfwSetTime(0.0);
   while (!window->ShouldClose()) {
+    glfwSetTime(0.0);
+
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     delta = glfwGetTime();
-    glfwSetTime(0.0);
+    elapsedTime += delta;
     // Any nodes that are removed from the list during a 'Tick' call
     // will no longer cause problems
     auto tempList = tickNodes;

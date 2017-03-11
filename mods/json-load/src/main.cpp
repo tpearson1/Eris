@@ -40,7 +40,7 @@ public:
     glClearColor(0.1f, 0.6f, 0.9f, 1.0f);
     scene.Render();  
 
-    tagged->transform.ChangeScale(0.1f * delta, 0.1f * delta, 0.1f * delta);
+    // tagged->transform.ChangeScale(0.1f * delta, 0.1f * delta, 0.1f * delta);
     shape->transform.Translate(delta, 0.0f, 0.0f);
     shape->transform.Rotate(30.0f * delta, 60.0f * delta, 0.0f);
 
@@ -86,7 +86,6 @@ void OnMouseMove(double xPos, double yPos) {
 }
 
 MyGame::MyGame() {
-  std::cout << "Hello!\n";
   Input::RegisterMouseScrollCallback(OnMouseScroll);
   Input::RegisterMouseMoveCallback(OnMouseMove);
   Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
@@ -105,8 +104,11 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  Resources::active->preRenderMeshFuncs.Register("Test", [] {
-    std::cout << '.' << std::flush;    
+  Resources::active->preRenderMeshFuncs.Register("Test", [this] {
+    auto &cur = Shader::Current();
+    cur.SetUniform(cur.GetUniform("pointLights[0].position"), Vec3(8.0f * sinf(GetElapsedTime()), 2.0f, 4.0f));
+    cur.SetUniform(cur.GetUniform("pointLights[0].color"), Vec3(0.7f, 0.7f, 0.7f));
+    cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, tagged->transform.Matrix());
   });
 
   std::string json;

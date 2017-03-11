@@ -34,6 +34,7 @@ class NNode;
 
 class Game {
   std::list<NNode *> tickNodes;
+  float elapsedTime = 0.0f;
 
 protected:
   virtual void Initialize() {}
@@ -55,6 +56,8 @@ public:
   }
 
   void Start();
+
+  float GetElapsedTime() { return elapsedTime; }
 
   Ref<Window> window;
 };

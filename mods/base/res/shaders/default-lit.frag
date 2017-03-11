@@ -35,7 +35,7 @@ struct SpotLight {
 };
 
 uniform int numPointLights;
-uniform PointLight pointLights
+uniform PointLight pointLights;
 
 in vec2 UV;
 in vec3 normal;
