@@ -28,6 +28,8 @@ SOFTWARE.
 #define _BASE__SHADER_H
 
 #include <string>
+#include <vector>
+#include <tuple>
 #include <math/vec.h>
 #include <math/mat.h>
 #include <base/gl.h>
@@ -48,15 +50,19 @@ class Shader {
   static const Shader *current;
 
 public:
+  using Definitions = std::vector<std::tuple<std::string, std::string>>;
+
+  static std::string openGLVersion;
+
   GLuint ID() const { return id; }
 
   Shader() {}
-  Shader(const std::string &vertexFilePath, const std::string &fragmentFilePath)
-    { Load(vertexFilePath, fragmentFilePath); }
+  Shader(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions = Definitions())
+    { Load(vertexFilePath, fragmentFilePath, definitions); }
   ~Shader()
     { glDeleteProgram(id); }
 
-  bool Load(const std::string &vertexFilePath, const std::string &fragmentFilePath);
+  bool Load(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions = Definitions());
 
   /*
    * Gets a uniform variable from the shader

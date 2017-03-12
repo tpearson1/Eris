@@ -1,7 +1,3 @@
-#version 330 core
-
-#define NUM_LIGHTS 12
-
 out vec4 color;
 
 in vec3 fragPos;

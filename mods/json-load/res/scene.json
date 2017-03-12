@@ -8,11 +8,12 @@
         "path": "mods/json-load/res/monk.blend",
         "texture": "mods/json-load/res/tex/monk.png",
         "shader": {
-          /*"vertex": "mods/base/res/shaders/default-unlit.vs",
-          "fragment": "mods/base/res/shaders/default-unlit.frag",*/
           "vertex": "mods/base/res/shaders/default-lit.vs",
           "fragment": "mods/base/res/shaders/phong.frag",
-          "prerender-func": "Test"
+          "prerender-func": "Test",
+          "definitions": [
+            "NUM_LIGHTS", "12"
+          ] 
         },
         "NNode": {
           "transform": {

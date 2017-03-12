@@ -1,5 +1,3 @@
-#version 330 core
-
 struct Props {
   vec3 ambient;
   vec3 diffuse;

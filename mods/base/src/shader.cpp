@@ -26,15 +26,14 @@ SOFTWARE.
 
 #include <shader.h>
 #include <iostream>
-#include <string>
 #include <sstream>
-#include <vector>
 #include <fstream>
 #include <cstring>
 #include <core/file.h>
 #include <core/statics.h>
 
 const Shader *Shader::current;
+std::string Shader::openGLVersion = "330 core";
 
 static void CompileShader(GLuint shaderID, const std::string &source) {
   GLint result = GL_FALSE;
@@ -56,7 +55,10 @@ static void CompileShader(GLuint shaderID, const std::string &source) {
   }
 }
 
-bool Shader::Load(const std::string &vertexFilePath, const std::string &fragmentFilePath) {
+bool Shader::Load(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions) {
+  if (id)
+    glDeleteProgram(id);
+
   // Create the shaders
   GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -69,6 +71,15 @@ bool Shader::Load(const std::string &vertexFilePath, const std::string &fragment
     std::cerr << "> Unable to load shader files\n";
     return false;
   }
+
+  std::string versionText = "#version " + openGLVersion + '\n';
+
+  std::string defs;
+  for (auto &definition : definitions)
+    defs += "#define " + std::get<0>(definition) + ' ' + std::get<1>(definition) + '\n'; 
+
+  vertexShaderCode = versionText + defs + vertexShaderCode;
+  fragmentShaderCode = versionText + defs + fragmentShaderCode;
 
   // Compile the shaders
   CompileShader(vertexShaderID, vertexShaderCode);

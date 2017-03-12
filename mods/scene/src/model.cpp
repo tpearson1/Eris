@@ -149,6 +149,20 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
     preRenderFunction = Resources::active->preRenderMeshFuncs.Get(preRenderFunc.GetString()); 
   }
 
+  Shader::Definitions definitions;
+  if (shaderObj.HasMember("definitions")) {
+    const auto &defsObj = shaderObj["definitions"];
+    CHECK_RETURN(defsObj.IsArray(), "Member 'definition' in member 'shader' of 'Model' must be of type array", nullptr)
+    const auto &defs = defsObj.GetArray();
+    for (auto it = defs.Begin(); it != defs.End(); it++) {
+      CHECK_RETURN(it->IsString(), "Shader definitions must be strings", nullptr)
+      auto name = it->GetString();
+      CHECK_RETURN(++it != defs.End() && it->IsString(), "Shader definitions must occur in string pairs", nullptr)
+      
+      definitions.push_back({name, it->GetString()}); 
+    }
+  }
+
   RenderRequirements rr;
 
   auto texturePath = texture.GetString();
@@ -165,13 +179,27 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
 
   auto vertexPath = vertexShader.GetString();
   auto fragmentPath = fragmentShader.GetString();
-  auto shaderRef = Resources::active->shaders.Get(std::make_tuple(vertexPath, fragmentPath));
-  if (shaderRef)
-    rr.shader = shaderRef;
+  bool success = false;
+  ShaderResource shaderRes;
+  for (auto &shader : Resources::active->shaders) {
+    if (shader.vertexPath == vertexPath
+        && shader.fragmentPath == fragmentPath
+        && shader.definitions == definitions) {
+      success = true; 
+      shaderRes = shader;
+    }
+  }
+  
+  if (success)
+    rr.shader = shaderRes.shader;
   else {
-    auto s = Ref<Shader>::Create(vertexPath, fragmentPath);
-    Resources::active->shaders.Add({vertexPath, fragmentPath}, s);
-    rr.shader = s;
+    ShaderResource s;
+    s.vertexPath = vertexPath;
+    s.fragmentPath = fragmentPath;
+    s.definitions = definitions;
+    s.shader = Ref<Shader>::Create(vertexPath, fragmentPath, definitions);
+    Resources::active->shaders.push_back(s);
+    rr.shader = s.shader;
   }
 
   // TODO: Assets for shader and texture support?

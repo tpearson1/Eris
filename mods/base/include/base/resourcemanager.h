@@ -50,17 +50,16 @@ public:
     { resources[key] = value; }
 };
 
-struct HashShaderTuple {
-  size_t operator()(const std::tuple<std::string, std::string> &t) const {
-    size_t seed = std::hash<std::string>()(std::get<0>(t)) + 0x9e3779b9;
-    return seed ^ (std::hash<std::string>()(std::get<1>(t)) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
-  }
+struct ShaderResource {
+  Ref<Shader> shader;
+  std::string vertexPath, fragmentPath;
+  Shader::Definitions definitions;
 };
 
 struct Resources {
   ResourceManager<Texture> textures;
-  // Key is tuple of vertex shader and fragment shader paths
-  ResourceManager<Shader, std::tuple<std::string, std::string>, HashShaderTuple> shaders;
+  
+  std::vector<ShaderResource> shaders;
 
   Mapping<std::string, std::function<void()>> preRenderMeshFuncs;
 

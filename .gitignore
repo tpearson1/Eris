@@ -7,3 +7,5 @@
 /mods/**/lib/
 load
 tags
+load.trace
+vgcore.*

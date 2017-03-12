@@ -45,6 +45,9 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::fun
  *       "vertex": "mods/base/res/shaders/default-unlit.vs",
  *       "fragment": "mods/base/res/shaders/default-unlit.frag",
  *       "prerender-func": "Default"
+ *       "definitions": [
+ *          "NUM_LIGHTS", "12"
+ *       ]
  *     },
  *     "NNode": { ... }
  *   }
