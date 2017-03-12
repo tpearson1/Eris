@@ -10,28 +10,42 @@ in vec2 UV;
 
 struct PointLight {
   vec3 position;
-  vec3 color;
+
+  vec3 ambient;
+  vec3 specular;
+  vec3 diffuse;
+
+  float linear;
+  float quadratic;
 };
 
 uniform vec3 cameraPosition;
 uniform PointLight[NUM_LIGHTS] pointLights;
 uniform sampler2D textureSampler;
+uniform float shininess;
 
 void main() {
-  float ambientStrength = 0.1f;
-  vec3 ambient = ambientStrength * pointLights[0].color;
+  vec3 tex = vec3(texture(textureSampler, UV));
+
+  vec3 ambient = pointLights[0].ambient * tex;
 
   vec3 norm = normalize(normal);
   vec3 lightDir = normalize(pointLights[0].position - fragPos);
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = diff * pointLights[0].color;
+  vec3 diffuse = pointLights[0].diffuse * diff * tex;
 
-  float specularStrength = 0.5f;
   vec3 cameraDir = normalize(cameraPosition - fragPos);
   vec3 reflectDir = reflect(-lightDir, norm);
-  float spec = pow(max(dot(cameraPosition, reflectDir), 0.0), 32);
-  vec3 specular = specularStrength * spec * pointLights[0].color;
+  float spec = pow(max(dot(cameraPosition, reflectDir), 0.0), shininess);
+  vec3 specular = pointLights[0].specular * spec;
 
-  vec3 result = (ambient + diffuse + specular) * texture(textureSampler, UV).rgb; 
-  color = vec4(result, 1.0f);
+  float distance = length(pointLights[0].position - fragPos);
+  float attenuation = 1.0f / (1.0f + pointLights[0].linear * distance +
+                      pointLights[0].quadratic * (distance * distance));
+
+  ambient *= attenuation;
+  diffuse *= attenuation;
+  specular *= attenuation;
+
+  color = vec4(ambient + diffuse + specular, 1.0f);
 }
