@@ -106,14 +106,17 @@ MyGame::MyGame() {
 
   Resources::active->preRenderMeshFuncs.Register("Test", [this] {
     auto &cur = Shader::Current();
+    cur.SetUniform(cur.GetUniform("cameraLocation"), NCamera::active->transform.Location());
     cur.SetUniform(cur.GetUniform("pointLights[0].position"), Vec3(8.0f * sinf(GetElapsedTime()), 2.0f, 4.0f));
     cur.SetUniform(cur.GetUniform("pointLights[0].ambient"), Vec3::one * 0.1f);
     cur.SetUniform(cur.GetUniform("pointLights[0].diffuse"), Vec3::one * 0.8f);
     cur.SetUniform(cur.GetUniform("pointLights[0].specular"), Vec3::one);
+    cur.SetUniform(cur.GetUniform("pointLights[0].constant"), 1.0f);
     cur.SetUniform(cur.GetUniform("pointLights[0].linear"), 0.09f);
     cur.SetUniform(cur.GetUniform("pointLights[0].quadratic"), 0.032f);
 
-    cur.SetUniform(cur.GetUniform("shininess"), 32.0f);
+    cur.SetUniform(cur.GetUniform("material.specular"), Vec3(0.6f, 0.6f, 0.6f));
+    cur.SetUniform(cur.GetUniform("material.shininess"), 32.0f);
     cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, tagged->transform.Matrix());
   });
 

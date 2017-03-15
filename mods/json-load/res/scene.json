@@ -12,7 +12,8 @@
           "fragment": "mods/base/res/shaders/phong.frag",
           "prerender-func": "Test",
           "definitions": [
-            "NUM_LIGHTS", "12"
+            "MAX_DIR_LIGHTS", "1",
+            "MAX_POINT_LIGHTS", "1"
           ] 
         },
         "NNode": {

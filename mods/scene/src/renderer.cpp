@@ -91,7 +91,7 @@ void Renderer::Render() {
       shaderGroup.same->Use();
     for (auto textureGroup : shaderGroup.items) {
       if (textureGroup.same) {
-        GLint textureSampler = shaderGroup.same->GetUniform("textureSampler");
+        auto textureSampler = shaderGroup.same->GetUniform("material.diffuse");
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureGroup.same->ID());
         Shader::SetUniform(textureSampler, 0);

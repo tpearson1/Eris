@@ -1,7 +1,12 @@
 in vec2 UV;
 out vec3 color;
-uniform sampler2D textureSampler;
+
+struct Material {
+  sampler2D diffuse;
+};
+
+uniform Material material;
 
 void main() {
-  color = texture(textureSampler, UV).rgb;
+  color = texture(material.diffuse, UV).rgb;
 }
