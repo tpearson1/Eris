@@ -15,7 +15,7 @@ struct DirectionalLight {
 };
 
 struct PointLight {
-  vec3 position;
+  vec3 location;
 
   vec3 ambient;
   vec3 specular;
@@ -38,6 +38,8 @@ uniform vec3 cameraLocation;
 uniform DirectionalLight[MAX_DIR_LIGHTS] directionalLights;
 uniform PointLight[MAX_POINT_LIGHTS] pointLights;
 
+uniform int numDirectionalLights, numPointLights;
+
 vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir);
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 pos, vec3 viewDir);
 
@@ -46,9 +48,9 @@ void main() {
   vec3 viewDir = normalize(cameraLocation - fragPos);
 
   vec3 result = vec3(0.0f, 0.0f, 0.0f);
-  for (int i = 0; i < MAX_DIR_LIGHTS; i++)
+  for (int i = 0; i < numDirectionalLights; i++)
     result += CalculateDirectionalLight(directionalLights[i], norm, viewDir);
-  for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+  for (int i = 0; i < numPointLights; i++)
       result += CalculatePointLight(pointLights[i], norm, fragPos, viewDir);
 
   color = vec4(result, 1.0f);
@@ -70,14 +72,14 @@ vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
 }
 
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 pos, vec3 viewDir) {
-  vec3 lightDir = normalize(light.position - pos);
+  vec3 lightDir = normalize(light.location - pos);
   // Diffuse
   float diff = max(dot(normal, lightDir), 0.0f);
   // Specular
   vec3 reflectDir = reflect(-lightDir, normal);
   float spec = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
   // Attenuation
-  float distance = length(light.position - pos);
+  float distance = length(light.location- pos);
   float attenuation = 1.0f / (light.constant + light.linear * distance
                               + light.quadratic * (distance * distance));
   

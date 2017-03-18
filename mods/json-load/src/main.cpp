@@ -30,17 +30,22 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/camera.h>
 #include <scene/tagmanager.h>
+#include <scene/lightmanager.h>
 
 class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
+  Ref<LightManager> lightManager;
+  PointLight *pointLight;
+
 public:
   MyGame();
   void Tick(float delta) override {
     glClearColor(0.1f, 0.6f, 0.9f, 1.0f);
     scene.Render();  
 
-    // tagged->transform.ChangeScale(0.1f * delta, 0.1f * delta, 0.1f * delta);
+    pointLight->transform.Location(3.0f * sinf(GetElapsedTime()), 1.0f, 3.0f);
+
     shape->transform.Translate(delta, 0.0f, 0.0f);
     shape->transform.Rotate(30.0f * delta, 60.0f * delta, 0.0f);
 
@@ -94,7 +99,7 @@ MyGame::MyGame() {
   });
 
   Input::GetMousePosition(startDragX, startDragY);
-  Input::SetMouseMode(MouseMode::DISABLED);
+  //Input::SetMouseMode(MouseMode::DISABLED);
 
   TagManager::active = Ref<TagManager>::Create();
   Resources::active = Ref<Resources>::Create();
@@ -104,21 +109,25 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  Resources::active->preRenderMeshFuncs.Register("Test", [this] {
-    auto &cur = Shader::Current();
-    cur.SetUniform(cur.GetUniform("cameraLocation"), NCamera::active->transform.Location());
-    cur.SetUniform(cur.GetUniform("pointLights[0].position"), Vec3(8.0f * sinf(GetElapsedTime()), 2.0f, 4.0f));
-    cur.SetUniform(cur.GetUniform("pointLights[0].ambient"), Vec3::one * 0.1f);
-    cur.SetUniform(cur.GetUniform("pointLights[0].diffuse"), Vec3::one * 0.8f);
-    cur.SetUniform(cur.GetUniform("pointLights[0].specular"), Vec3::one);
-    cur.SetUniform(cur.GetUniform("pointLights[0].constant"), 1.0f);
-    cur.SetUniform(cur.GetUniform("pointLights[0].linear"), 0.09f);
-    cur.SetUniform(cur.GetUniform("pointLights[0].quadratic"), 0.032f);
+  lightManager = Ref<LightManager>::Create();
+  pointLight = new PointLight;
+  pointLight->linear = 0.09f;
+  pointLight->quadratic = 0.032f;
+  lightManager->RegisterPointLight(pointLight);
 
-    cur.SetUniform(cur.GetUniform("material.specular"), Vec3(0.6f, 0.6f, 0.6f));
-    cur.SetUniform(cur.GetUniform("material.shininess"), 32.0f);
-    cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, tagged->transform.Matrix());
+  Resources::active->preRenderMeshFuncs.Register("Test", [this] {
+    lightManager->SetUniformsForClosestLights(tagged->transform.Location(), 0, 1);
+    PhongShaderUniformHelper(Vec3::one * 0.6f, 32.0f, tagged->transform);
   });
+  
+  // Resources::active->preRenderMeshFuncs.Register("Test", [this] {
+  //   lightManager->SetUniformsForClosestLights(tagged->transform.Location(), 0, 1);
+
+  //   auto &cur = Shader::Current();
+  //   cur.SetUniform(cur.GetUniform("material.specular"), Vec3(0.6f, 0.6f, 0.6f));
+  //   cur.SetUniform(cur.GetUniform("material.shininess"), 32.0f);
+  //   cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, tagged->transform.Matrix());
+  // });
 
   std::string json;
   File::Read("mods/json-load/res/scene.json", json);
