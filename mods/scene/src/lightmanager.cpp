@@ -75,9 +75,3 @@ void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirS
   } 
 }
 
-void PhongShaderUniformHelper(const Vec3 &specular, float shininess, const Transform &transform) {
-  auto &cur = Shader::Current();
-  cur.SetUniform(cur.GetUniform("material.specular"), specular);
-  cur.SetUniform(cur.GetUniform("material.shininess"), shininess);
-  cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, transform.Matrix());
-}

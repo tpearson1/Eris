@@ -24,16 +24,18 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <meshrenderer.h>
-#include <base/shader.h>
-#include <camera.h>
+#include <uniformsetters.h>
+#include <scene/meshrenderer.h>
 
-Mapping<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
+void PhongShaderUniformSetter::operator()(NMeshRenderer *nmr) const {
+  lightingStatus->lightManager->SetUniformsForClosestLights(
+    nmr->transform.Location(),
+    lightingStatus->maxDirectionalLights,
+    lightingStatus->maxPointLights
+  );
 
-void MeshRenderer::Draw(const Mat4 &global) {
-  const Shader &current = Shader::Current();
-  GLint shaderMVP = current.GetUniform("MVP");
-  Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, global);
-
-  mesh->Draw();
+  auto &cur = Shader::Current();
+  cur.SetUniform(cur.GetUniform("material.specular"), specular);
+  cur.SetUniform(cur.GetUniform("material.shininess"), shininess);
+  cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, nmr->transform.Matrix());
 }

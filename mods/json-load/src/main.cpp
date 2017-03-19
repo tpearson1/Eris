@@ -30,13 +30,14 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/camera.h>
 #include <scene/tagmanager.h>
-#include <scene/lightmanager.h>
+#include <scene/meshrenderer.h>
+#include <scene/uniformsetters.h>
 
 class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
-  Ref<LightManager> lightManager;
   PointLight *pointLight;
+  PhongShaderUniformSetter phongSetter;
 
 public:
   MyGame();
@@ -109,25 +110,22 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  lightManager = Ref<LightManager>::Create();
+  auto lightManager = Ref<LightManager>::Create();
   pointLight = new PointLight;
   pointLight->linear = 0.09f;
   pointLight->quadratic = 0.032f;
   lightManager->RegisterPointLight(pointLight);
 
-  Resources::active->preRenderMeshFuncs.Register("Test", [this] {
-    lightManager->SetUniformsForClosestLights(tagged->transform.Location(), 0, 1);
-    PhongShaderUniformHelper(Vec3::one * 0.6f, 32.0f, tagged->transform);
-  });
-  
-  // Resources::active->preRenderMeshFuncs.Register("Test", [this] {
-  //   lightManager->SetUniformsForClosestLights(tagged->transform.Location(), 0, 1);
+  auto lightingStatus = Ref<LightingStatus>::Create();
+  lightingStatus->maxDirectionalLights = 0;
+  lightingStatus->maxPointLights = 1;
+  lightingStatus->lightManager = lightManager;
 
-  //   auto &cur = Shader::Current();
-  //   cur.SetUniform(cur.GetUniform("material.specular"), Vec3(0.6f, 0.6f, 0.6f));
-  //   cur.SetUniform(cur.GetUniform("material.shininess"), 32.0f);
-  //   cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, tagged->transform.Matrix());
-  // });
+  phongSetter.lightingStatus = lightingStatus;
+  phongSetter.specular = Vec3::one * 0.6f;
+  phongSetter.shininess = 32.0f;
+
+  NMeshRenderer::preRenderFunctions.Register("Test", phongSetter); 
 
   std::string json;
   File::Read("mods/json-load/res/scene.json", json);

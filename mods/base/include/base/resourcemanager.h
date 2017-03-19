@@ -61,8 +61,6 @@ struct Resources {
   
   std::vector<ShaderResource> shaders;
 
-  Mapping<std::string, std::function<void()>> preRenderMeshFuncs;
-
   static Ref<Resources> active;
 };
 

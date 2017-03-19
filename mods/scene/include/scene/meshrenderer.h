@@ -28,6 +28,8 @@ SOFTWARE.
 #define _SCENE__MESH_RENDERER_H
 
 #include <memory>
+#include <functional>
+#include <core/mapping.h>
 #include <base/mesh.h>
 #include <scene/node.h>
 #include <scene/camera.h>
@@ -48,14 +50,12 @@ public:
 };
 
 class NMeshRenderer : public NNode {
-  void Draw() {
-    renderer.Draw(NCamera::active->Matrix(transform.GlobalTransform().Matrix()));
-  }
-
-  RenderRequirements requirements;
-  RenderRegistration registration;
-
 public:
+  using PreRenderFunctionType = std::function<void(NMeshRenderer *)>;
+
+  static Mapping<std::string, PreRenderFunctionType> preRenderFunctions;
+  PreRenderFunctionType preRenderFunction;
+
   MeshRenderer renderer;
 
   const RenderRequirements &GetRequirements() const { return requirements; };
@@ -67,6 +67,16 @@ public:
   NMeshRenderer(const RenderRequirements &r) {
     registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements = r);
   }
+
+private:
+  void Draw() {
+    if (preRenderFunction)
+      preRenderFunction(this);
+    renderer.Draw(NCamera::active->Matrix(transform.GlobalTransform().Matrix()));
+  }
+
+  RenderRequirements requirements;
+  RenderRegistration registration;
 };
 
 #endif // _SCENE__MESH_RENDERER_H

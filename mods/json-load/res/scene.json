@@ -37,7 +37,7 @@
         },
         "NNode": {
           "transform": {
-            "location": [5, 0, 0],
+            "location": [5, 0, 0], // Want support for math expressions like $(3 + 2)
             "rotation": [0, 0, 0]
           }
         }

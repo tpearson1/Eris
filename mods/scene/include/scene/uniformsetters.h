@@ -24,16 +24,27 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <meshrenderer.h>
-#include <base/shader.h>
-#include <camera.h>
+#ifndef _SCENE__UNIFORM_SETTERS_H
+#define _SCENE__UNIFORM_SETTERS_H
 
-Mapping<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
+#include <scene/lightmanager.h>
 
-void MeshRenderer::Draw(const Mat4 &global) {
-  const Shader &current = Shader::Current();
-  GLint shaderMVP = current.GetUniform("MVP");
-  Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, global);
+class NMeshRenderer;
 
-  mesh->Draw();
-}
+struct LightingStatus {
+  LightManager::DirSizeType maxDirectionalLights;
+  LightManager::PointSizeType maxPointLights;
+  
+  Ref<LightManager> lightManager;
+};
+
+struct PhongShaderUniformSetter {
+  Ref<LightingStatus> lightingStatus;
+  Vec3 specular;
+  float shininess;
+
+  void operator()(NMeshRenderer *nmr) const; 
+};
+
+#endif // _SCENE__UNIFORM_SETTERS_H
+

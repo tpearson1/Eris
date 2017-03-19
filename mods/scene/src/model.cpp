@@ -30,7 +30,7 @@ SOFTWARE.
 #include <scene/meshrenderer.h>
 #include <base/resourcemanager.h>
 
-NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
+NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
 
@@ -83,14 +83,14 @@ NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const Rend
       }
     );
   }
-  meshPtr->preRenderFunc = preRenderFunc;
  
   auto *mr = new NMeshRenderer(rr);
+  mr->preRenderFunction = preRenderFunc;
   mr->renderer.Set(meshPtr);
   return mr;
 }
 
-static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
+static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   for (auto i = 0u; i < node->mNumMeshes; i++) {
     auto mesh = scene->mMeshes[node->mMeshes[i]];
     ProcessMesh(mesh, scene, rr, preRenderFunc)->transform.Parent(parent);
@@ -100,7 +100,7 @@ static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const
     ProcessNode(node->mChildren[i], scene, parent, rr, preRenderFunc);
 }
 
-NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::function<void()> preRenderFunc) {
+NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   Assimp::Importer importer;
   const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
   if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -142,11 +142,11 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
   const auto &fragmentShader = shaderObj["fragment"];
   CHECK_RETURN(fragmentShader.IsString(), "Member 'fragment' in member 'shader' of 'Model' must be of type string", nullptr)
 
-  std::function<void()> preRenderFunction;
+  NMeshRenderer::PreRenderFunctionType preRenderFunction;
   if (shaderObj.HasMember("prerender-func")) {
     const auto &preRenderFunc = shaderObj["prerender-func"];
     CHECK_RETURN(preRenderFunc.IsString(), "Member 'prerender-func' in member 'shader' of 'Model' must be of type string", nullptr)
-    preRenderFunction = Resources::active->preRenderMeshFuncs.Get(preRenderFunc.GetString()); 
+    preRenderFunction = NMeshRenderer::preRenderFunctions.Get(preRenderFunc.GetString()); 
   }
 
   Shader::Definitions definitions;

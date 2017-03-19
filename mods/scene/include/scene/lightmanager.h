@@ -70,7 +70,5 @@ public:
   void SetUniformsForClosestLights(Vec3 location, DirSizeType dCount, PointSizeType pCount);
 };
 
-void PhongShaderUniformHelper(const Vec3 &specular, float shininess, const Transform &transform);
-
 #endif // _SCENE__LIGHT_MANAGER_H
 

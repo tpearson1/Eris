@@ -30,7 +30,6 @@ SOFTWARE.
 #include <iostream>
 #include <vector>
 #include <array>
-#include <functional>
 #include <base/vertexattribute.h>
 #include <math/vec.h>
 
@@ -58,8 +57,6 @@ class Mesh {
   ElementBuffer indices;
 
 public:
-  std::function<void()> preRenderFunc;
-
   Mesh() {}
 
   Mesh(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData, const std::vector<VertexAttribute<>> &&atts)

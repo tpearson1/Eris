@@ -27,6 +27,8 @@ SOFTWARE.
 #ifndef _CORE__MAPPING_H
 #define _CORE__MAPPING_H
 
+#include <unordered_map>
+
 template <typename K, typename V, typename Hash = std::hash<K>>
 class Mapping {
 protected:
