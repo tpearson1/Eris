@@ -47,14 +47,14 @@ void DirectionalLight::SetUniformData(const std::string &prefix) const {
   cur.SetUniform(cur.GetUniform(prefix + ".specular"), specular);
 }
 
-void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirSizeType dCount, LightManager::PointSizeType pCount) {
+void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirSizeType maxDirCount, LightManager::PointSizeType maxPointCount) {
   auto &cur = Shader::Current();
   cur.SetUniform(cur.GetUniform("cameraLocation"), NCamera::active->transform.Location());
-  cur.SetUniform(cur.GetUniform("numPointLights"), Math::Min<GLint>(pCount, pointLights.size()));
-  cur.SetUniform(cur.GetUniform("numDirectionalLights"), Math::Min<GLint>(dCount, directionalLights.size()));
+  cur.SetUniform(cur.GetUniform("numPointLights"), Math::Min<GLint>(maxPointCount, pointLights.size()));
+  cur.SetUniform(cur.GetUniform("numDirectionalLights"), Math::Min<GLint>(maxDirCount, directionalLights.size()));
 
   auto dirIt = directionalLights.begin();
-  auto less = Math::Min(dCount, directionalLights.size());
+  auto less = Math::Min(maxDirCount, directionalLights.size());
   for (auto i = 0u; i < less; i++, dirIt++) {
     std::stringstream iss;
     iss << "directionalLights[" << i << ']';
@@ -66,7 +66,7 @@ void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirS
     return Vec3::Distance(lhs->transform.Location(), location) < Vec3::Distance(rhs->transform.Location(), location); 
   });
 
-  less = Math::Min(pCount, pointLights.size());
+  less = Math::Min(maxPointCount, pointLights.size());
   auto pointIt = pointLights.begin();
   for (auto i = 0u; i < less; i++, pointIt++) {
     std::stringstream iss;

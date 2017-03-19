@@ -67,7 +67,7 @@ public:
 
   using PointSizeType = std::list<PointLight *>::size_type;
   using DirSizeType = std::list<DirectionalLight *>::size_type;
-  void SetUniformsForClosestLights(Vec3 location, DirSizeType dCount, PointSizeType pCount);
+  void SetUniformsForClosestLights(Vec3 location, DirSizeType maxDirCount, PointSizeType maxPointCount);
 };
 
 #endif // _SCENE__LIGHT_MANAGER_H
