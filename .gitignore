@@ -4,6 +4,7 @@
 **/*~
 **/*.bak
 **/*.sw[abcdefghijklmnop]
+.vscode/
 /mods/**/lib/
 load
 tags
