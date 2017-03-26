@@ -28,7 +28,7 @@ SOFTWARE.
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <scene/meshrenderer.h>
-#include <base/resourcemanager.h>
+#include <base/resources.h>
 
 NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   std::vector<GLfloat> verts, uvs, normals;
@@ -131,78 +131,23 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
 
   CHECK_RETURN(object.HasMember("shader"), "'Model' object must have member 'shader'", nullptr)
   const auto &shader = object["shader"];
-  CHECK_RETURN(shader.IsObject(), "Member 'shader' in 'Model' must be of type object", nullptr)
-  const auto &shaderObj = shader.GetObject();
-
-  CHECK_RETURN(shaderObj.HasMember("vertex"), "Member 'shader' of 'Model' object must have member 'vertex'", nullptr)
-  const auto &vertexShader = shaderObj["vertex"];
-  CHECK_RETURN(vertexShader.IsString(), "Member 'vertex' in member 'shader' of 'Model' must be of type string", nullptr)
-
-  CHECK_RETURN(shaderObj.HasMember("fragment"), "Member 'shader' of 'Model' object must have member 'fragment'", nullptr)
-  const auto &fragmentShader = shaderObj["fragment"];
-  CHECK_RETURN(fragmentShader.IsString(), "Member 'fragment' in member 'shader' of 'Model' must be of type string", nullptr)
+  CHECK_RETURN(shader.IsString(), "'Member 'shader' in 'Model' must be of type string", nullptr)
 
   NMeshRenderer::PreRenderFunctionType preRenderFunction;
-  if (shaderObj.HasMember("prerender-func")) {
-    const auto &preRenderFunc = shaderObj["prerender-func"];
-    CHECK_RETURN(preRenderFunc.IsString(), "Member 'prerender-func' in member 'shader' of 'Model' must be of type string", nullptr)
+  if (object.HasMember("prerender-func")) {
+    const auto &preRenderFunc = object["prerender-func"];
+    CHECK_RETURN(preRenderFunc.IsString(), "Member 'prerender-func' in 'Model' must be of type string", nullptr)
     preRenderFunction = NMeshRenderer::preRenderFunctions.Get(preRenderFunc.GetString()); 
-  }
-
-  Shader::Definitions definitions;
-  if (shaderObj.HasMember("definitions")) {
-    const auto &defsObj = shaderObj["definitions"];
-    CHECK_RETURN(defsObj.IsArray(), "Member 'definition' in member 'shader' of 'Model' must be of type array", nullptr)
-    const auto &defs = defsObj.GetArray();
-    for (auto it = defs.Begin(); it != defs.End(); it++) {
-      CHECK_RETURN(it->IsString(), "Shader definitions must be strings", nullptr)
-      auto name = it->GetString();
-      CHECK_RETURN(++it != defs.End() && it->IsString(), "Shader definitions must occur in string pairs", nullptr)
-      
-      definitions.push_back({name, it->GetString()}); 
-    }
   }
 
   RenderRequirements rr;
 
-  auto texturePath = texture.GetString();
-  auto textureRef = Resources::active->textures.Get(texturePath);
-  if (textureRef)
-    rr.texture = textureRef;
-  else {
-    Ref<Texture> t;
-    t.Reset();
-    t->Load(texturePath);
-    Resources::active->textures.Add(texturePath, t);
-    rr.texture = t;
-  }
+  auto textureRef = Resources::active->textures.Get(texture.GetString());
+  rr.texture = textureRef;
 
-  auto vertexPath = vertexShader.GetString();
-  auto fragmentPath = fragmentShader.GetString();
-  bool success = false;
-  ShaderResource shaderRes;
-  for (auto &shader : Resources::active->shaders) {
-    if (shader.vertexPath == vertexPath
-        && shader.fragmentPath == fragmentPath
-        && shader.definitions == definitions) {
-      success = true; 
-      shaderRes = shader;
-    }
-  }
-  
-  if (success)
-    rr.shader = shaderRes.shader;
-  else {
-    ShaderResource s;
-    s.vertexPath = vertexPath;
-    s.fragmentPath = fragmentPath;
-    s.definitions = definitions;
-    s.shader = Ref<Shader>::Create(vertexPath, fragmentPath, definitions);
-    Resources::active->shaders.push_back(s);
-    rr.shader = s.shader;
-  }
+  auto shaderRef = Resources::active->shaders.Get(shader.GetString());
+  rr.shader = shaderRef;
 
-  // TODO: Assets for shader and texture support?
   auto model = LoadModel(path.GetString(), rr, preRenderFunction); 
   model->LoadFromJSON(node, manager);
   return model;

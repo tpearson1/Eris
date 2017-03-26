@@ -6,16 +6,9 @@
       "Model",
       {
         "path": "mods/json-load/res/monk.blend",
-        "texture": "mods/json-load/res/tex/monk.png",
-        "shader": {
-          "vertex": "mods/base/res/shaders/default-lit.vs",
-          "fragment": "mods/base/res/shaders/phong.frag",
-          "prerender-func": "Test",
-          "definitions": [
-            "MAX_DIR_LIGHTS", "1",
-            "MAX_POINT_LIGHTS", "1"
-          ] 
-        },
+        "texture": "monk",
+        "shader": "phong", 
+        "prerender-func": "Test",
         "NNode": {
           "transform": {
             "location": [0, 0, 0],
@@ -30,11 +23,8 @@
       "Model",
       {
         "path": "mods/json-load/res/shape.blend",
-        "texture": "mods/json-load/res/tex/shape.png",
-        "shader": {
-          "vertex": "mods/base/res/shaders/default-unlit.vs",
-          "fragment": "mods/base/res/shaders/default-unlit.frag"
-        },
+        "texture": "shape",
+        "shader": "unlit",
         "NNode": {
           "transform": {
             "location": [5, 0, 0], // Want support for math expressions like $(3 + 2)

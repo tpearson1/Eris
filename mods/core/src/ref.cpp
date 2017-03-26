@@ -25,7 +25,7 @@ SOFTWARE.
 */
 
 #include <ref.h>
-#include <core/testing.h>
+#include <testing.h>
 
 struct RefDummyBase {
   int a;

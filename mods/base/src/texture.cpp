@@ -27,10 +27,10 @@ SOFTWARE.
 #include <texture.h>
 #include <iostream>
 
-bool Texture::Load(const std::string &path, const TextureSettings &settings) {
+bool Texture::Load(const TextureSettings &settings) {
   RawImage r;
-  if (!r.Load(path, true)) {
-    std::cerr << "> Failed to load texture with path: " << path << '\n';
+  if (!r.Load(settings.path, true)) {
+    std::cerr << "> Failed to load texture with path: " << settings.path << '\n';
     return false;
   }
 
@@ -59,29 +59,17 @@ static GLuint Generate(const TextureSettings &settings, GLint internalFormat, in
 }
 
 // TODO: Add more options and make this more versatile
-void Texture::Load(const RawImage &raw, const TextureSettings &_settings) {
+void Texture::Load(const RawImage &raw, const TextureSettings &settings) {
   width = raw.width;
   height = raw.height;
 
   id = Generate(settings, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, raw.data.data());
-  settings = _settings;
 }
 
 void Texture::CreateForFramebuffer(int _width, int _height) {
   width = _width;
   height = _height;
-  settings = TextureSettings(TextureType::TEX_2D, TextureShrinkType::NEAREST, TextureEnlargeType::NEAREST);
+  auto settings = TextureSettings(TextureType::TEX_2D, TextureShrinkType::NEAREST, TextureEnlargeType::NEAREST);
   id = Generate(settings, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 }
 
-bool Texture::Load(const std::string &path) {
-  TextureSettings settings;
-  if (!settings.FromJSON(path + ".json")) {
-    std::cerr << "> Unable to load texture settings from file '" << path << ".json'\n";
-    return false;
-  }
-
-  Load(path, settings);
-
-  return true;
-}

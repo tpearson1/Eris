@@ -25,7 +25,7 @@ SOFTWARE.
 */
 
 #include <core/testing.h>
-#include <base/ref.h>
+#include <core/ref.h>
 
 extern "C" bool Base_RunTests() {
   RunRefTests();

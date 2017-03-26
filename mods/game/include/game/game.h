@@ -27,8 +27,8 @@ SOFTWARE.
 #ifndef _GAME__GAME_H
 #define _GAME__GAME_H
 
+#include <core/ref.h>
 #include <base/window.h>
-#include <base/resourcemanager.h>
 
 class NNode;
 

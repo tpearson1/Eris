@@ -40,15 +40,9 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::fun
  *   "Model",
  *   {
  *     "path": "mods/mod/res/model.blend",
- *     "texture": "mods/mod/res/tex/texture.png",
- *     "shader": {
- *       "vertex": "mods/base/res/shaders/default-unlit.vs",
- *       "fragment": "mods/base/res/shaders/default-unlit.frag",
- *       "prerender-func": "Default"
- *       "definitions": [
- *          "NUM_LIGHTS", "12"
- *       ]
- *     },
+ *     "texture": "texture",
+ *     "prerender-func": "Default",
+ *     "shader": "phong", 
  *     "NNode": { ... }
  *   }
  * ]

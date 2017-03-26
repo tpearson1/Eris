@@ -27,9 +27,7 @@ SOFTWARE.
 #ifndef _BASE__SHADER_H
 #define _BASE__SHADER_H
 
-#include <string>
-#include <vector>
-#include <tuple>
+#include <core/mapping.h>
 #include <math/vec.h>
 #include <math/mat.h>
 #include <base/gl.h>
@@ -50,19 +48,26 @@ class Shader {
   static const Shader *current;
 
 public:
-  using Definitions = std::vector<std::tuple<std::string, std::string>>;
+  using Definitions = SerializableMapping<std::string>;
+
+  struct Settings : public SaveLoad {
+    std::string vertexFilePath, fragmentFilePath;
+    Shader::Definitions definitions; 
+
+    virtual void SerializeToJSON(Save::Writer &writer) const override;
+
+    virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override;
+  };
 
   static std::string openGLVersion;
 
   GLuint ID() const { return id; }
 
   Shader() {}
-  Shader(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions = Definitions())
-    { Load(vertexFilePath, fragmentFilePath, definitions); }
   ~Shader()
-    { glDeleteProgram(id); }
+    { if (id) glDeleteProgram(id); }
 
-  bool Load(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions = Definitions());
+  bool Load(const Settings &settings);
 
   /*
    * Gets a uniform variable from the shader
@@ -82,7 +87,6 @@ public:
   /*
    * Sets uniform variables in the shader
    */
-
   static void SetUniform(GLint location, GLfloat v)
     { glUniform1f(location, v); }
   static void SetUniform(GLint location, Vec2 v)

@@ -79,13 +79,13 @@ bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
   version = json["version"].GetString();
 
   if (json.HasMember("link-options")) {
-    const rapidjson::Value &linkOpts = json["link-options"];
+    const auto &linkOpts = json["link-options"];
     CHECK(linkOpts.IsString(), "'link-options' member must be of type string")
     linkOptions = linkOpts.GetString();
   }
 
   if (json.HasMember("depend")) {
-    const rapidjson::Value &depend = json["depend"];
+    const auto &depend = json["depend"];
     CHECK(depend.IsArray(), "'depend' member must be of type array")
 
     dependencies.reserve(depend.Size());

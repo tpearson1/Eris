@@ -28,6 +28,7 @@ SOFTWARE.
 #define _BASE__TEXTURE_SETTINGS_H
 
 #include <string>
+#include <core/saveload.h>
 #include <base/gl.h>
 
 enum class TextureType : GLenum {
@@ -58,14 +59,16 @@ enum class TextureEnlargeType : GLint {
   LINEAR = GL_LINEAR
 };
 
-struct TextureSettings {
+struct TextureSettings : public SaveLoad {
   TextureSettings() {}
   TextureSettings(TextureType tt, TextureShrinkType tst, TextureEnlargeType tet)
                  : type(tt), shrinkFilter(tst), enlargeFilter(tet) {}
-  TextureSettings(const std::string &path)
-    { FromJSON(path); }
 
-  bool FromJSON(const std::string &path);
+  virtual void SerializeToJSON(Save::Writer &writer) const override;
+
+  virtual bool LoadFromJSON(const rapidjson::Value &value, JSONTypeManager &manager) override;
+
+  std::string path;
 
   TextureType type = TextureType::TEX_2D;
 

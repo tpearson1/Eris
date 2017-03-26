@@ -49,8 +49,6 @@ public:
     renderer->Render(); 
   }
 
-  void LoadFromJSON(const std::string &json, JSONTypeManager &manager);
-
   NNode root;
 
   virtual void SerializeToJSON(Writer &writer) const override;

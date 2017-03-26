@@ -1,7 +1,0 @@
-{
-  "texture": {
-    "type": "tex-2d",
-    "shrink-filter": "linear",
-    "enlarge-filter": "linear"
-  }
-}

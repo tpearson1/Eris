@@ -1,0 +1,14 @@
+{
+  "monk": {
+    "path": "mods/json-load/res/tex/monk.png",
+    "type": "tex-2d",
+    "shrink-filter": "linear",
+    "enlarge-filter": "linear"
+  },
+  "shape": {
+    "path": "mods/json-load/res/tex/shape.png",
+    "type": "tex-2d",
+    "shrink-filter": "linear",
+    "enlarge-filter": "linear"
+  }
+}

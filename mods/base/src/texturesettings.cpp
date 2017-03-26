@@ -30,93 +30,118 @@ SOFTWARE.
 #include <rapidjson/document.h>
 #include <core/file.h>
 
-TextureSettings TextureSettings::nearest{
-  TextureType::TEX_2D,
-  TextureShrinkType::NEAREST,
-  TextureEnlargeType::NEAREST
-};
+void TextureSettings::SerializeToJSON(Save::Writer &writer) const {
+  writer.StartObject();
 
-TextureSettings TextureSettings::linear{
-  TextureType::TEX_2D,
-  TextureShrinkType::LINEAR,
-  TextureEnlargeType::LINEAR
-};
+  writer.String("path", strlen("path"));
+  writer.String(path.c_str(), path.size());
 
-#define CHECK(expr, failMessage) {\
-if (!(expr)) {\
-  std::cerr << "> JSON: Texture '" << path << "' error: " << (failMessage) << '\n';\
-  return false;\
-}}
+  const std::unordered_map<TextureType, std::string> textureTypes = {
+    {TextureType::TEX_1D, "tex-1d"},
+    {TextureType::TEX_2D, "tex-2d"},
+    {TextureType::TEX_3D, "tex-3d"},
+    {TextureType::RECTANGLE, "rectangle"},
+    {TextureType::BUFFER, "buffer"},
+    {TextureType::CUBEMAP, "cubemap"},
+    {TextureType::TEX_1D_ARRAY, "tex-1d-array"},
+    {TextureType::TEX_2D_ARRAY, "tex-2d-array"},
+    {TextureType::CUBEMAP_ARRAY, "cubemap-array"},
+    {TextureType::TEX_2D_MULTISAMPLE, "tex-2d-multisample"},
+    {TextureType::TEX_2D_MULTISAMPLE_ARRAY, "tex-2d-multisample-array"}
+  };
+  
+  writer.String("type", strlen("type"));
+  auto str = textureTypes.at(type);
+  writer.String(str.c_str(), str.size());
+  
+  const std::unordered_map<TextureShrinkType, std::string> shrinkTypes = {
+    {TextureShrinkType::NEAREST_MIPMAP_NEAREST, "nearest-mipmap-nearest"},
+    {TextureShrinkType::LINEAR_MIPMAP_NEAREST, "linear-mipmap-nearest"},
+    {TextureShrinkType::NEAREST_MIPMAP_LINEAR, "nearest-mipmap-linear"},
+    {TextureShrinkType::LINEAR_MIPMAP_LINEAR, "linear-mipmap-linear"},
+    {TextureShrinkType::NEAREST, "nearest"},
+    {TextureShrinkType::LINEAR, "linear"}
+  };
 
-#define ERROR(message)\
-{ std::cerr << "> JSON: Texture '" << path << "' error: " << (message) << '\n'; return false; }
+  writer.String("shrink-filter", strlen("shrink-filter"));
+  str = shrinkTypes.at(shrinkFilter);
+  writer.String(str.c_str(), str.size());
+  
+  const std::unordered_map<TextureEnlargeType, std::string> enlargeTypes = {
+    {TextureEnlargeType::NEAREST, "nearest"},
+    {TextureEnlargeType::LINEAR, "linear"}
+  };
 
-bool TextureSettings::FromJSON(const std::string &path) {
-  std::string text;
-  File::Read(path, text);
-  rapidjson::Document document;
-  document.Parse<rapidjson::kParseCommentsFlag
-                | rapidjson::kParseTrailingCommasFlag
-                | rapidjson::kParseNanAndInfFlag>(text.c_str());
+  writer.String("enlarge-filter", strlen("enlarge-filter"));
+  str = enlargeTypes.at(enlargeFilter);
+  writer.String(str.c_str(), str.size());
 
-  // Error checking
-  CHECK(document.IsObject(), "There is no root object")
+  writer.EndObject();
+}
 
-  CHECK(document.HasMember("texture"), "'texture' member must be present")
-  CHECK(document["texture"].IsObject(), "'texture' member must be of type object")
+bool TextureSettings::LoadFromJSON(const rapidjson::Value &value, JSONTypeManager &/* manager */) {
+  CHECK(value.IsObject(), "TextureSettings must be of type object")
 
-  const rapidjson::Value &json = document["texture"];
+  CHECK(value.HasMember("path"), "Member 'path' of TextureSettings is not present")
+  const auto &texPath = value["path"];
+  CHECK(value["path"].IsString(), "Member 'path' of TextureSettings is not present")
 
-  if (json.HasMember("use-preset")) {
-    CHECK(json["use-preset"].IsString(), "'use-preset' member must be of type string")
+  CHECK(value.HasMember("type"), "Member 'type' of TextureSettings is not present")
+  const auto &texType = value["type"];
+  CHECK(value["type"].IsString(), "Member 'type' of TextureSettings must be of type string")
 
-    std::string preset = json["use-preset"].GetString();
-    if (preset == "nearest") *this = nearest;
-    else if (preset == "linear") *this = linear;
-    else ERROR("'use-preset' member is not a valid preset")
-  }
-  else {
-    CHECK(json.HasMember("type"), "'type' member must be included if 'use-preset' member isn't present")
-    CHECK(json.HasMember("shrink-filter"), "'shrink-filter' member must be included if 'use-preset' member isn't present")
-    CHECK(json.HasMember("enlarge-filter"), "'enlarge-filter' member must be included if 'use-preset' member isn't present")
-  }
+  CHECK(value.HasMember("shrink-filter"), "Member 'shrink-filter' of TextureSettings is not present")
+  const auto &shrink = value["shrink-filter"];
+  CHECK(value["shrink-filter"].IsString(), "'Member 'shrink-filter' of TextureSettings must be of type string")
 
-  if (json.HasMember("type")) {
-    CHECK(json["type"].IsString(), "'type' member must be of type string")
-    std::string typeString = json["type"].GetString();
-    if (typeString == "tex-1d") type = TextureType::TEX_1D;
-    else if (typeString == "tex-2d") type = TextureType::TEX_2D;
-    else if (typeString == "tex-3d") type = TextureType::TEX_3D;
-    else if (typeString == "rectangle") type = TextureType::RECTANGLE;
-    else if (typeString == "buffer") type = TextureType::BUFFER;
-    else if (typeString == "cubemap") type = TextureType::CUBEMAP;
-    else if (typeString == "tex-1d-array") type = TextureType::TEX_1D_ARRAY;
-    else if (typeString == "tex-2d-array") type = TextureType::TEX_2D_ARRAY;
-    else if (typeString == "cubemap-array") type = TextureType::CUBEMAP_ARRAY;
-    else if (typeString == "tex-2d-multisample") type = TextureType::TEX_2D_MULTISAMPLE;
-    else if (typeString == "tex-2d-multisample-array") type = TextureType::TEX_2D_MULTISAMPLE_ARRAY;
-    else ERROR("Member 'type' has invalid value")
-  }
+  CHECK(value.HasMember("enlarge-filter"), "Member 'enlarge-filter' of TextureSettings is not present")
+  const auto &enlarge = value["enlarge-filter"];
+  CHECK(value["enlarge-filter"].IsString(), "Member 'enlarge-filter' of TextureSettings must be of type string")
 
-  if (json.HasMember("shrink-filter")) {
-    CHECK(json["shrink-filter"].IsString(), "'shrink-filter' member must be of type string")
-    std::string shrinkString = json["shrink-filter"].GetString();
-    if (shrinkString == "nearest-mipmap-nearest") shrinkFilter = TextureShrinkType::NEAREST_MIPMAP_NEAREST;
-    else if (shrinkString == "linear-mipmap-nearest") shrinkFilter = TextureShrinkType::LINEAR_MIPMAP_NEAREST;
-    else if (shrinkString == "nearest-mipmap-linear") shrinkFilter = TextureShrinkType::NEAREST_MIPMAP_LINEAR;
-    else if (shrinkString == "linear-mipmap-linear") shrinkFilter = TextureShrinkType::LINEAR_MIPMAP_LINEAR;
-    else if (shrinkString == "nearest") shrinkFilter = TextureShrinkType::NEAREST;
-    else if (shrinkString == "linear") shrinkFilter = TextureShrinkType::LINEAR;
-    else ERROR("Member 'shrink-filter' has invalid value")
-  }
+  path = texPath.GetString();
 
-  if (json.HasMember("enlarge-filter")) {
-    CHECK(json["enlarge-filter"].IsString(), "'enlarge-filter' member must be of type string")
-    std::string enlargeString = json["enlarge-filter"].GetString();
-    if (enlargeString == "nearest") enlargeFilter = TextureEnlargeType::NEAREST;
-    else if (enlargeString == "linear") enlargeFilter = TextureEnlargeType::LINEAR;
-    else ERROR("Member 'enlarge-filter' has invalid value")
-  }
+  const std::unordered_map<std::string, TextureType> textureTypes = {
+    {"tex-1d", TextureType::TEX_1D},
+    {"tex-2d", TextureType::TEX_2D},
+    {"tex-3d", TextureType::TEX_3D},
+    {"rectangle", TextureType::RECTANGLE},
+    {"buffer", TextureType::BUFFER},
+    {"cubemap", TextureType::CUBEMAP},
+    {"tex-1d-array", TextureType::TEX_1D_ARRAY},
+    {"tex-2d-array", TextureType::TEX_2D_ARRAY},
+    {"cubemap-array", TextureType::CUBEMAP_ARRAY},
+    {"tex-2d-multisample", TextureType::TEX_2D_MULTISAMPLE},
+    {"tex-2d-multisample-array", TextureType::TEX_2D_MULTISAMPLE_ARRAY}
+  };
+
+  auto typesIt = textureTypes.find(texType.GetString()); 
+  if (typesIt == textureTypes.end())
+    ERROR("Member 'type' of TextureSettings has invalid value")
+  type = typesIt->second;
+
+  const std::unordered_map<std::string, TextureShrinkType> shrinkTypes = {
+    {"nearest-mipmap-nearest", TextureShrinkType::NEAREST_MIPMAP_NEAREST},
+    {"linear-mipmap-nearest", TextureShrinkType::LINEAR_MIPMAP_NEAREST},
+    {"nearest-mipmap-linear", TextureShrinkType::NEAREST_MIPMAP_LINEAR},
+    {"linear-mipmap-linear", TextureShrinkType::LINEAR_MIPMAP_LINEAR},
+    {"nearest", TextureShrinkType::NEAREST},
+    {"linear", TextureShrinkType::LINEAR}
+  };
+
+  auto shrinkIt = shrinkTypes.find(shrink.GetString());
+  if (shrinkIt == shrinkTypes.end())
+    ERROR("Member 'shrink-filter' of TextureSettings has invalid value")
+  shrinkFilter = shrinkIt->second;
+
+  const std::unordered_map<std::string, TextureEnlargeType> enlargeTypes = {
+    {"nearest", TextureEnlargeType::NEAREST},
+    {"linear", TextureEnlargeType::LINEAR}
+  };
+  
+  auto enlargeIt = enlargeTypes.find(enlarge.GetString());
+  if (enlargeIt == enlargeTypes.end())
+    ERROR("Member 'enlarge-filter' of TextureSettings has invalid value")
+  enlargeFilter = enlargeIt->second;
 
   return true;
 }

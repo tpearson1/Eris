@@ -35,12 +35,10 @@ SOFTWARE.
 class Texture {
   GLuint id = 0;
   int width = 0, height = 0;
-  TextureSettings settings;
 
 public:
-  bool Load(const std::string &path, const TextureSettings &settings);
+  bool Load(const TextureSettings &settings);
   void Load(const RawImage &raw, const TextureSettings &settings);
-  bool Load(const std::string &path);
 
   void CreateForFramebuffer(int _width = Window::inst->width, int _height = Window::inst->height);
 
@@ -50,7 +48,6 @@ public:
   GLuint ID() const { return id; }
   int Width() const { return width; }
   int Height() const { return height; }
-  const TextureSettings &Settings() const { return settings; }
 };
 
 #endif // _BASE__TEXTURE_H

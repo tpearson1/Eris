@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <game/game.h>
 #include <core/file.h>
+#include <base/resources.h>
 #include <input/input.h>
 #include <scene/scene.h>
 #include <scene/camera.h>
@@ -100,7 +101,6 @@ MyGame::MyGame() {
   });
 
   Input::GetMousePosition(startDragX, startDragY);
-  //Input::SetMouseMode(MouseMode::DISABLED);
 
   TagManager::active = Ref<TagManager>::Create();
   Resources::active = Ref<Resources>::Create();
@@ -127,9 +127,14 @@ MyGame::MyGame() {
 
   NMeshRenderer::preRenderFunctions.Register("Test", phongSetter); 
 
-  std::string json;
-  File::Read("mods/json-load/res/scene.json", json);
-  scene.LoadFromJSON(json, manager);
+  auto shaders = GetJSONDocumentFromFile("mods/json-load/res/shaders.json");
+  Resources::active->shaders.LoadFromJSON(shaders, manager);
+
+  auto textures = GetJSONDocumentFromFile("mods/json-load/res/textures.json");
+  Resources::active->textures.LoadFromJSON(textures, manager);
+
+  auto document = GetJSONDocumentFromFile("mods/json-load/res/scene.json");
+  scene.LoadFromJSON(document, manager);
 
   tagged = TagManager::active->Get<NNode>("model");
   shape = TagManager::active->Get<NNode>("shape");

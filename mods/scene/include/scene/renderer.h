@@ -30,7 +30,7 @@ SOFTWARE.
 #include <tuple>
 #include <list>
 #include <functional>
-#include <base/ref.h>
+#include <core/ref.h>
 #include <scene/renderrequirements.h>
 
 class Renderable;

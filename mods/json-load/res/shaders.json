@@ -1,0 +1,14 @@
+{
+  "phong": {
+    "vertex": "mods/base/res/shaders/default-lit.vs",
+    "fragment": "mods/base/res/shaders/phong.frag",
+    "definitions": {
+      "MAX_DIR_LIGHTS": "1",
+      "MAX_POINT_LIGHTS": "1"
+    }
+  },
+  "unlit": {
+    "vertex": "mods/base/res/shaders/default-unlit.vs",
+    "fragment": "mods/base/res/shaders/default-unlit.frag"
+  }
+}

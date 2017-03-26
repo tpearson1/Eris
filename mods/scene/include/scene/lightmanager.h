@@ -28,7 +28,7 @@ SOFTWARE.
 #define _SCENE__LIGHT_MANAGER_H
 
 #include <list>
-#include <base/ref.h>
+#include <core/ref.h>
 #include <scene/node.h>
 
 struct Light : public NNode {

@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <unordered_map>
 #include <string>
-#include <base/ref.h>
+#include <core/ref.h>
 #include <core/mapping.h>
 #include <core/saveload.h>
 

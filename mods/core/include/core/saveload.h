@@ -33,6 +33,7 @@ SOFTWARE.
 #include <functional>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/document.h>
+#include <core/file.h>
 
 #define PARSE_ERROR(message) {\
   std::cerr << "> JSON: error: " << (message) << '\n';\
@@ -83,6 +84,21 @@ using JSONTypeManager = FunctionalSelfMapping<std::string>;
 struct Save {
   using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
 
+  static void SerializeValue(Save &value, Save::Writer &writer)
+    { value.SerializeToJSON(writer); }
+
+  static void SerializeValue(const std::string &value, Save::Writer &writer)
+    { writer.String(value.c_str(), value.size()); }
+
+  static void SerializeValue(double value, Save::Writer &writer)
+    { writer.Double(value); }
+
+  static void SerializeValue(int value, Save::Writer &writer)
+    { writer.Int(value); }
+
+  static void SerializeValue(unsigned value, Save::Writer &writer)
+    { writer.Uint(value); }
+
   virtual void SerializeToJSON(Writer &writer) const = 0;
 };
 
@@ -90,6 +106,57 @@ struct Load {
   virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) = 0;
 };
 
+template <typename T>
+inline T LoadValue(const rapidjson::Value &data, JSONTypeManager &manager) {
+  T value;
+  value.LoadFromJSON(data, manager);
+  return value;
+}
+
+template <>
+inline double LoadValue(const rapidjson::Value &data, JSONTypeManager &/* manager */) {
+  CHECK_RETURN(data.IsNumber(), "Must be a number", 0.0)
+  return data.GetDouble();
+}
+
+template <>
+inline std::string LoadValue(const rapidjson::Value &data, JSONTypeManager &/* manager */) {
+  CHECK_RETURN(data.IsString(), "Must be a string", "")
+  return data.GetString();
+}
+
+template <>
+inline int LoadValue(const rapidjson::Value &data, JSONTypeManager &/* manager */) {
+  CHECK_RETURN(data.IsInt(), "Must be an integer", 0)
+  return data.GetInt();
+}
+
+template <>
+inline unsigned LoadValue(const rapidjson::Value &data, JSONTypeManager &/* manager */) {
+  CHECK_RETURN(data.IsUint(), "Must be an integer", 0)
+  return data.GetUint();
+}
+
 struct SaveLoad : public Save, public Load {};
+
+inline rapidjson::Document GetJSONDocument(const std::string &json) {
+  rapidjson::Document document;
+  document.Parse<JSON_FLAGS>(json.c_str());
+  return document;
+}
+
+inline rapidjson::Document GetJSONDocumentFromFile(const std::string &path) {
+  std::string text;
+  File::Read(path, text);
+  return GetJSONDocument(text);
+}
+
+template <typename Func>
+std::string WriteJSONToString(Func func) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> writer{buffer};
+  func(writer);
+  return buffer.GetString();
+}
 
 #endif // _CORE__SAVE_LOAD_H

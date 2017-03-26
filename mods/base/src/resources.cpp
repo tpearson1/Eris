@@ -24,44 +24,6 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__RESOURCE_MANAGER_H
-#define _BASE__RESOURCE_MANAGER_H
+#include <resources.h>
 
-#include <unordered_map>
-#include <base/ref.h>
-#include <base/texture.h>
-#include <base/shader.h>
-#include <core/mapping.h>
-
-template <typename T, typename Key = std::string, typename Hash = std::hash<Key>>
-class ResourceManager {
-  std::unordered_map<Key, Ref<T>, Hash> resources;
-
-public:
-  Ref<T> Get(const Key &key) const {
-    auto val = resources.find(key);
-    if (val == resources.end())
-      return Ref<T>(); // nullptr
-    else
-      return val->second;
-  }
-
-  void Add(const Key &key, const Ref<T> &value)
-    { resources[key] = value; }
-};
-
-struct ShaderResource {
-  Ref<Shader> shader;
-  std::string vertexPath, fragmentPath;
-  Shader::Definitions definitions;
-};
-
-struct Resources {
-  ResourceManager<Texture> textures;
-  
-  std::vector<ShaderResource> shaders;
-
-  static Ref<Resources> active;
-};
-
-#endif // _BASE__RESOURCE_MANAGER_H
+Ref<Resources> Resources::active;

@@ -24,6 +24,19 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <resourcemanager.h>
+#ifndef _BASE__RESOURCES_H
+#define _BASE__RESOURCES_H
 
-Ref<Resources> Resources::active;
+#include <core/ref.h>
+#include <base/texture.h>
+#include <base/shader.h>
+#include <core/mapping.h>
+
+struct Resources {
+  DeferredLoadableMapping<Ref<Texture>, TextureSettings> textures;
+  DeferredLoadableMapping<Ref<Shader>, Shader::Settings> shaders;
+
+  static Ref<Resources> active;
+};
+
+#endif // _BASE__RESOURCES_H

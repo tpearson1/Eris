@@ -24,10 +24,11 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__REF_H
-#define _BASE__REF_H
+#ifndef _CORE__REF_H
+#define _CORE__REF_H
 
 #include <ostream>
+#include <core/saveload.h>
 
 template <typename T>
 class Ref {
@@ -133,8 +134,18 @@ public:
       delete stub;
   }
 
-  template <typename... Args>
-  friend Ref<T> CreateRef(Args&&... args);
+  void SerializeToJSON(Save::Writer &writer) const
+    { stub->data.SerializeToJSON(writer); }
+
+  bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
+    { return stub->data.LoadFromJSON(data, manager); }
+
+  template <typename Data>
+  void Load(const Data &value) {
+    if (!stub)
+      stub = new Stub(1);
+    stub->data.Load(value);
+  }
 
   template <typename U>
   friend class Ref;
@@ -151,4 +162,4 @@ inline std::ostream &operator<<(std::ostream &os, Ref<T> &ref) {
 
 void RunRefTests();
 
-#endif // _BASE__REF_H
+#endif // _CORE__REF_H

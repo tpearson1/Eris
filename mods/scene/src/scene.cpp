@@ -29,13 +29,6 @@ SOFTWARE.
 #include <tagmanager.h>
 #include <model.h>
 
-void Scene::LoadFromJSON(const std::string &json, JSONTypeManager &manager) {
-  rapidjson::Document parser;
-  parser.Parse<JSON_FLAGS>(json.c_str());
-
-  LoadFromJSON(parser.GetObject(), manager);
-}
-
 void Scene::SerializeToJSON(Writer &writer) const {
   writer.StartObject();
     writer.String("nodes", strlen("nodes"));
@@ -48,10 +41,10 @@ void Scene::SerializeToJSON(Writer &writer) const {
 
 bool Scene::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Type 'Scene' must be an object")
-  auto object = data.GetObject();
+  const auto &object = data.GetObject();
 
   PARSE_CHECK(object.HasMember("nodes"), "'Scene' object must have member 'nodes'")
-  auto &nodesVal = object["nodes"];
+  const auto &nodesVal = object["nodes"];
   PARSE_CHECK(nodesVal.IsArray(), "Member 'nodes' in 'Scene' object must be of type array")
   const auto &nodesArr = nodesVal.GetArray();
 

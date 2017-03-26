@@ -35,6 +35,42 @@ SOFTWARE.
 const Shader *Shader::current;
 std::string Shader::openGLVersion = "330 core";
 
+void Shader::Settings::SerializeToJSON(Save::Writer &writer) const {
+  writer.StartObject();
+
+  writer.String("vertex", strlen("vertex"));
+  writer.String(vertexFilePath.c_str(), vertexFilePath.size());
+
+  writer.String("fragment", strlen("fragment"));
+  writer.String(fragmentFilePath.c_str(), fragmentFilePath.size());
+
+  writer.String("definitions", strlen("definitions"));
+  definitions.SerializeToJSON(writer); 
+
+  writer.EndObject();
+}
+
+bool Shader::Settings::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
+  PARSE_CHECK(data.IsObject(), "Shader must be an object")
+  const auto &object = data.GetObject();
+  
+  PARSE_CHECK(object.HasMember("vertex"), "Shader must have member 'vertex'")
+  const auto &vertex = object["vertex"];
+  PARSE_CHECK(vertex.IsString(), "Member 'vertex' of object shader must be of type string")
+
+  PARSE_CHECK(object.HasMember("fragment"), "Shader must have member 'fragment'")
+  const auto &fragment = object["fragment"];
+  PARSE_CHECK(fragment.IsString(), "Member 'fragment' of object shader must be of type string")
+
+  vertexFilePath = vertex.GetString();
+  fragmentFilePath = fragment.GetString();
+
+  if (object.HasMember("definitions"))
+    return definitions.LoadFromJSON(object["definitions"], manager);
+
+  return true;
+}
+
 static void CompileShader(GLuint shaderID, const std::string &source) {
   GLint result = GL_FALSE;
   int infoLogLength;
@@ -55,7 +91,7 @@ static void CompileShader(GLuint shaderID, const std::string &source) {
   }
 }
 
-bool Shader::Load(const std::string &vertexFilePath, const std::string &fragmentFilePath, const Definitions &definitions) {
+bool Shader::Load(const Settings &settings) {
   if (id)
     glDeleteProgram(id);
 
@@ -65,8 +101,8 @@ bool Shader::Load(const std::string &vertexFilePath, const std::string &fragment
 
   // Read the shader code from the files
   std::string vertexShaderCode, fragmentShaderCode;
-  File::Read(vertexFilePath, vertexShaderCode);
-  File::Read(fragmentFilePath, fragmentShaderCode);
+  File::Read(settings.vertexFilePath, vertexShaderCode);
+  File::Read(settings.fragmentFilePath, fragmentShaderCode);
   if (vertexShaderCode.empty() || fragmentShaderCode.empty()) {
     std::cerr << "> Unable to load shader files\n";
     return false;
@@ -75,7 +111,7 @@ bool Shader::Load(const std::string &vertexFilePath, const std::string &fragment
   std::string versionText = "#version " + openGLVersion + '\n';
 
   std::string defs;
-  for (auto &definition : definitions)
+  for (auto &definition : settings.definitions)
     defs += "#define " + std::get<0>(definition) + ' ' + std::get<1>(definition) + '\n'; 
 
   vertexShaderCode = versionText + defs + vertexShaderCode;
@@ -111,3 +147,4 @@ bool Shader::Load(const std::string &vertexFilePath, const std::string &fragment
 
   return true;
 }
+

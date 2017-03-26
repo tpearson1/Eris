@@ -80,18 +80,18 @@ bool SpriteSheet::Load(const std::string &imagePath) {
   CHECK(document.HasMember("sprites"), "'sprites' member must be present")
   CHECK(document["sprites"].IsArray(), "'sprites' member must be of type array")
 
-  const rapidjson::Value &json = document["sprites"];
+  const auto &json = document["sprites"];
   FAIL_IF(json.Size() == 0, "no sprites are listed inside member 'sprites'")
 
   for (rapidjson::SizeType i = 0; i < json.Size(); i++) {
-    const rapidjson::Value &sprite = json[i];
+    const auto &sprite = json[i];
     CHECK(sprite.IsObject(), "All elements of 'sprites' array must be of type object")
 
     CHECK(sprite.HasMember("name"), "All 'sprites' array elements must have 'name' element")
     CHECK(sprite["name"].IsString(), "All 'sprites' array 'name' elements must be of type string")
 
     CHECK(sprite.HasMember("rect"), "All 'sprites' array elements must have 'rect' element")
-    const rapidjson::Value &rect = sprite["rect"];
+    const auto &rect = sprite["rect"];
     CHECK(rect.IsArray() && rect.Size() == 4, "All 'sprites' array 'rect' elements must be of type array with size 4")
 
     for (rapidjson::SizeType j = 0; j < 4; j++)
