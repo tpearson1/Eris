@@ -31,9 +31,9 @@ SOFTWARE.
 #include <string>
 #include <core/ref.h>
 #include <core/mapping.h>
-#include <core/saveload.h>
+#include <core/readwrite.h>
 
-class TagManager : public Mapping<std::string, SaveLoad *> {
+class TagManager : public Mapping<std::string, JSON::ReadWrite *> {
 public:
   template <typename T>
   T *Get(const std::string &key) const
@@ -55,6 +55,6 @@ public:
  *   ]
  * ]
  */
-SaveLoad *TagRegistration(const rapidjson::Value &val, JSONTypeManager &manager);
+JSON::ReadWrite *TagRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
 
 #endif // _SCENE__TAG_MANAGER_H

@@ -69,28 +69,28 @@ Mat4 RectTransform::Matrix() const {
          * Mat4::Scale({size.x, size.y, 1.0f});
 }
 
-void RectTransform::SerializeToJSON(Writer &writer) {
+void RectTransform::WriteToJSON(JSON::Writer &writer) {
   writer.StartObject();
     writer.String("location", strlen("location"));
-    location.SerializeToJSON(writer);
+    location.WriteToJSON(writer);
     writer.String("pivot", strlen("pivot"));
-    pivot.SerializeToJSON(writer);
+    pivot.WriteToJSON(writer);
     writer.String("anchors", strlen("anchors"));
-    anchors.SerializeToJSON(writer);
+    anchors.WriteToJSON(writer);
     writer.String("size", strlen("size"));
-    size.SerializeToJSON(writer);
+    size.WriteToJSON(writer);
     writer.String("rotation-rads", strlen("rotation-rads"));
     writer.Double(static_cast<double>(rotation));
 
     writer.String("children", strlen("children"));
     writer.StartArray();
       for (auto &elem : children)
-        elem->SerializeToJSON(writer);
+        elem->WriteToJSON(writer);
     writer.EndArray();
   writer.EndObject();
 }
 
-bool RectTransform::LoadFromJSON(const rapidjson::Value &data) {
+bool RectTransform::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsObject(), "Type 'RectTransform' must be an object")
 
   auto object = data.GetObject();
@@ -115,8 +115,8 @@ bool RectTransform::LoadFromJSON(const rapidjson::Value &data) {
   else
     PARSE_ERROR("'RectTransform' object must have member 'rotation-rads' or 'rotation-degs'")
 
-  return location.LoadFromJSON(loc)
-         && pivot.LoadFromJSON(piv)
-         && size.LoadFromJSON(siz)
-         && anchors.LoadFromJSON(anchs);
+  return location.ReadFromJSON(loc)
+         && pivot.ReadFromJSON(piv)
+         && size.ReadFromJSON(siz)
+         && anchors.ReadFromJSON(anchs);
 }

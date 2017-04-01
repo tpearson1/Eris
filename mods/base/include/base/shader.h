@@ -50,13 +50,13 @@ class Shader {
 public:
   using Definitions = SerializableMapping<std::string>;
 
-  struct Settings : public SaveLoad {
+  struct Settings : public JSON::ReadWrite {
     std::string vertexFilePath, fragmentFilePath;
     Shader::Definitions definitions; 
 
-    virtual void SerializeToJSON(Save::Writer &writer) const override;
+    virtual void WriteToJSON(JSON::Writer &writer) const override;
 
-    virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override;
+    virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
   };
 
   static std::string openGLVersion;

@@ -111,24 +111,24 @@ Transform Transform::GlobalTransform() const {
   return t;
 }
 
-void Transform::SerializeToJSON(Writer &writer) const {
+void Transform::WriteToJSON(JSON::Writer &writer) const {
   writer.StartObject();
     writer.String("location", strlen("location"));
-    location.SerializeToJSON(writer);
+    location.WriteToJSON(writer);
     writer.String("rotation", strlen("rotation"));
-    rotation.SerializeToJSON(writer);
+    rotation.WriteToJSON(writer);
     writer.String("scale", strlen("scale"));
-    scale.SerializeToJSON(writer);
+    scale.WriteToJSON(writer);
 
     writer.String("children", strlen("children"));
     writer.StartArray();
       for (auto &elem : children)
-        elem->SerializeToJSON(writer);
+        elem->WriteToJSON(writer);
     writer.EndArray();
   writer.EndObject();
 }
 
-bool Transform::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &/* manager */) {
+bool Transform::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) {
   PARSE_CHECK(data.IsObject(), "Type 'Transform' must be an object")
 
   auto object = data.GetObject();
@@ -137,12 +137,12 @@ bool Transform::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &/* m
   
   bool res = true;
   if (object.HasMember("scale"))
-    res = scale.LoadFromJSON(object["scale"]);
+    res = scale.ReadFromJSON(object["scale"]);
   else
     scale = Vec3::one;
 
   auto &loc = object["location"], &rot = object["rotation"];
-  return location.LoadFromJSON(loc)
-         && rotation.LoadFromJSON(rot)
+  return location.ReadFromJSON(loc)
+         && rotation.ReadFromJSON(rot)
          && res;
 }

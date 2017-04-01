@@ -51,14 +51,14 @@ Vec2 Vec2::MoveTowards(Vec2 a, Vec2 b, float maxDistance) {
   return Lerp(a, b, Math::Clamp(t, 0.0f, 1.0f));
 }
 
-void Vec2::SerializeToJSON(Save::Writer &writer) const {
+void Vec2::WriteToJSON(JSON::Writer &writer) const {
   writer.StartArray();
     writer.Double(static_cast<double>(x));
     writer.Double(static_cast<double>(y));
   writer.EndArray();
 }
 
-bool Vec2::LoadFromJSON(const rapidjson::Value &data) {
+bool Vec2::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsArray(), "Type 'Vec2' must be an array")
   auto arr = data.GetArray();
   PARSE_CHECK(arr.Size() == 2 && arr[0].IsNumber() && arr[1].IsNumber(), "Vec2's array must contain 2 float values")
@@ -76,7 +76,7 @@ Vec3 Vec3::MoveTowards(const Vec3 &a, const Vec3 &b, float maxDistance) {
   return Lerp(a, b, Math::Clamp(t, 0.0f, 1.0f));
 }
 
-void Vec3::SerializeToJSON(Save::Writer &writer) const {
+void Vec3::WriteToJSON(JSON::Writer &writer) const {
   writer.StartArray();
     writer.Double(static_cast<double>(x));
     writer.Double(static_cast<double>(y));
@@ -84,7 +84,7 @@ void Vec3::SerializeToJSON(Save::Writer &writer) const {
   writer.EndArray();
 }
 
-bool Vec3::LoadFromJSON(const rapidjson::Value &data) {
+bool Vec3::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsArray(), "Type 'Vec3' must be an array")
   auto arr = data.GetArray();
   PARSE_CHECK(
@@ -97,7 +97,7 @@ bool Vec3::LoadFromJSON(const rapidjson::Value &data) {
   return true;
 }
 
-void Vec4::SerializeToJSON(Save::Writer &writer) const {
+void Vec4::WriteToJSON(JSON::Writer &writer) const {
   writer.StartArray();
     writer.Double(static_cast<double>(x));
     writer.Double(static_cast<double>(y));
@@ -106,7 +106,7 @@ void Vec4::SerializeToJSON(Save::Writer &writer) const {
   writer.EndArray();
 }
 
-bool Vec4::LoadFromJSON(const rapidjson::Value &data) {
+bool Vec4::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsArray(), "Type 'Vec4' must be an array")
   auto arr = data.GetArray();
   PARSE_CHECK(

@@ -29,17 +29,17 @@ SOFTWARE.
 #include <tagmanager.h>
 #include <model.h>
 
-void Scene::SerializeToJSON(Writer &writer) const {
+void Scene::WriteToJSON(JSON::Writer &writer) const {
   writer.StartObject();
     writer.String("nodes", strlen("nodes"));
     writer.StartArray();
       for (auto &elem : root.transform)
-        elem->SerializeToJSON(writer);
+        elem->WriteToJSON(writer);
     writer.EndArray();
   writer.EndObject();
 }
 
-bool Scene::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
+bool Scene::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Type 'Scene' must be an object")
   const auto &object = data.GetObject();
 
@@ -64,7 +64,7 @@ bool Scene::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
   return true;
 }
 
-void RegisterSceneTypeAssociations(JSONTypeManager &manager) {
+void RegisterSceneTypeAssociations(JSON::TypeManager &manager) {
   manager.Register("NNode", DefaultTypeRegistration<NNode>);
   manager.Register("NCamera", DefaultTypeRegistration<NCamera>);
   manager.Register("Tagged", TagRegistration);

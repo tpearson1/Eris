@@ -88,9 +88,9 @@ struct Quat {
     return *this;
   }
 
-  void SerializeToJSON(Save::Writer &writer) const;
+  void WriteToJSON(JSON::Writer &writer) const;
 
-  bool LoadFromJSON(const rapidjson::Value &data);
+  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, Quat q) {

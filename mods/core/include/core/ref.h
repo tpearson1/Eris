@@ -28,7 +28,7 @@ SOFTWARE.
 #define _CORE__REF_H
 
 #include <ostream>
-#include <core/saveload.h>
+#include <core/readwrite.h>
 
 template <typename T>
 class Ref {
@@ -134,11 +134,11 @@ public:
       delete stub;
   }
 
-  void SerializeToJSON(Save::Writer &writer) const
-    { stub->data.SerializeToJSON(writer); }
+  void WriteToJSON(JSON::Writer &writer) const
+    { stub->data.WriteToJSON(writer); }
 
-  bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
-    { return stub->data.LoadFromJSON(data, manager); }
+  bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager)
+    { return stub->data.ReadFromJSON(data, manager); }
 
   template <typename Data>
   void Load(const Data &value) {

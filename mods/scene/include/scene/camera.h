@@ -66,8 +66,8 @@ public:
   Mat4 Matrix(Mat4 model) const
     { return ProjectionMatrix() * ViewMatrix() * model; }
 
-  virtual void SerializeToJSON(Writer &writer) const override;
-  virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override;
+  virtual void WriteToJSON(JSON::Writer &writer) const override;
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
 };
 
 #endif // _SCENE__CAMERA_H

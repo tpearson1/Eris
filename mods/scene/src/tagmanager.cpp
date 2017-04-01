@@ -28,7 +28,7 @@ SOFTWARE.
 
 Ref<TagManager> TagManager::active;
 
-SaveLoad *TagRegistration(const rapidjson::Value &val, JSONTypeManager &manager) {
+JSON::ReadWrite *TagRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
   CHECK_RETURN(val.IsArray(), "'Tagged' object must be an array", nullptr)
   const auto &array = val.GetArray();
 

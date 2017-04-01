@@ -36,17 +36,17 @@ void CanvasItem::RecursiveDestroy(CanvasItem *c) {
   delete c;
 }
 
-void CanvasItem::SerializeToJSON(Writer &writer) {
+void CanvasItem::WriteToJSON(JSON::Writer &writer) {
   writer.StartObject();
     writer.String("visible", strlen("visible"));
     writer.Bool(visible);
 
     writer.String("transform", strlen("transform"));
-    transform.SerializeToJSON(writer);
+    transform.WriteToJSON(writer);
   writer.EndObject();
 }
 
-bool CanvasItem::LoadFromJSON(const rapidjson::Value &data) {
+bool CanvasItem::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsObject(), "Type 'CanvasItem' must be an object")
   auto object = data.GetObject();
 
@@ -57,5 +57,5 @@ bool CanvasItem::LoadFromJSON(const rapidjson::Value &data) {
 
   PARSE_CHECK(object.HasMember("transform"), "'CanvasItem' object must have member 'transform'")
   transform.node = this;
-  return transform.LoadFromJSON(object["transform"]);
+  return transform.ReadFromJSON(object["transform"]);
 }

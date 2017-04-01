@@ -29,10 +29,10 @@ SOFTWARE.
 
 #include <math/vec.h>
 #include <math/quat.h>
-#include <core/saveload.h>
+#include <core/readwrite.h>
 #include <scene/rendertree.h>
 
-class RectTransform : public RenderTree<class CanvasItem>, public SaveLoad {
+class RectTransform : public RenderTree<class CanvasItem>, public JSON::ReadWrite {
   /*
    * The relative position of the UI element relative to it's anchors
    */
@@ -84,8 +84,8 @@ public:
 
   Mat4 Matrix() const;
 
-  virtual void SerializeToJSON(Writer &writer) override;
-  virtual bool LoadFromJSON(const rapidjson::Value &data) override;
+  virtual void WriteToJSON(JSON::Writer &writer) override;
+  virtual bool ReadFromJSON(const rapidjson::Value &data) override;
 };
 
 #endif // _2D__RECT_TRANSFORM_H

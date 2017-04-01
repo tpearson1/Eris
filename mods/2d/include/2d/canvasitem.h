@@ -33,7 +33,7 @@ SOFTWARE.
 #include <scene/renderrequirements.h>
 #include <scene/renderable.h>
 
-class CanvasItem : public Renderable, public SaveLoad {
+class CanvasItem : public Renderable, public JSON::ReadWrite {
 protected:
   static void RecursiveDestroy(CanvasItem *c);
 
@@ -53,8 +53,8 @@ public:
 
   RectTransform transform;
 
-  virtual void SerializeToJSON(Writer &writer) override;
-  virtual bool LoadFromJSON(const rapidjson::Value &data) override;
+  virtual void WriteToJSON(JSON::Writer &writer) override;
+  virtual bool ReadFromJSON(const rapidjson::Value &data) override;
 };
 
 #endif // _2D__CANVAS_ITEM_H

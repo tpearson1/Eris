@@ -105,7 +105,7 @@ MyGame::MyGame() {
   TagManager::active = Ref<TagManager>::Create();
   Resources::active = Ref<Resources>::Create();
   
-  JSONTypeManager manager;
+  JSON::TypeManager manager;
   RegisterSceneTypeAssociations(manager);
 
   scene.SetActive();
@@ -127,14 +127,14 @@ MyGame::MyGame() {
 
   NMeshRenderer::preRenderFunctions.Register("Test", phongSetter); 
 
-  auto shaders = GetJSONDocumentFromFile("mods/json-load/res/shaders.json");
-  Resources::active->shaders.LoadFromJSON(shaders, manager);
+  auto shaders = JSON::GetDocumentFromFile("mods/json-load/res/shaders.json");
+  Resources::active->shaders.ReadFromJSON(shaders, manager);
 
-  auto textures = GetJSONDocumentFromFile("mods/json-load/res/textures.json");
-  Resources::active->textures.LoadFromJSON(textures, manager);
+  auto textures = JSON::GetDocumentFromFile("mods/json-load/res/textures.json");
+  Resources::active->textures.ReadFromJSON(textures, manager);
 
-  auto document = GetJSONDocumentFromFile("mods/json-load/res/scene.json");
-  scene.LoadFromJSON(document, manager);
+  auto document = JSON::GetDocumentFromFile("mods/json-load/res/scene.json");
+  scene.ReadFromJSON(document, manager);
 
   tagged = TagManager::active->Get<NNode>("model");
   shape = TagManager::active->Get<NNode>("shape");

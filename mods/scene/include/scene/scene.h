@@ -27,13 +27,13 @@ SOFTWARE.
 #ifndef _SCENE__SCENE_H
 #define _SCENE__SCENE_H
 
-#include <core/saveload.h>
+#include <core/readwrite.h>
 #include <scene/renderer.h>
 #include <scene/node.h>
 #include <base/window.h>
 #include <unordered_map>
 
-class Scene : public SaveLoad {
+class Scene : public JSON::ReadWrite {
   Ref<Renderer> renderer;
 
 public:
@@ -51,17 +51,17 @@ public:
 
   NNode root;
 
-  virtual void SerializeToJSON(Writer &writer) const override;
-  virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override;
+  virtual void WriteToJSON(JSON::Writer &writer) const override;
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
 };
 
 template <typename T>
-SaveLoad *DefaultTypeRegistration(const rapidjson::Value &val, JSONTypeManager &manager) {
+JSON::ReadWrite *DefaultTypeRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
   auto *obj = new T;
-  obj->LoadFromJSON(val, manager);
+  obj->ReadFromJSON(val, manager);
   return obj;
 }
 
-void RegisterSceneTypeAssociations(JSONTypeManager &manager);
+void RegisterSceneTypeAssociations(JSON::TypeManager &manager);
 
 #endif // _SCENE__SCENE_H

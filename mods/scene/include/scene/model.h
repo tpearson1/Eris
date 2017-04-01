@@ -47,6 +47,6 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, std::fun
  *   }
  * ]
  */
-NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager);
+NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
 
 #endif // _BASE__MODEL_H

@@ -158,7 +158,7 @@ Vec3 Quat::operator*(const Vec3 &r) const {
               (xz2 - wy2) * r.x + (yz2 + wx2) * r.y + (1.0f - (xx2 + yy2)) * r.z);
 }
 
-void Quat::SerializeToJSON(Save::Writer &writer) const {
+void Quat::WriteToJSON(JSON::Writer &writer) const {
   writer.StartArray();
     writer.Double(static_cast<double>(x));
     writer.Double(static_cast<double>(y));
@@ -167,7 +167,7 @@ void Quat::SerializeToJSON(Save::Writer &writer) const {
   writer.EndArray();
 }
 
-bool Quat::LoadFromJSON(const rapidjson::Value &data) {
+bool Quat::ReadFromJSON(const rapidjson::Value &data) {
   PARSE_CHECK(data.IsArray(), "Type 'Quat' must be an array")
   auto arr = data.GetArray();
 

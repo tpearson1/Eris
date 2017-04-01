@@ -35,18 +35,18 @@ void NNode::RecursiveDestroy(NNode *n) {
   delete n;
 }
 
-void NNode::SerializeToJSON(Writer &writer) const {
+void NNode::WriteToJSON(JSON::Writer &writer) const {
   writer.String("NNode", strlen("NNode"));
   writer.StartObject();
     writer.String("visible", strlen("visible"));
     writer.Bool(visible);
 
     writer.String("transform", strlen("transform"));
-    transform.SerializeToJSON(writer);
+    transform.WriteToJSON(writer);
   writer.EndObject();
 }
 
-bool NNode::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
+bool NNode::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Type 'NNode' must be an object")
   auto object = data.GetObject();
 
@@ -60,5 +60,5 @@ bool NNode::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager)
   
   PARSE_CHECK(object.HasMember("transform"), "'NNode' object must have member 'transform'")
   transform.node = this;
-  return transform.LoadFromJSON(object["transform"], manager);
+  return transform.ReadFromJSON(object["transform"], manager);
 }

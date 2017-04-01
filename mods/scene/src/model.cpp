@@ -114,7 +114,7 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRen
   return root;
 }
 
-NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) {
+NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
   CHECK_RETURN(val.IsObject(), "'Model' type must be an object", nullptr)
   const auto &object = val.GetObject();
 
@@ -149,6 +149,6 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSONTypeManager &manager) 
   rr.shader = shaderRef;
 
   auto model = LoadModel(path.GetString(), rr, preRenderFunction); 
-  model->LoadFromJSON(node, manager);
+  model->ReadFromJSON(node, manager);
   return model;
 }

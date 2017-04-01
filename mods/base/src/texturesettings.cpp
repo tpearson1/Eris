@@ -30,7 +30,7 @@ SOFTWARE.
 #include <rapidjson/document.h>
 #include <core/file.h>
 
-void TextureSettings::SerializeToJSON(Save::Writer &writer) const {
+void TextureSettings::WriteToJSON(JSON::Writer &writer) const {
   writer.StartObject();
 
   writer.String("path", strlen("path"));
@@ -79,7 +79,7 @@ void TextureSettings::SerializeToJSON(Save::Writer &writer) const {
   writer.EndObject();
 }
 
-bool TextureSettings::LoadFromJSON(const rapidjson::Value &value, JSONTypeManager &/* manager */) {
+bool TextureSettings::ReadFromJSON(const rapidjson::Value &value, JSON::TypeManager &/* manager */) {
   CHECK(value.IsObject(), "TextureSettings must be of type object")
 
   CHECK(value.HasMember("path"), "Member 'path' of TextureSettings is not present")

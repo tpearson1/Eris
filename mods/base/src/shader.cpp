@@ -35,7 +35,7 @@ SOFTWARE.
 const Shader *Shader::current;
 std::string Shader::openGLVersion = "330 core";
 
-void Shader::Settings::SerializeToJSON(Save::Writer &writer) const {
+void Shader::Settings::WriteToJSON(JSON::Writer &writer) const {
   writer.StartObject();
 
   writer.String("vertex", strlen("vertex"));
@@ -45,12 +45,12 @@ void Shader::Settings::SerializeToJSON(Save::Writer &writer) const {
   writer.String(fragmentFilePath.c_str(), fragmentFilePath.size());
 
   writer.String("definitions", strlen("definitions"));
-  definitions.SerializeToJSON(writer); 
+  definitions.WriteToJSON(writer); 
 
   writer.EndObject();
 }
 
-bool Shader::Settings::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
+bool Shader::Settings::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Shader must be an object")
   const auto &object = data.GetObject();
   
@@ -66,7 +66,7 @@ bool Shader::Settings::LoadFromJSON(const rapidjson::Value &data, JSONTypeManage
   fragmentFilePath = fragment.GetString();
 
   if (object.HasMember("definitions"))
-    return definitions.LoadFromJSON(object["definitions"], manager);
+    return definitions.ReadFromJSON(object["definitions"], manager);
 
   return true;
 }

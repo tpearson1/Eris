@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <iostream>
 #include <cmath>
-#include <core/saveload.h>
+#include <core/readwrite.h>
 #include <math/math.h>
 
 template <typename T>
@@ -194,9 +194,9 @@ struct Vec2 {
   static Vec2 Reflect(Vec2 direction, Vec2 normal)
     { return direction - normal * 2 * Dot(direction, normal); }
 
-  void SerializeToJSON(Save::Writer &writer) const;
+  void WriteToJSON(JSON::Writer &writer) const;
 
-  bool LoadFromJSON(const rapidjson::Value &data);
+  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, Vec2 v) {
@@ -323,9 +323,9 @@ struct Vec3 {
   // static Vec3 Reflect(Vec3 direction, Vec3 normal)
   //   {}
 
-  void SerializeToJSON(Save::Writer &writer) const;
+  void WriteToJSON(JSON::Writer &writer) const;
 
-  bool LoadFromJSON(const rapidjson::Value &data);
+  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Vec3 &v) {
@@ -339,9 +339,9 @@ struct Vec4 {
   Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
   Vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 
-  void SerializeToJSON(Save::Writer &writer) const;
+  void WriteToJSON(JSON::Writer &writer) const;
 
-  bool LoadFromJSON(const rapidjson::Value &data);
+  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Vec4 &v) {

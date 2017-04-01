@@ -51,10 +51,10 @@ Mat4 NCamera::ViewMatrix() const {
   return Mat4::LookAt(loc, loc + rot * Vec3::front, rot * Vec3(0.0f, 1.0f, 0.0f));
 }
 
-void NCamera::SerializeToJSON(Writer &writer) const {
+void NCamera::WriteToJSON(JSON::Writer &writer) const {
   writer.String("NCamera", strlen("NCamera"));
   writer.StartObject();
-    NNode::SerializeToJSON(writer);
+    NNode::WriteToJSON(writer);
 
     writer.String("active", strlen("active"));
     writer.Bool(active == this);
@@ -84,7 +84,7 @@ void NCamera::SerializeToJSON(Writer &writer) const {
   writer.EndObject();
 }
 
-bool NCamera::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) {
+bool NCamera::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Type 'NCamera' must be an object")
   auto object = data.GetObject();
 
@@ -134,5 +134,5 @@ bool NCamera::LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manage
   }
 
   PARSE_CHECK(object.HasMember("NNode"), "'NCamera' object must have member 'NNode'")
-  return NNode::LoadFromJSON(object["NNode"], manager);
+  return NNode::ReadFromJSON(object["NNode"], manager);
 }

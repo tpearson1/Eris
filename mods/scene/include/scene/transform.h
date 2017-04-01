@@ -31,10 +31,10 @@ SOFTWARE.
 #include <iomanip>
 #include <math/vec.h>
 #include <math/quat.h>
-#include <core/saveload.h>
+#include <core/readwrite.h>
 #include <scene/rendertree.h>
 
-class Transform : public RenderTree<class NNode>, public SaveLoad {
+class Transform : public RenderTree<class NNode>, public JSON::ReadWrite {
   Vec3 location, scale;
   Quat rotation;
 
@@ -106,8 +106,8 @@ public:
   void Scale(float x, float y, float z)
     { Scale(Vec3(x, y, z)); }
 
-  virtual void SerializeToJSON(Writer &writer) const override;
-  virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &/* manager */) override;
+  virtual void WriteToJSON(JSON::Writer &writer) const override;
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Transform &t) {

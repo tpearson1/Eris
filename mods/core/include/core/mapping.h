@@ -57,7 +57,7 @@ public:
 };
 
 template <typename V, typename Hash = std::hash<std::string>>
-class SerializableMapping : public SaveLoad {
+class SerializableMapping : public JSON::ReadWrite {
   std::unordered_map<std::string, V, Hash> map;
 
 public:
@@ -80,23 +80,23 @@ public:
   const_iterator end() const
     { return map.end(); }
 
-  virtual void SerializeToJSON(Save::Writer &writer) const override {
+  virtual void WriteToJSON(JSON::Writer &writer) const override {
     writer.StartObject();
     for (auto &pair : map) {
       writer.String(pair.first.c_str(), pair.first.size());
-      Save::SerializeValue(pair.second, writer);
+      JSON::WriteValue(pair.second, writer);
     }
     writer.EndObject();
   }
 
-  virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override {
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override {
     PARSE_CHECK(data.IsObject(), "Mapping must be an object")
     const auto &object = data.GetObject();
 
     for (auto it = object.MemberBegin(); it != object.MemberEnd(); it++) {
       const auto &name = it->name.GetString();
       const auto &value = it->value;
-      V val = LoadValue<V>(value, manager);
+      V val = JSON::ReadValue<V>(value, manager);
       Register(name, val);
     }
     return true;
@@ -104,7 +104,7 @@ public:
 };
 
 template <typename Value, typename Data, typename Hash = std::hash<std::string>>
-class DeferredLoadableMapping : public Load {
+class DeferredLoadableMapping : public JSON::Read {
   std::unordered_map<std::string, Value, Hash> values;
   std::unordered_map<std::string, Data, Hash> notLoaded; 
 
@@ -129,7 +129,7 @@ public:
     return val;
   }
 
-  virtual bool LoadFromJSON(const rapidjson::Value &data, JSONTypeManager &manager) override {
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override {
     PARSE_CHECK(data.IsObject(), "Mapping must be an object")
     const auto &object = data.GetObject();
 
@@ -137,7 +137,7 @@ public:
       const auto &name = it->name.GetString();
       auto &value = it->value;
       Data d;
-      d.LoadFromJSON(value, manager);
+      d.ReadFromJSON(value, manager);
       Register(name, d);
     }
     return true;
