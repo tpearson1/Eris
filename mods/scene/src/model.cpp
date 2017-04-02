@@ -67,9 +67,9 @@ NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const Rend
   // if (mesh->mMaterialIndex >= 0) {
   //   auto *material = scene->mMaterials[mesh->mMaterialIndex];
   // }
-  std::shared_ptr<Mesh> meshPtr;
+  Ref<Mesh> meshPtr;
   if (hasUVs) {
-    meshPtr = std::make_shared<Mesh>(
+    meshPtr = Ref<Mesh>::Create(
       verts, indices, std::vector<VertexAttribute<>>{
         {1, 2, uvs},
         {2, 3, normals}
@@ -77,7 +77,7 @@ NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const Rend
     );
   }
   else {
-    meshPtr = std::make_shared<Mesh>(
+    meshPtr = Ref<Mesh>::Create(
       verts, indices, std::vector<VertexAttribute<>>{
         {2, 3, normals}
       }

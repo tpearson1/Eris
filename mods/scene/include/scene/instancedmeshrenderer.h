@@ -27,14 +27,12 @@ SOFTWARE.
 #ifndef _SCENE__INSTANCED_MESH_RENDERER_H
 #define _SCENE__INSTANCED_MESH_RENDERER_H
 
-#include <memory>
 #include <base/shader.h>
 #include <base/instancedmesh.h>
-#include <scene/component.h>
 
 template <size_t attrCount>
 class CInstancedMeshRenderer : public CComponent {
-  std::shared_ptr<const InstancedMesh<attrCount>> mesh;
+  const Ref<InstancedMesh<attrCount>> mesh;
   bool visible = true;
 
 protected:
@@ -49,12 +47,12 @@ protected:
 
 public:
   CInstancedMeshRenderer() {}
-  CInstancedMeshRenderer(const std::shared_ptr<const InstancedMesh<attrCount>> &m)
+  CInstancedMeshRenderer(const Ref<InstancedMesh<attrCount>> &m)
     { Set(m); }
 
-  std::shared_ptr<const InstancedMesh<attrCount>> Get() { return mesh; }
-  const std::shared_ptr<const InstancedMesh<attrCount>> Get() const { return mesh; }
-  void Set(const std::shared_ptr<const InstancedMesh<attrCount>> &m) { mesh = m; }
+  const Ref<InstancedMesh<attrCount>> Get() { return mesh; }
+  const Ref<const InstancedMesh<attrCount>> Get() const { return mesh; }
+  void Set(const Ref<InstancedMesh<attrCount>> &m) { mesh = m; }
 
   bool Visible() const { return visible; }
   void Visible(bool value) { visible = value; }

@@ -27,7 +27,6 @@ SOFTWARE.
 #ifndef _SCENE__MESH_RENDERER_H
 #define _SCENE__MESH_RENDERER_H
 
-#include <memory>
 #include <functional>
 #include <core/mapping.h>
 #include <base/mesh.h>
@@ -36,17 +35,16 @@ SOFTWARE.
 #include <scene/renderer.h>
 
 class MeshRenderer {
-  std::shared_ptr<const Mesh> mesh;
+  Ref<Mesh> mesh;
 
 public:
   void Draw(const Mat4 &global);
 
   MeshRenderer() {}
-  MeshRenderer(const std::shared_ptr<const Mesh> &value) : mesh(value) {}
+  MeshRenderer(const Ref<Mesh> &value) : mesh(value) {}
 
-  std::shared_ptr<const Mesh> Get() { return mesh; }
-  const std::shared_ptr<const Mesh> Get() const { return mesh; }
-  void Set(const std::shared_ptr<const Mesh> &value) { mesh = value; }
+  const Ref<Mesh> Get() { return mesh; }
+  void Set(const Ref<Mesh> &value) { mesh = value; }
 };
 
 class NMeshRenderer : public NNode {

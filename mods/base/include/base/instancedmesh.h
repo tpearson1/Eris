@@ -27,7 +27,6 @@ SOFTWARE.
 #ifndef _BASE__INSTANCED_MESH_H
 #define _BASE__INSTANCED_MESH_H
 
-#include <memory>
 #include <base/mesh.h>
 
 struct InstancedVertexAttribute {
@@ -41,7 +40,7 @@ struct InstancedVertexAttribute {
 
 template <size_t AttrCount>
 class InstancedMesh {
-  std::shared_ptr<const Mesh> mesh;
+  const Ref<Mesh> mesh;
 
   size_t instanceCount;
   std::array<InstancedVertexAttribute, AttrCount> attrs;
@@ -75,11 +74,11 @@ public:
   }
 
   template <typename... Attrs>
-  InstancedMesh(const std::shared_ptr<const Mesh> &m, size_t count, Attrs... a)
+  InstancedMesh(const Ref<Mesh> &m, size_t count, Attrs... a)
     { Setup(m, count, a...); }
 
   template <typename... Attrs>
-  void Setup(const std::shared_ptr<const Mesh> &m, size_t count, Attrs... a) {
+  void Setup(const Ref<Mesh> &m, size_t count, Attrs... a) {
     instanceCount = count;
     mesh = m;
     mesh->vao.Use();
@@ -92,8 +91,8 @@ public:
     VertexArray::ClearUse();
   }
 
-  std::shared_ptr<const Mesh> Get() { return mesh; }
-  const std::shared_ptr<const Mesh> Get() const { return mesh; }
+  const Ref<Mesh> Get() { return mesh; }
+  const Ref<const Mesh> Get() const { return mesh; }
 };
 
 #endif // _BASE__INSTANCED_MESH_H

@@ -102,8 +102,10 @@ public:
 
   explicit operator bool() const { return Valid(); }
 
+  operator Ref<const T>() { return Ref<const T>(stub); }
+
   template <typename B>
-  operator Ref<B>() { return Ref<B>(stub); }
+  explicit operator Ref<B>() { return Ref<B>(stub); }
 
   auto &operator[](unsigned index)
     { return stub->data[index]; }
