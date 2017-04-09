@@ -69,5 +69,5 @@ void RegisterSceneTypeAssociations(JSON::TypeManager &manager) {
   manager.Register("NCamera", DefaultTypeRegistration<NCamera>);
   manager.Register("Tagged", TagRegistration);
   manager.Register("Model", ModelRegistration);
-  manager.Register("Mesh", MeshRegistration);
+  manager.Register("NMeshRenderer", MeshRendererRegistration);
 }

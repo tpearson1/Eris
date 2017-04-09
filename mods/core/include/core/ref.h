@@ -49,6 +49,8 @@ class Ref {
 public:
   Ref() {}
 
+  Ref(std::nullptr_t) {}
+
   Ref(const Ref<T> &other) {
     *this = other;
   }

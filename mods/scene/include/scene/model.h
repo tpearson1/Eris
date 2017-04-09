@@ -32,7 +32,9 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/meshrenderer.h>
 
-NMeshRenderer *LoadMesh(const std::string &path, const RenderRequirements &rr);
+Ref<Mesh> LoadMesh(const std::string &path);
+
+NMeshRenderer *LoadMeshRenderer(const std::string &path, const RenderRequirements &rr);
 
 NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc = nullptr);
 
@@ -54,7 +56,7 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
 /*
  * Function that can be registered for the ability to load single meshes as shown below:
  * [
- *   "Mesh",
+ *   "NMeshRenderer",
  *   {
  *     "path": "mods/mod/res/mesh.blend",
  *     "prerender-func": "Default", // Optional
@@ -63,6 +65,6 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
  *   }
  * ]
  */
-NMeshRenderer *MeshRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
+NMeshRenderer *MeshRendererRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
 
 #endif // _BASE__MODEL_H

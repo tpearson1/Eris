@@ -29,7 +29,7 @@ SOFTWARE.
 #include <assimp/postprocess.h>
 #include <base/resources.h>
 
-NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
+static Ref<Mesh> ProcessMesh(aiMesh *mesh) {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
 
@@ -82,17 +82,22 @@ NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const Rend
       }
     );
   }
- 
+
+  return meshPtr;
+}
+
+static NMeshRenderer *ProcessMeshRenderer(aiMesh *mesh, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
+  auto m = ProcessMesh(mesh);
   auto *mr = new NMeshRenderer(rr);
   mr->preRenderFunction = preRenderFunc;
-  mr->renderer.Set(meshPtr);
+  mr->renderer.Set(m);
   return mr;
 }
 
 static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   for (auto i = 0u; i < node->mNumMeshes; i++) {
     auto mesh = scene->mMeshes[node->mMeshes[i]];
-    ProcessMesh(mesh, scene, rr, preRenderFunc)->transform.Parent(parent);
+    ProcessMeshRenderer(mesh, rr, preRenderFunc)->transform.Parent(parent);
   }
 
   for (auto i = 0u; i < node->mNumChildren; i++)
@@ -114,15 +119,26 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRen
   return root;
 }
 
-NMeshRenderer *LoadMesh(const std::string &path, const RenderRequirements &rr) {
+Ref<Mesh> LoadMesh(const std::string &path) {
   Assimp::Importer importer;
-  const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace);// | aiProcess_OptimizeMeshes);
+  const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes);
   
   const auto *meshes = scene->mRootNode->mChildren[0];
 
   CHECK_RETURN(meshes->mNumMeshes == 1, "Failed to load mesh - there is more than one mesh in the file", nullptr)
 
-  return ProcessMesh(scene->mMeshes[meshes->mMeshes[0]], scene, rr, nullptr);
+  return ProcessMesh(scene->mMeshes[meshes->mMeshes[0]]);
+}
+
+NMeshRenderer *LoadMeshRenderer(const std::string &path, const RenderRequirements &rr) {
+  Assimp::Importer importer;
+  const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes);
+  
+  const auto *meshes = scene->mRootNode->mChildren[0];
+
+  CHECK_RETURN(meshes->mNumMeshes == 1, "Failed to load mesh - there is more than one mesh in the file", nullptr)
+
+  return ProcessMeshRenderer(scene->mMeshes[meshes->mMeshes[0]], rr, nullptr);
 }
 
 NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
@@ -154,7 +170,7 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
   return model;
 }
 
-NMeshRenderer *MeshRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
+NMeshRenderer *MeshRendererRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
   CHECK_RETURN(val.IsObject(), "'Mesh' type must be an object", nullptr)
   const auto &object = val.GetObject();
 
@@ -178,7 +194,7 @@ NMeshRenderer *MeshRegistration(const rapidjson::Value &val, JSON::TypeManager &
   RenderRequirements rr;
   rr.ReadFromJSON(requirements, manager);
 
-  auto *model = LoadMesh(path.GetString(), rr); 
+  auto *model = LoadMeshRenderer(path.GetString(), rr); 
   model->preRenderFunction = preRenderFunction;
   model->ReadFromJSON(node, manager);
   return model;
