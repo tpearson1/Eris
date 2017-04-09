@@ -3,11 +3,28 @@
     "Tagged",
     [
       { "tag": "model" },
-      "Model",
+      /*"Model",
       {
         "path": "mods/json-load/res/monk.blend",
-        "texture": "monk",
-        "shader": "phong", 
+        "requirements": {
+          "texture": "monk",
+          "shader": "phong"
+        },
+        "prerender-func": "Test",
+        "NNode": {
+          "transform": {
+            "location": [0, 0, 0],
+            "rotation": [0, 0, 0]
+          }
+        }
+      }*/
+      "Mesh",
+      {
+        "path": "mods/json-load/res/monk.blend",
+        "requirements": {
+          "texture": "monk",
+          "shader": "phong"
+        },
         "prerender-func": "Test",
         "NNode": {
           "transform": {
@@ -23,11 +40,13 @@
       "Model",
       {
         "path": "mods/json-load/res/shape.blend",
-        "texture": "shape",
-        "shader": "unlit",
+        "requirements": {
+          "texture": "shape",
+          "shader": "unlit"
+        },
         "NNode": {
           "transform": {
-            "location": [5, 0, 0], // Want support for math expressions like $(3 + 2)
+            "location": [5, 0, 0],
             "rotation": [0, 0, 0]
           }
         }

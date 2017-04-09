@@ -138,9 +138,6 @@ MyGame::MyGame() {
 
   tagged = TagManager::active->Get<NNode>("model");
   shape = TagManager::active->Get<NNode>("shape");
-
-  if (dynamic_cast<NMeshRenderer *>(shape->transform.Child(0)))
-    std::cout << "OK\n";
 }
 
 extern "C" bool JsonLoad_Run() {

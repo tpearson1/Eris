@@ -31,7 +31,7 @@ SOFTWARE.
 #include <base/shader.h>
 #include <base/texture.h>
 
-struct RenderRequirements {
+struct RenderRequirements : public JSON::Read {
   Ref<Shader> shader;
   Ref<Texture> texture;
 
@@ -42,6 +42,8 @@ struct RenderRequirements {
     { return shader == r.shader && texture == r.texture; }
   bool operator!=(const RenderRequirements &r) const
     { return shader != r.shader || texture != r.texture; }
+
+  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
 };
 
 #endif // _SCENE__RENDER_REQUIREMENTS_H

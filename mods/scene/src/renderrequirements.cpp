@@ -24,45 +24,23 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__MODEL_H
-#define _BASE__MODEL_H
+#include <renderrequirements.h>
+#include <base/resources.h>
 
-#include <vector>
-#include <assimp/scene.h>
-#include <scene/scene.h>
-#include <scene/meshrenderer.h>
+bool RenderRequirements::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) {
+  PARSE_CHECK(data.IsObject(), "RenderRequirements must be of type object")
+  const auto &object = data.GetObject();
 
-NMeshRenderer *LoadMesh(const std::string &path, const RenderRequirements &rr);
+  PARSE_CHECK(object.HasMember("shader"), "RenderRequirements object must have member 'shader'")
+  const auto &shaderObj = object["shader"];
+  PARSE_CHECK(shaderObj.IsString(), "Member 'shader' of RenderRequirements must be of type string")
+ 
+  PARSE_CHECK(object.HasMember("texture"), "RenderRequirements object must have member 'texture'")
+  const auto &textureObj = object["texture"];
+  PARSE_CHECK(textureObj.IsString(), "Member 'texture' of RenderRequirements must be of type string")
 
-NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc = nullptr);
+  shader = Resources::active->shaders.Get(shaderObj.GetString());
+  texture = Resources::active->textures.Get(textureObj.GetString());
 
-/*
- * Function that can be registered for the ability to load models as shown below:
- *
- * [
- *   "Model",
- *   {
- *     "path": "mods/mod/res/model.blend",
- *     "prerender-func": "Default", // Optional
- *     "requirements": { ... },
- *     "NNode": { ... }
- *   }
- * ]
- */
-NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
-
-/*
- * Function that can be registered for the ability to load single meshes as shown below:
- * [
- *   "Mesh",
- *   {
- *     "path": "mods/mod/res/mesh.blend",
- *     "prerender-func": "Default", // Optional
- *     "requirements": { ... },
- *     "NNode": { ... }
- *   }
- * ]
- */
-NMeshRenderer *MeshRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
-
-#endif // _BASE__MODEL_H
+  return true;
+}

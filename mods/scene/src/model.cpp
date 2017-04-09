@@ -27,7 +27,6 @@ SOFTWARE.
 #include <model.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
-#include <scene/meshrenderer.h>
 #include <base/resources.h>
 
 NMeshRenderer *ProcessMesh(aiMesh *mesh, const aiScene * /* scene */, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
@@ -100,18 +99,30 @@ static void ProcessNode(aiNode *node, const aiScene *scene, NNode *parent, const
     ProcessNode(node->mChildren[i], scene, parent, rr, preRenderFunc);
 }
 
+static const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer, unsigned int flags) {
+  const auto *scene = importer.ReadFile(path, flags); 
+  CHECK_RETURN(scene && scene->mFlags != AI_SCENE_FLAGS_INCOMPLETE && scene->mRootNode, "Failed to load Scene" << importer.GetErrorString(), nullptr)
+  return scene;
+}
+
 NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRenderer::PreRenderFunctionType preRenderFunc) {
   Assimp::Importer importer;
-  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
-  if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    std::cerr << "> ERROR: Failed to load Model: " << importer.GetErrorString() << '\n';
-    return nullptr;
-  }
-
+  const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
   auto *root = new NNode;
   ProcessNode(scene->mRootNode, scene, root, rr, preRenderFunc);
 
   return root;
+}
+
+NMeshRenderer *LoadMesh(const std::string &path, const RenderRequirements &rr) {
+  Assimp::Importer importer;
+  const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace);// | aiProcess_OptimizeMeshes);
+  
+  const auto *meshes = scene->mRootNode->mChildren[0];
+
+  CHECK_RETURN(meshes->mNumMeshes == 1, "Failed to load mesh - there is more than one mesh in the file", nullptr)
+
+  return ProcessMesh(scene->mMeshes[meshes->mMeshes[0]], scene, rr, nullptr);
 }
 
 NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
@@ -122,17 +133,6 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
   const auto &path = object["path"];
   CHECK_RETURN(path.IsString(), "Member 'path' in 'Model' must be of type string", nullptr)
 
-  CHECK_RETURN(object.HasMember("texture"), "'Model' object must have member 'texture'", nullptr)
-  const auto &texture = object["texture"];
-  CHECK_RETURN(texture.IsString(), "Member 'texture' in 'Model' must be of type string", nullptr)
-
-  CHECK_RETURN(object.HasMember("NNode"), "'Model' object must have member 'NNode'", nullptr)
-  const auto &node = object["NNode"];
-
-  CHECK_RETURN(object.HasMember("shader"), "'Model' object must have member 'shader'", nullptr)
-  const auto &shader = object["shader"];
-  CHECK_RETURN(shader.IsString(), "'Member 'shader' in 'Model' must be of type string", nullptr)
-
   NMeshRenderer::PreRenderFunctionType preRenderFunction;
   if (object.HasMember("prerender-func")) {
     const auto &preRenderFunc = object["prerender-func"];
@@ -140,15 +140,46 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
     preRenderFunction = NMeshRenderer::preRenderFunctions.Get(preRenderFunc.GetString()); 
   }
 
+  CHECK_RETURN(object.HasMember("NNode"), "'Model' object must have member 'NNode'", nullptr)
+  const auto &node = object["NNode"];
+  
+  CHECK_RETURN(object.HasMember("requirements"), "'Model' object must have member 'requirements'", nullptr)
+  const auto &requirements = object["requirements"];
+  
   RenderRequirements rr;
-
-  auto textureRef = Resources::active->textures.Get(texture.GetString());
-  rr.texture = textureRef;
-
-  auto shaderRef = Resources::active->shaders.Get(shader.GetString());
-  rr.shader = shaderRef;
+  rr.ReadFromJSON(requirements, manager);
 
   auto model = LoadModel(path.GetString(), rr, preRenderFunction); 
+  model->ReadFromJSON(node, manager);
+  return model;
+}
+
+NMeshRenderer *MeshRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
+  CHECK_RETURN(val.IsObject(), "'Mesh' type must be an object", nullptr)
+  const auto &object = val.GetObject();
+
+  CHECK_RETURN(object.HasMember("path"), "'Mesh' object must have member 'path'", nullptr)
+  const auto &path = object["path"];
+  CHECK_RETURN(path.IsString(), "Member 'path' in 'Mesh' must be of type string", nullptr)
+
+  NMeshRenderer::PreRenderFunctionType preRenderFunction;
+  if (object.HasMember("prerender-func")) {
+    const auto &preRenderFunc = object["prerender-func"];
+    CHECK_RETURN(preRenderFunc.IsString(), "Member 'prerender-func' in 'Mesh' must be of type string", nullptr)
+    preRenderFunction = NMeshRenderer::preRenderFunctions.Get(preRenderFunc.GetString()); 
+  }
+
+  CHECK_RETURN(object.HasMember("NNode"), "'Mesh' object must have member 'NNode'", nullptr)
+  const auto &node = object["NNode"];
+  
+  CHECK_RETURN(object.HasMember("requirements"), "'Mesh' object must have member 'requirements'", nullptr)
+  const auto &requirements = object["requirements"];
+  
+  RenderRequirements rr;
+  rr.ReadFromJSON(requirements, manager);
+
+  auto *model = LoadMesh(path.GetString(), rr); 
+  model->preRenderFunction = preRenderFunction;
   model->ReadFromJSON(node, manager);
   return model;
 }
