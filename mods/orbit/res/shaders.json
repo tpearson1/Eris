@@ -1,0 +1,7 @@
+{
+  "unlit": {
+    "vertex": "mods/base/res/shaders/default-unlit.vs",
+    "fragment": "mods/base/res/shaders/default-unlit.frag"
+  }
+}
+

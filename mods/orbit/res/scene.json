@@ -1,0 +1,53 @@
+{
+  "nodes": [
+    "Tagged",
+    [
+      { "tag": "sphere" },
+      "NMeshRenderer",
+      {
+        "path": "mods/orbit/res/sphere.blend",
+        "requirements": {
+          "texture": "sphere",
+          "shader": "unlit"
+        },
+        "NNode": {
+          "transform": {
+            "location": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "children": [
+              "NMeshRenderer",
+              {
+                "path": "mods/orbit/res/sphere.blend",
+                "requirements": {
+                  "texture": "black",
+                  "shader": "unlit"
+                },
+                "NNode": {
+                  "transform": {
+                    "location": [0, 5, 0],
+                    "rotation": [0, 0, 0],
+                    "scale": [0.1, 0.1, 0.1]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "NCamera",
+    {
+      "active": true,
+      "near": 0.1,
+      "far": 500.1,
+      "perspective": true,
+      "fov": 70,
+      "NNode": {
+        "transform": {
+          "location": [0, 0, -15],
+          "rotation": [0, 180, 0]
+        }
+      }
+    }
+  ]
+}

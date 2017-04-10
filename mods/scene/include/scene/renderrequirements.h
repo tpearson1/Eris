@@ -36,7 +36,7 @@ struct RenderRequirements : public JSON::Read {
   Ref<Texture> texture;
 
   RenderRequirements() {}
-  RenderRequirements(Ref<Shader> &s, Ref<Texture> &t) : shader(s), texture(t) {}
+  RenderRequirements(Ref<Shader> s, Ref<Texture> t) : shader(s), texture(t) {}
 
   bool operator==(const RenderRequirements &r) const
     { return shader == r.shader && texture == r.texture; }

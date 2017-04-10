@@ -128,7 +128,7 @@ void Transform::WriteToJSON(JSON::Writer &writer) const {
   writer.EndObject();
 }
 
-bool Transform::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) {
+bool Transform::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
   PARSE_CHECK(data.IsObject(), "Type 'Transform' must be an object")
 
   auto object = data.GetObject();
@@ -140,6 +140,22 @@ bool Transform::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/*
     res = scale.ReadFromJSON(object["scale"]);
   else
     scale = Vec3::one;
+
+  if (object.HasMember("children")) {
+    const auto &childrenObj = object["children"];
+    PARSE_CHECK(childrenObj.IsArray(), "Member 'children' of 'Transform' must be of type array")
+    
+    const auto &childrenArr = childrenObj.GetArray();
+    for (auto it = childrenArr.Begin(); it != childrenArr.End(); it++) {
+      PARSE_CHECK(it->IsString(), "Array members 'children' of 'Transform' must alternate between types string and another type")
+      auto str = it->GetString();
+
+      PARSE_CHECK(++it != childrenArr.End(), "Array 'children' of 'Transform' must have data after each type string")
+
+      auto func = manager.Get(str);
+      ((NNode *)func(*it, manager))->transform.Parent(node);
+    }
+  }
 
   auto &loc = object["location"], &rot = object["rotation"];
   return location.ReadFromJSON(loc)

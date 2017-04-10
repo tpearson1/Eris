@@ -65,6 +65,18 @@ public:
   NMeshRenderer(const RenderRequirements &r) {
     registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements = r);
   }
+ 
+  NMeshRenderer(NMeshRenderer &mr) {
+    preRenderFunction = mr.preRenderFunction;
+    renderer = mr.renderer;
+
+    requirements = mr.requirements;
+    registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements);
+  }
+
+  ~NMeshRenderer() {
+    Renderer::active->Unregister(registration);
+  }
 
 private:
   void Draw() {
