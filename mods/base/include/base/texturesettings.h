@@ -59,14 +59,10 @@ enum class TextureEnlargeType : GLint {
   LINEAR = GL_LINEAR
 };
 
-struct TextureSettings : public JSON::ReadWrite {
+struct TextureSettings {
   TextureSettings() {}
   TextureSettings(TextureType tt, TextureShrinkType tst, TextureEnlargeType tet)
                  : type(tt), shrinkFilter(tst), enlargeFilter(tet) {}
-
-  virtual void WriteToJSON(JSON::Writer &writer) const override;
-
-  virtual bool ReadFromJSON(const rapidjson::Value &value, JSON::TypeManager &manager) override;
 
   std::string path;
 
@@ -76,6 +72,12 @@ struct TextureSettings : public JSON::ReadWrite {
   TextureEnlargeType enlargeFilter = TextureEnlargeType::LINEAR;
 
   static TextureSettings nearest, linear;
+};
+
+template <>
+struct JSONImpl<TextureSettings> {
+  static void Read(TextureSettings &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const TextureSettings &value, JSON::Writer &writer);
 };
 
 #endif // _BASE__TEXTURE_SETTINGS_H

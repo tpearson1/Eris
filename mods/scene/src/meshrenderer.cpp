@@ -28,7 +28,7 @@ SOFTWARE.
 #include <base/shader.h>
 #include <camera.h>
 
-Mapping<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
+std::unordered_map<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
 
 void MeshRenderer::Draw(const Mat4 &global) {
   const Shader &current = Shader::Current();
@@ -37,3 +37,12 @@ void MeshRenderer::Draw(const Mat4 &global) {
 
   mesh->Draw();
 }
+
+NMeshRenderer &NMeshRenderer::operator=(const NMeshRenderer &mr) {
+  preRenderFunction = mr.preRenderFunction;
+  renderer = mr.renderer;
+  requirements = mr.requirements;
+  registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements);
+  return *this;
+}
+

@@ -27,20 +27,13 @@ SOFTWARE.
 #include <renderrequirements.h>
 #include <base/resources.h>
 
-bool RenderRequirements::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) {
-  PARSE_CHECK(data.IsObject(), "RenderRequirements must be of type object")
-  const auto &object = data.GetObject();
+void JSONImpl<RenderRequirements>::Read(RenderRequirements &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "RenderRequirements"};
 
-  PARSE_CHECK(object.HasMember("shader"), "RenderRequirements object must have member 'shader'")
-  const auto &shaderObj = object["shader"];
-  PARSE_CHECK(shaderObj.IsString(), "Member 'shader' of RenderRequirements must be of type string")
- 
-  PARSE_CHECK(object.HasMember("texture"), "RenderRequirements object must have member 'texture'")
-  const auto &textureObj = object["texture"];
-  PARSE_CHECK(textureObj.IsString(), "Member 'texture' of RenderRequirements must be of type string")
+  const auto &object = JSON::GetObject(value, data);
+  auto shaderStr = JSON::GetMember<std::string>("shader", object, data);
+  auto textureStr = JSON::GetMember<std::string>("texture", object, data);
 
-  shader = Resources::active->shaders.Get(shaderObj.GetString());
-  texture = Resources::active->textures.Get(textureObj.GetString());
-
-  return true;
+  out.shader = Resources::active->shaders.Get(shaderStr);
+  out.texture = Resources::active->textures.Get(textureStr);
 }

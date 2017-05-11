@@ -30,8 +30,6 @@ SOFTWARE.
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
-#include <rapidjson/rapidjson.h>
-#include <rapidjson/document.h>
 #include <statics.h>
 #include <library.h>
 #include <file.h>
@@ -44,71 +42,72 @@ Package *Package::active = nullptr;
 bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
   std::string jsonPath = path + "package.json";
 
-  std::string jsonText;
-  File::Read(jsonPath, jsonText);
+  JSON::Document value;
+  JSON::GetDataFromFile(value, jsonPath);
 
-  rapidjson::Document json;
-  json.Parse<JSON_FLAGS>(jsonText.c_str());
+  JSON::ReadData data{std::make_shared<JSON::TypeManager>()};
+  auto t = Trace::Pusher{data.trace, "Package"};
 
-  // Error checking
-  CHECK(json.IsObject(), "There is no root object")
+  const auto &object = JSON::GetObject(value, data);
 
-  CHECK(json.HasMember("author"), "'author' member must be present")
-  CHECK(json["author"].IsString(), "'author' member must be of type string")
+  JSON::GetMember(author, "author", object, data);
+  JSON::GetMember(version, "version", object, data);
+  JSON::GetMember(playable, "playable", object, data);
+  JSON::GetMember(usesCPP, "uses-c++", object, data);
 
-  CHECK(json.HasMember("version"), "'version' member must be present")
-  CHECK(json["version"].IsString(), "'version' member must be of type string")
+  JSON::TryGetMember(headerOnly, "header-only", object, false, data);
+  JSON::ParseFailIf(headerOnly && !usesCPP, data, "'uses-c++' member must be set to true if the package is header only");
 
-  CHECK(json.HasMember("playable"), "'playable' member must be present")
-  CHECK(json["playable"].IsBool(), "'playable' member must be of type bool")
+  JSON::ParseFailIf(!usesCPP && playable, data, "'playable' member is set to true and therefore the package must use C++");
 
-  CHECK(json.HasMember("uses-c++"), "'uses-c++' member must be present")
-  CHECK(json["uses-c++"].IsBool(), "'uses-c++' member must be of type bool")
+  linkOptions = JSON::TryGetMember<std::string>("link-options", object, "", data);
 
-  if (json.HasMember("header-only")) {
-    CHECK(json["uses-c++"] == true, "'uses-c++' member must be set to true if the package is header only")
-    headerOnly = true;
-  }
+  if (!object.HasMember("depend"))
+    return true;
 
-  usesCPP = json["uses-c++"].GetBool();
-  playable = json["playable"].GetBool();
+  auto dependStrings = JSON::GetMember<std::vector<std::string>>("depend", object, data);
 
-  PARSE_FAIL_IF(!usesCPP && playable, "'playable' member is set to true and therefore the package must use C++")
+  for (auto &dep : dependStrings) {
+    auto *pkg = new Package(dep);
+    if (pkg->Load(compileDependencies, quiet))
+      dependencies.push_back(pkg);
+    else {
+      auto it = std::find_if(
+        std::begin(all), std::end(all),
+        [&dep](const auto &d) { return d->name == dep; }
+      );
 
-  author = json["author"].GetString();
-  version = json["version"].GetString();
-
-  if (json.HasMember("link-options")) {
-    const auto &linkOpts = json["link-options"];
-    CHECK(linkOpts.IsString(), "'link-options' member must be of type string")
-    linkOptions = linkOpts.GetString();
-  }
-
-  if (json.HasMember("depend")) {
-    const auto &depend = json["depend"];
-    CHECK(depend.IsArray(), "'depend' member must be of type array")
-
-    dependencies.reserve(depend.Size());
-    for (rapidjson::SizeType i = 0; i < depend.Size(); i++) {
-      CHECK(depend[i].IsString(), "All members of 'depend' array must be of type string")
-
-      std::string dep = depend[i].GetString();
-      CHECK(Directory::Exists("mods/" + dep), "Dependency '" + dep + "' is unsatisfied")
-
-      Package *pkg = new Package(dep);
-      if (pkg->Load(compileDependencies, quiet)) // No package will ever be loaded twice
-        dependencies.push_back(pkg);
-      else {
-        for (size_t i = 0; i < all.size(); i++) {
-          if (all[i]->name == dep) {
-            dependencies.push_back(all[i]);
-            delete pkg;
-            break;
-          }
-        }
-      }
+      if (it == std::end(all))
+        return false;
+      dependencies.push_back(*it);
+      delete pkg;
     }
   }
+  /* if (value.HasMember("depend")) { */
+  /*   const auto &depend = value["depend"]; */
+  /*   JSON::ParseAssert(depend.IsArray(), data, "'depend' member must be of type array"); */
+
+  /*   dependencies.reserve(depend.Size()); */
+  /*   for (rapidjson::SizeType i = 0; i < depend.Size(); i++) { */
+  /*     JSON::ParseAssert(depend[i].IsString(), data, "All members of 'depend' array must be of type string"); */
+
+  /*     std::string dep = depend[i].GetString(); */
+  /*     JSON::ParseAssert(Directory::Exists("mods/" + dep), data, "Dependency '" + dep + "' is unsatisfied"); */
+
+  /*     Package *pkg = new Package(dep); */
+  /*     if (pkg->Load(compileDependencies, quiet)) // No package will ever be loaded twice */
+  /*       dependencies.push_back(pkg); */
+  /*     else { */
+  /*       for (size_t i = 0; i < all.size(); i++) { */
+  /*         if (all[i]->name == dep) { */
+  /*           dependencies.push_back(all[i]); */
+  /*           delete pkg; */
+  /*           break; */
+  /*         } */
+  /*       } */
+  /*     } */
+  /*   } */
+  /* } */
 
   return true;
 }
@@ -169,7 +168,7 @@ std::string HyphenatedToPascalCasing(const std::string &input) {
   while (std::getline(ss, section, '-')) {
     if (section.empty())
       continue;
-    
+
     section[0] = toupper(section[0]);
     out.append(section);
   }
@@ -187,7 +186,7 @@ bool CallFuncOnDependenciesPrefixed(const std::vector<Package *> &deps, std::vec
   for (auto &elem : deps) {
     if (std::find(std::begin(processed), std::end(processed), elem) != std::end(processed))
       continue;
-    
+
     if (!CallFuncOnDependenciesPrefixed(elem->Dependencies(), processed, lib, funcName))
       return false;
     auto fullName = HyphenatedToPascalCasing(elem->Name()) + funcName;
@@ -201,13 +200,12 @@ bool CallFuncOnDependenciesPrefixed(const std::vector<Package *> &deps, std::vec
 }
 
 bool Package::Load(bool compile, bool quiet) {
-  for (size_t i = 0; i < all.size(); i++)
-    if (all[i]->name == name)
-      return false;
+  if (std::find_if(std::begin(all), std::end(all), [this](const auto &d) { return d->name == name; }) != std::end(all))
+    return false;
 
   path = "mods/" + name + "/";
   if (!ReadPackageJSON(compile, quiet))
-  return false;
+    return false;
   if (!quiet)
     std::clog << TermColor::FG_BLUE << "---- LOADING PACKAGE " << name << "@v" << version << " by " << author << " ----" << TermColor::FG_DEFAULT << '\n';
 
@@ -232,7 +230,7 @@ bool Package::Start(bool quiet, bool runTests) {
       return false;
 
     active = this;
-    std::vector<Package *> temp; 
+    std::vector<Package *> temp;
     if (!CallFuncOnDependenciesPrefixed({this}, temp, lib, "_Initialize"))
       return false;
 

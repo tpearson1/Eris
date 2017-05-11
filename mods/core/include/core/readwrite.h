@@ -27,118 +27,319 @@ SOFTWARE.
 #ifndef _CORE__READ_WRITE_H
 #define _CORE__READ_WRITE_H
 
-#include <string>
-#include <iostream>
+#include <memory>
 #include <unordered_map>
+#include <array>
+#include <vector>
 #include <functional>
+
+#ifndef RAPIDJSON_HAS_STDSTRING
+  #define RAPIDJSON_HAS_STDSTRING 1
+#endif
+
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/document.h>
-#include <core/file.h>
 
-#define PARSE_ERROR(message) {\
-  std::cerr << "> JSON: error: " << (message) << '\n';\
-  return false;\
-}
+#include <core/trace.h>
 
-#define PARSE_FAIL_IF(expr, failMessage) {\
-  if (expr)\
-    PARSE_ERROR((failMessage))\
-}
-
-#define PARSE_CHECK(expr, failMessage) PARSE_FAIL_IF(!(expr), failMessage)
-
-#define CHECK_RETURN(condition, string, ret) \
-{ \
-  if (!(condition)) \
-    { ERROR(string) return (ret); } \
-}
-
-#define CHECK(condition, string) \
-{ \
-  if (!(condition)) \
-    ERROR(string) \
-}
-
-
-#define ERROR(string) std::cerr << "> " << string << '\n';
-
-#define JSON_FLAGS rapidjson::kParseCommentsFlag |\
-             rapidjson::kParseTrailingCommasFlag |\
-             rapidjson::kParseNanAndInfFlag
-
-template <typename K, typename Hash>
-class FunctionalSelfMapping;
+#ifndef FUNC_NAME
+  #define FUNC_NAME __PRETTY_FUNTION__
+#endif
 
 namespace JSON {
-  using TypeManager = FunctionalSelfMapping<std::string, std::hash<std::string>>;
+  using Document = rapidjson::Document;
+  using Value = rapidjson::Value;
+
+  using Array = Value::Array;
+  using ConstArray = Value::ConstArray;
+
+  using Object = Value::Object;
+  using ConstObject = Value::ConstObject;
 
   using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
 
-  struct Write {
-    virtual void WriteToJSON(JSON::Writer &writer) const = 0;
+  struct ReadData;
+
+  using TypeManager = std::unordered_map<std::string, std::function<void *(const Value &, const ReadData &)>>;
+
+  struct ReadData {
+    // Used to show where Read calls fail
+    mutable Trace trace;
+
+    std::shared_ptr<TypeManager> typeManager;
+
+    ReadData(std::shared_ptr<TypeManager> manager) : typeManager(std::move(manager)) {}
   };
 
-  struct Read {
-    virtual bool ReadFromJSON(const rapidjson::Value &data, TypeManager &manager) = 0;
-  };
+  struct ParseException : public std::exception {};
 
-  inline void WriteValue(Write &value, Writer &writer)
-    { value.WriteToJSON(writer); }
+  [[noreturn]] inline void ParseError(const ReadData &data, const std::string &message) {
+    data.trace.Unwind(message);
+    throw ParseException{};
+  }
 
-  inline void WriteValue(const std::string &value, Writer &writer)
-    { writer.String(value.c_str(), value.size()); }
+  inline void ParseFailIf(bool expr, const ReadData &data, const std::string &message) {
+    if (expr)
+      ParseError(data, message);
+  }
 
-  inline void WriteValue(double value, Writer &writer)
+  inline void ParseAssert(bool expr, const ReadData &data, const std::string &message) {
+    if (!expr)
+      ParseError(data, message);
+  }
+
+  constexpr const auto parseFlags = rapidjson::kParseCommentsFlag |
+                                    rapidjson::kParseTrailingCommasFlag |
+                                    rapidjson::kParseNanAndInfFlag;
+}
+
+/*
+ * Class for Reading and Writing JSON to and from arbitrary classes. Either or
+ * both functions below can be implemented as part of your partially specialized
+ * class for your type 'T'.
+ *
+ * static T Read(const JSON::Value &value, const JSON::ReadData &data)
+ * static void Write(const T &value, JSON::Writer &data)
+ */
+template <typename T>
+struct JSONImpl;
+
+template <>
+struct JSONImpl<bool> {
+  static void Read(bool &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(bool value, JSON::Writer &writer)
+    { writer.Bool(value); }
+};
+
+template <>
+struct JSONImpl<float> {
+  static void Read(float &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(float value, JSON::Writer &writer)
+    { writer.Double(static_cast<double>(value)); }
+};
+
+template <>
+struct JSONImpl<double> {
+  static void Read(double &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(double value, JSON::Writer &writer)
     { writer.Double(value); }
+};
 
-  inline void WriteValue(int value, Writer &writer)
+template <>
+struct JSONImpl<int> {
+  static void Read(int &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(int value, JSON::Writer &writer)
     { writer.Int(value); }
+};
 
-  inline void WriteValue(unsigned value, Writer &writer)
+template <>
+struct JSONImpl<unsigned> {
+  static void Read(unsigned &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(unsigned value, JSON::Writer &writer)
     { writer.Uint(value); }
+};
+
+template <>
+struct JSONImpl<std::string> {
+  static void Read(std::string &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const std::string &value, JSON::Writer &writer)
+    { writer.String(value); }
+};
+
+template <typename T, std::size_t Size>
+struct JSONImpl<std::array<T, Size>> {
+  static void Read(std::array<T, Size> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "std::array"};
+
+    JSON::ParseAssert(value.IsArray(), data, "Must be an array");
+    const auto &arr = value.GetArray();
+    JSON::ParseAssert(arr.Size() == Size, data, "Incorrect size for array");
+
+    for (auto i = 0u; i < Size; i++)
+      JSONImpl<T>::Read(out[i], arr[i], data);
+  }
+
+  static void Write(const std::array<T, Size> &value, JSON::Writer &writer) {
+    writer.StartArray();
+    for (auto &&elem : value)
+      JSONImpl<T>::Write(elem, writer);
+    writer.EndArray();
+  }
+};
+
+template <typename T>
+struct JSONImpl<std::vector<T>> {
+  static void Read(std::vector<T> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "std::vector"};
+
+    JSON::ParseAssert(value.IsArray(), data, "Must be an array");
+    const auto &arr = value.GetArray();
+
+    auto newSize = out.size() + arr.Size();
+    out.reserve(newSize);
+    for (auto &&elem : arr) {
+      T v;
+      JSONImpl<T>::Read(v, elem, data);
+      out.push_back(v);
+    }
+  }
+
+  static void Write(const std::vector<T> &value, JSON::Writer &writer) {
+    writer.StartArray();
+    for (auto &&elem : value)
+      JSONImpl<T>::Write(elem, writer);
+    writer.EndArray();
+  }
+};
+
+template <typename V, typename Hash>
+struct JSONImpl<std::unordered_map<std::string, V, Hash>> {
+  static void Read(std::unordered_map<std::string, V, Hash> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "std::unordered_map"};
+
+    JSON::ParseAssert(value.IsObject(), data, "Mapping must be an object");
+    const auto &object = value.GetObject();
+
+    for (auto &&member : object) {
+      V v;
+      JSONImpl<V>::Read(v, member.value, data);
+      out[member.name.GetString()] = v;
+    }
+  }
+
+  static void Write(const std::unordered_map<std::string, V, Hash> &value, JSON::Writer &writer) {
+    writer.StartObject();
+    for (auto &&elem : value) {
+      JSONImpl<std::string>::Write(elem.first, writer);
+      JSONImpl<V>::Write(elem.second, writer);
+    }
+    writer.EndObject();
+  }
+};
+
+namespace JSON {
+  template <typename T>
+  T Read(const Value &value, const ReadData &data) {
+    // We do not push and pop the trace for data because this is merely a
+    // helper function and would not provide much useful debug information
+    T v;
+    JSONImpl<T>::Read(v, value, data);
+    return v;
+  }
 
   template <typename T>
-  inline T ReadValue(const rapidjson::Value &data, TypeManager &manager) {
-    T value;
-    value.ReadFromJSON(data, manager);
-    return value;
+  void Read(T &out, const Value &value, const ReadData &data)
+    { JSONImpl<T>::Read(out, value, data); }
+
+  /*
+   * Helper function for JSONImpl<T>::Write
+   */
+  template <typename T>
+  void Write(const T &value, Writer &writer)
+    { JSONImpl<T>::Write(value, writer); }
+
+  /*
+   * Write a JSON key-value pair
+   */
+  template <typename T>
+  void WritePair(const std::string &key, const T &value, Writer &writer) {
+    JSONImpl<std::string>::Write(key, writer);
+    JSONImpl<T>::Write(value, writer);
   }
 
-  template <>
-  inline double ReadValue(const rapidjson::Value &data, TypeManager &/* manager */) {
-    CHECK_RETURN(data.IsNumber(), "Must be a number", 0.0)
-    return data.GetDouble();
+  class ObjectEncloser {
+    Writer &writer;
+
+  public:
+    ObjectEncloser(Writer &_writer) : writer(_writer)
+      { writer.StartObject(); }
+
+    ~ObjectEncloser()
+      { writer.EndObject(); }
+  };
+
+  template <typename ObjectFunction>
+  void WriteObject(const std::string &key, Writer &writer, ObjectFunction func) {
+    JSONImpl<std::string>::Write(key, writer);
+    writer.StartObject();
+    func();
+    writer.EndObject();
   }
 
-  template <>
-  inline std::string ReadValue(const rapidjson::Value &data, TypeManager &/* manager */) {
-    CHECK_RETURN(data.IsString(), "Must be a string", "")
-    return data.GetString();
+  class ArrayEncloser {
+    Writer &writer;
+
+  public:
+    ArrayEncloser(Writer &_writer) : writer(_writer)
+      { writer.StartArray(); }
+
+    ~ArrayEncloser()
+      { writer.EndArray(); }
+  };
+
+  template <typename ArrayFunction>
+  void WriteArray(const std::string &key, Writer &writer, ArrayFunction func) {
+    JSONImpl<std::string>::Write(key, writer);
+    writer.StartArray();
+    func();
+    writer.EndArray();
   }
 
-  template <>
-  inline int ReadValue(const rapidjson::Value &data, TypeManager &/* manager */) {
-    CHECK_RETURN(data.IsInt(), "Must be an integer", 0)
-    return data.GetInt();
+  template <typename T>
+  void GetMember(T &out, const std::string &memberName, const ConstObject &object, const ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "JSON::GetMember"};
+
+    const auto memIt = object.FindMember(memberName);
+    if (memIt == object.MemberEnd())
+      ParseError(data, "Member '" + memberName + "' expected");
+    JSONImpl<T>::Read(out, memIt->value, data);
   }
 
-  template <>
-  inline unsigned ReadValue(const rapidjson::Value &data, TypeManager &/* manager */) {
-    CHECK_RETURN(data.IsUint(), "Must be an integer", 0)
-    return data.GetUint();
+  template <typename T>
+  T GetMember(const std::string &memberName, const ConstObject &object, const ReadData &data) {
+    T t;
+    GetMember<T>(t, memberName, object, data);
+    return t;
   }
 
-  inline rapidjson::Document GetDocument(const std::string &json) {
-    rapidjson::Document document;
-    document.Parse<JSON_FLAGS>(json.c_str());
-    return document;
+  template <typename T>
+  void TryGetMember(T &out, const std::string &memberName, const ConstObject &object, const T &fallback, const ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "JSON::TryGetMember"};
+
+    const auto memIt = object.FindMember(memberName);
+    if (memIt == object.MemberEnd())
+      out = fallback;
+    else
+      JSONImpl<T>::Read(out, memIt->value, data);
   }
 
-  inline rapidjson::Document GetDocumentFromFile(const std::string &path) {
-    std::string text;
-    File::Read(path, text);
-    return GetDocument(text);
+  template <typename T>
+  T TryGetMember(const std::string &memberName, const ConstObject &object, const T &fallback, const ReadData &data) {
+    T t;
+    TryGetMember<T>(t, memberName, object, fallback, data);
+    return t;
   }
+
+  ConstObject GetObject(const Value &value, const ReadData &data);
+
+  ConstArray GetArray(const Value &value, const ReadData &data);
+
+  template <typename Key, typename Value, typename AssocContainer>
+  Value GetAssociated(const AssocContainer &cont, const Key &key, const ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "JSON::GetAssociated"};
+    auto it = cont.find(key);
+    if (it == std::end(cont))
+      ParseError(data, "Invalid value for string for conversion to enumerable");
+    return it->second;
+  }
+
+  template <typename Key, typename Value, typename AssocContainer>
+  void GetAssociated(Value &out, const AssocContainer &cont, const Key &key, const ReadData &data)
+    { out = GetAssociated<Key, Value, AssocContainer>(cont, key, data); }
+
+  void GetData(Document &out, const std::string &json);
+
+  void GetDataFromFile(Document &out, const std::string &path);
 
   template <typename Func>
   std::string WriteToString(Func func) {
@@ -147,21 +348,7 @@ namespace JSON {
     func(writer);
     return buffer.GetString();
   }
-
-  struct ReadWrite : public Read, public Write {};
 }
 
-template <typename K, typename Hash = std::hash<K>>
-class FunctionalSelfMapping {
-  using LoadFunc = std::function<struct JSON::ReadWrite *(const rapidjson::Value &, FunctionalSelfMapping &)>;
-  std::unordered_map<K, LoadFunc, Hash> map; 
-
-public:
-  void Register(const K &key, LoadFunc func)
-    { map[key] = func; }
-  
-  LoadFunc Get(const K &key) const
-    { return map.at(key); } 
-};
-
 #endif // _CORE__READ_WRITE_H
+

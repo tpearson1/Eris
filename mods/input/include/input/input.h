@@ -84,7 +84,7 @@ class Input {
   static void OnMouseButton(GLFWwindow *window, int button, int action, int mods);
   static void OnMouseMove(GLFWwindow *window, double xPos, double yPos);
   static void OnMouseScroll(GLFWwindow *window, double xOffset, double yOffset);
-  
+
   static std::unordered_map<KeyCode, KeyState> keyStates;
 
   using MouseButtonCallback = std::function<void(int, int)>;
@@ -144,7 +144,7 @@ public:
     { mouseMoveCallbacks.push_front(callback); return mouseMoveCallbacks.begin(); }
   static auto RegisterMouseScrollCallback(MouseScrollCallback callback)
     { mouseScrollCallbacks.push_front(callback); return mouseScrollCallbacks.begin(); }
-  
+
   static void UnregisterMouseButtonCallback(std::list<MouseButtonCallback>::iterator it, MouseButton button)
     { mouseButtonCallbacks[button].erase(it); }
   static void UnregisterMouseMoveCallback(std::list<MouseMoveCallback>::iterator it)

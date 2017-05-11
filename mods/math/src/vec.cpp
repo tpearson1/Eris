@@ -51,20 +51,16 @@ Vec2 Vec2::MoveTowards(Vec2 a, Vec2 b, float maxDistance) {
   return Lerp(a, b, Math::Clamp(t, 0.0f, 1.0f));
 }
 
-void Vec2::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartArray();
-    writer.Double(static_cast<double>(x));
-    writer.Double(static_cast<double>(y));
-  writer.EndArray();
+void JSONImpl<Vec2>::Write(const Vec2 &value, JSON::Writer &writer) {
+  auto a = JSON::ArrayEncloser{writer};
+  JSON::Write(value.x, writer);
+  JSON::Write(value.y, writer);
 }
 
-bool Vec2::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsArray(), "Type 'Vec2' must be an array")
-  auto arr = data.GetArray();
-  PARSE_CHECK(arr.Size() == 2 && arr[0].IsNumber() && arr[1].IsNumber(), "Vec2's array must contain 2 float values")
-  x = arr[0].GetFloat();
-  y = arr[1].GetFloat();
-  return true;
+void JSONImpl<Vec2>::Read(Vec2 &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Vec2"};
+  auto array = JSON::Read<std::array<float, 2>>(value, data);
+  out = Vec2{array[0], array[1]};
 }
 
 Vec3 Vec3::MoveTowards(const Vec3 &a, const Vec3 &b, float maxDistance) {
@@ -76,46 +72,30 @@ Vec3 Vec3::MoveTowards(const Vec3 &a, const Vec3 &b, float maxDistance) {
   return Lerp(a, b, Math::Clamp(t, 0.0f, 1.0f));
 }
 
-void Vec3::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartArray();
-    writer.Double(static_cast<double>(x));
-    writer.Double(static_cast<double>(y));
-    writer.Double(static_cast<double>(z));
-  writer.EndArray();
+void JSONImpl<Vec3>::Write(const Vec3 &value, JSON::Writer &writer) {
+  auto a = JSON::ArrayEncloser{writer};
+  JSON::Write(value.x, writer);
+  JSON::Write(value.y, writer);
+  JSON::Write(value.z, writer);
 }
 
-bool Vec3::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsArray(), "Type 'Vec3' must be an array")
-  auto arr = data.GetArray();
-  PARSE_CHECK(
-    arr.Size() == 3 && arr[0].IsNumber() && arr[1].IsNumber() && arr[2].IsNumber(),
-    "Vec3's array must contain 3 float values"
-  )
-  x = arr[0].GetFloat();
-  y = arr[1].GetFloat();
-  z = arr[2].GetFloat();
-  return true;
+void JSONImpl<Vec3>::Read(Vec3 &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Vec3"};
+  auto array = JSON::Read<std::array<float, 3>>(value, data);
+  out = Vec3{array[0], array[1], array[2]};
 }
 
-void Vec4::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartArray();
-    writer.Double(static_cast<double>(x));
-    writer.Double(static_cast<double>(y));
-    writer.Double(static_cast<double>(z));
-    writer.Double(static_cast<double>(w));
-  writer.EndArray();
+void JSONImpl<Vec4>::Write(const Vec4 &value, JSON::Writer &writer) {
+  auto a = JSON::ArrayEncloser{writer};
+  JSON::Write(value.x, writer);
+  JSON::Write(value.y, writer);
+  JSON::Write(value.z, writer);
+  JSON::Write(value.w, writer);
 }
 
-bool Vec4::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsArray(), "Type 'Vec4' must be an array")
-  auto arr = data.GetArray();
-  PARSE_CHECK(
-    arr.Size() == 4 && arr[0].IsNumber() && arr[1].IsNumber() && arr[2].IsNumber() && arr[3].IsNumber(),
-    "Vec4's array must contain 4 float values"
-  )
-  x = arr[0].GetFloat();
-  y = arr[1].GetFloat();
-  z = arr[2].GetFloat();
-  w = arr[3].GetFloat();
-  return true;
+void JSONImpl<Vec4>::Read(Vec4 &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Vec4"};
+  auto array = JSON::Read<std::array<float, 4>>(value, data);
+  out = Vec4{array[0], array[1], array[2], array[3]};
 }
+

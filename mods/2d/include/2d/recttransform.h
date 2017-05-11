@@ -83,9 +83,6 @@ public:
   void Rotate(float radians) { rotation += radians; }
 
   Mat4 Matrix() const;
-
-  virtual void WriteToJSON(JSON::Writer &writer) override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data) override;
 };
 
 #endif // _2D__RECT_TRANSFORM_H

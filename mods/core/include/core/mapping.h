@@ -30,83 +30,10 @@ SOFTWARE.
 #include <unordered_map>
 #include <core/ref.h>
 
-template <typename K, typename V, typename Hash = std::hash<K>>
-class Mapping {
-protected:
-  std::unordered_map<K, V, Hash> map;
-
-public:
-  void Register(const K &key, V val)
-    { map[key] = val; }
-
-  V Get(const K &key) const
-    { return map.at(key); }
-
-  using iterator = typename std::unordered_map<std::string, V, Hash>::iterator;
-  using const_iterator = typename std::unordered_map<std::string, V, Hash>::const_iterator;
-
-  iterator begin()
-    { return map.begin(); }
-  const_iterator begin() const
-    { return map.begin(); }
-
-  iterator end()
-    { return map.end(); }
-  const_iterator end() const
-    { return map.end(); }
-};
-
-template <typename V, typename Hash = std::hash<std::string>>
-class SerializableMapping : public JSON::ReadWrite {
-  std::unordered_map<std::string, V, Hash> map;
-
-public:
-  void Register(const std::string &key, V val)
-    { map[key] = val; }
-
-  V Get(const std::string &key) const
-    { return map.at(key); }
-
-  using iterator = typename std::unordered_map<std::string, V, Hash>::iterator;
-  using const_iterator = typename std::unordered_map<std::string, V, Hash>::const_iterator;
-
-  iterator begin()
-    { return map.begin(); }
-  const_iterator begin() const
-    { return map.begin(); }
-
-  iterator end()
-    { return map.end(); }
-  const_iterator end() const
-    { return map.end(); }
-
-  virtual void WriteToJSON(JSON::Writer &writer) const override {
-    writer.StartObject();
-    for (auto &pair : map) {
-      writer.String(pair.first.c_str(), pair.first.size());
-      JSON::WriteValue(pair.second, writer);
-    }
-    writer.EndObject();
-  }
-
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override {
-    PARSE_CHECK(data.IsObject(), "Mapping must be an object")
-    const auto &object = data.GetObject();
-
-    for (auto it = object.MemberBegin(); it != object.MemberEnd(); it++) {
-      const auto &name = it->name.GetString();
-      const auto &value = it->value;
-      V val = JSON::ReadValue<V>(value, manager);
-      Register(name, val);
-    }
-    return true;
-  }
-};
-
 template <typename Value, typename Data, typename Hash = std::hash<std::string>>
-class DeferredLoadableMapping : public JSON::Read {
+class JSONDeferredReadMapping {
   std::unordered_map<std::string, Value, Hash> values;
-  std::unordered_map<std::string, Data, Hash> notLoaded; 
+  std::unordered_map<std::string, Data, Hash> notLoaded;
 
 public:
   void Register(const std::string &key, Value val)
@@ -118,29 +45,26 @@ public:
     auto it = values.find(key);
     if (it != values.end())
       return it->second;
-    
+
     auto dataIt = notLoaded.find(key);
-    // We assume that jsonIt is a valid iterator
+    // We assume that dataIt is a valid iterator
     Value val;
     val.Load(dataIt->second);
-    
+
     notLoaded.erase(dataIt);
     values[key] = val;
     return val;
   }
 
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override {
-    PARSE_CHECK(data.IsObject(), "Mapping must be an object")
-    const auto &object = data.GetObject();
+  auto &GetLoaded() { return values; }
+  auto &GetDeferred() { return notLoaded; }
+};
 
-    for (auto it = object.MemberBegin(); it != object.MemberEnd(); it++) {
-      const auto &name = it->name.GetString();
-      auto &value = it->value;
-      Data d;
-      d.ReadFromJSON(value, manager);
-      Register(name, d);
-    }
-    return true;
+template <typename Value, typename Data, typename Hash>
+struct JSONImpl<JSONDeferredReadMapping<Value, Data, Hash>> {
+  static void Read(JSONDeferredReadMapping<Value, Data, Hash> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "JSONDeferredMapping"};
+    JSON::Read(out.GetDeferred(), value, data);
   }
 };
 

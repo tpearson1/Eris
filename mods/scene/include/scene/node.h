@@ -33,7 +33,16 @@ SOFTWARE.
 #include <scene/transform.h>
 #include <scene/renderable.h>
 
-class NNode : public Renderable, public JSON::ReadWrite {
+template <>
+struct JSONImpl<NNode> {
+  static void Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const NNode &value, JSON::Writer &writer);
+};
+
+class NNode : public Renderable {
+  void SetTransformNodeMember()
+    { transform.node = this; }
+
 protected:
   static void RecursiveDestroy(NNode *n);
 
@@ -42,7 +51,7 @@ protected:
 
 public:
   NNode()
-    { transform.node = this; }
+    { SetTransformNodeMember(); }
 
   virtual void Tick(float delta)
     { if (visible) _Tick(delta); }
@@ -54,8 +63,7 @@ public:
 
   Transform transform;
 
-  virtual void WriteToJSON(JSON::Writer &writer) const override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
+  friend void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data);
 };
 
 #endif // _SCENE__NODE_H

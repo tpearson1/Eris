@@ -30,11 +30,10 @@ SOFTWARE.
 #include <rapidjson/document.h>
 #include <core/file.h>
 
-void TextureSettings::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartObject();
+void JSONImpl<TextureSettings>::Write(const TextureSettings &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
 
-  writer.String("path", strlen("path"));
-  writer.String(path.c_str(), path.size());
+  JSON::WritePair("path", value.path, writer);
 
   const std::unordered_map<TextureType, std::string> textureTypes = {
     {TextureType::TEX_1D, "tex-1d"},
@@ -49,11 +48,9 @@ void TextureSettings::WriteToJSON(JSON::Writer &writer) const {
     {TextureType::TEX_2D_MULTISAMPLE, "tex-2d-multisample"},
     {TextureType::TEX_2D_MULTISAMPLE_ARRAY, "tex-2d-multisample-array"}
   };
-  
-  writer.String("type", strlen("type"));
-  auto str = textureTypes.at(type);
-  writer.String(str.c_str(), str.size());
-  
+
+  JSON::WritePair("type", textureTypes.at(value.type), writer);
+
   const std::unordered_map<TextureShrinkType, std::string> shrinkTypes = {
     {TextureShrinkType::NEAREST_MIPMAP_NEAREST, "nearest-mipmap-nearest"},
     {TextureShrinkType::LINEAR_MIPMAP_NEAREST, "linear-mipmap-nearest"},
@@ -63,42 +60,22 @@ void TextureSettings::WriteToJSON(JSON::Writer &writer) const {
     {TextureShrinkType::LINEAR, "linear"}
   };
 
-  writer.String("shrink-filter", strlen("shrink-filter"));
-  str = shrinkTypes.at(shrinkFilter);
-  writer.String(str.c_str(), str.size());
-  
+  JSON::WritePair("shrink-filter", shrinkTypes.at(value.shrinkFilter), writer);
+
   const std::unordered_map<TextureEnlargeType, std::string> enlargeTypes = {
     {TextureEnlargeType::NEAREST, "nearest"},
     {TextureEnlargeType::LINEAR, "linear"}
   };
 
-  writer.String("enlarge-filter", strlen("enlarge-filter"));
-  str = enlargeTypes.at(enlargeFilter);
-  writer.String(str.c_str(), str.size());
-
-  writer.EndObject();
+  JSON::WritePair("enlarge-filter", enlargeTypes.at(value.enlargeFilter), writer);
 }
 
-bool TextureSettings::ReadFromJSON(const rapidjson::Value &value, JSON::TypeManager &/* manager */) {
-  CHECK(value.IsObject(), "TextureSettings must be of type object")
+void JSONImpl<TextureSettings>::Read(TextureSettings &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "TextureSettings"};
 
-  CHECK(value.HasMember("path"), "Member 'path' of TextureSettings is not present")
-  const auto &texPath = value["path"];
-  CHECK(value["path"].IsString(), "Member 'path' of TextureSettings is not present")
+  const auto &object = JSON::GetObject(value, data);
 
-  CHECK(value.HasMember("type"), "Member 'type' of TextureSettings is not present")
-  const auto &texType = value["type"];
-  CHECK(value["type"].IsString(), "Member 'type' of TextureSettings must be of type string")
-
-  CHECK(value.HasMember("shrink-filter"), "Member 'shrink-filter' of TextureSettings is not present")
-  const auto &shrink = value["shrink-filter"];
-  CHECK(value["shrink-filter"].IsString(), "'Member 'shrink-filter' of TextureSettings must be of type string")
-
-  CHECK(value.HasMember("enlarge-filter"), "Member 'enlarge-filter' of TextureSettings is not present")
-  const auto &enlarge = value["enlarge-filter"];
-  CHECK(value["enlarge-filter"].IsString(), "Member 'enlarge-filter' of TextureSettings must be of type string")
-
-  path = texPath.GetString();
+  JSON::GetMember(out.path, "path", object, data);
 
   const std::unordered_map<std::string, TextureType> textureTypes = {
     {"tex-1d", TextureType::TEX_1D},
@@ -114,10 +91,8 @@ bool TextureSettings::ReadFromJSON(const rapidjson::Value &value, JSON::TypeMana
     {"tex-2d-multisample-array", TextureType::TEX_2D_MULTISAMPLE_ARRAY}
   };
 
-  auto typesIt = textureTypes.find(texType.GetString()); 
-  if (typesIt == textureTypes.end())
-    ERROR("Member 'type' of TextureSettings has invalid value")
-  type = typesIt->second;
+  auto texType = JSON::GetMember<std::string>("type", object, data);
+  JSON::GetAssociated(out.type, textureTypes, texType, data);
 
   const std::unordered_map<std::string, TextureShrinkType> shrinkTypes = {
     {"nearest-mipmap-nearest", TextureShrinkType::NEAREST_MIPMAP_NEAREST},
@@ -128,20 +103,15 @@ bool TextureSettings::ReadFromJSON(const rapidjson::Value &value, JSON::TypeMana
     {"linear", TextureShrinkType::LINEAR}
   };
 
-  auto shrinkIt = shrinkTypes.find(shrink.GetString());
-  if (shrinkIt == shrinkTypes.end())
-    ERROR("Member 'shrink-filter' of TextureSettings has invalid value")
-  shrinkFilter = shrinkIt->second;
+  auto shrink = JSON::GetMember<std::string>("shrink-filter", object, data);
+  JSON::GetAssociated(out.shrinkFilter, shrinkTypes, shrink, data);
 
   const std::unordered_map<std::string, TextureEnlargeType> enlargeTypes = {
     {"nearest", TextureEnlargeType::NEAREST},
     {"linear", TextureEnlargeType::LINEAR}
   };
-  
-  auto enlargeIt = enlargeTypes.find(enlarge.GetString());
-  if (enlargeIt == enlargeTypes.end())
-    ERROR("Member 'enlarge-filter' of TextureSettings has invalid value")
-  enlargeFilter = enlargeIt->second;
 
-  return true;
+  auto enlarge = JSON::GetMember<std::string>("enlarge-filter", object, data);
+  JSON::GetAssociated(out.enlargeFilter, enlargeTypes, enlarge, data);
 }
+

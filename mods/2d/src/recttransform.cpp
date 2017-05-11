@@ -91,25 +91,25 @@ void RectTransform::WriteToJSON(JSON::Writer &writer) {
 }
 
 bool RectTransform::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsObject(), "Type 'RectTransform' must be an object")
+  JSON::ParseAssert(data.IsObject(), "Type 'RectTransform' must be an object")
 
   auto object = data.GetObject();
-  PARSE_CHECK(object.HasMember("location"), "'RectTransform' object must have member 'location'")
-  PARSE_CHECK(object.HasMember("size"), "'RectTransform' object must have member 'size'")
-  PARSE_CHECK(object.HasMember("pivot"), "'RectTransform' object must have member 'pivot'")
-  PARSE_CHECK(object.HasMember("anchors"), "'RectTransform' object must have member 'anchors'")
+  JSON::ParseAssert(object.HasMember("location"), "'RectTransform' object must have member 'location'")
+  JSON::ParseAssert(object.HasMember("size"), "'RectTransform' object must have member 'size'")
+  JSON::ParseAssert(object.HasMember("pivot"), "'RectTransform' object must have member 'pivot'")
+  JSON::ParseAssert(object.HasMember("anchors"), "'RectTransform' object must have member 'anchors'")
 
   auto &loc = object["location"], &siz = object["size"],
        &piv = object["pivot"], &anchs = object["anchors"];
 
   if (object.HasMember("rotation-rads")) {
     auto &rot = object["rotation-rads"];
-    PARSE_CHECK(rot.IsFloat(), "Member 'rotation-rads' of 'RectTransform' must be of type float")
+    JSON::ParseAssert(rot.IsFloat(), "Member 'rotation-rads' of 'RectTransform' must be of type float")
     rotation = rot.GetFloat();
   }
   else if (object.HasMember("rotation-degs")) {
     auto &rot = object["rotation-degs"];
-    PARSE_CHECK(rot.IsFloat(), "Member 'rotation-degs' of 'RectTransform' must be of type float")
+    JSON::ParseAssert(rot.IsFloat(), "Member 'rotation-degs' of 'RectTransform' must be of type float")
     rotation = Math::Radians(rot.GetFloat());
   }
   else

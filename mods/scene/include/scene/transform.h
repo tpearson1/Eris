@@ -34,7 +34,15 @@ SOFTWARE.
 #include <core/readwrite.h>
 #include <scene/rendertree.h>
 
-class Transform : public RenderTree<class NNode>, public JSON::ReadWrite {
+class Transform;
+
+template <>
+struct JSONImpl<Transform> {
+  static void Read(Transform &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Transform &value, JSON::Writer &writer);
+};
+
+class Transform : public RenderTree<class NNode> {
   Vec3 location, scale;
   Quat rotation;
 
@@ -106,8 +114,7 @@ public:
   void Scale(float x, float y, float z)
     { Scale(Vec3(x, y, z)); }
 
-  virtual void WriteToJSON(JSON::Writer &writer) const override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &/* manager */) override;
+  friend void JSONImpl<Transform>::Read(Transform &out, const JSON::Value &value, const JSON::ReadData &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Transform &t) {

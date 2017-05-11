@@ -47,7 +47,7 @@ public:
     scene.Render();
 
     if (go) {
-      auto spawn = (NMeshRenderer *)sphere->transform.Child(0);
+      auto spawn = reinterpret_cast<NMeshRenderer *>(sphere->transform.Child(0));
 
       auto n = new NMeshRenderer(*spawn);
       n->transform.Location(spawn->transform.GlobalLocation());
@@ -56,7 +56,8 @@ public:
       rend.push_back(n);
       if (rend.size() > 99) {
         delete rend.front();
-        rend.erase(rend.begin()); }
+          rend.erase(rend.begin());
+      }
 
       sphere->transform.Rotate(rot * delta);
     }
@@ -108,7 +109,7 @@ MyGame::MyGame() {
     if (action == InputEvent::PRESS)
       go = !go;
   });
-  
+
   Input::RegisterKeyCallback(KeyCode::I, [this](InputEvent action) {
     if (action != InputEvent::PRESS)
       return;
@@ -118,7 +119,7 @@ MyGame::MyGame() {
     else
       rot.x += 30.0f;
   });
- 
+
   Input::RegisterKeyCallback(KeyCode::O, [this](InputEvent action) {
     if (action != InputEvent::PRESS)
       return;
@@ -143,20 +144,23 @@ MyGame::MyGame() {
 
   TagManager::active = Ref<TagManager>::Create();
   Resources::active = Ref<Resources>::Create();
-  
-  JSON::TypeManager manager;
-  RegisterSceneTypeAssociations(manager);
+
+  auto typeManager = std::make_shared<JSON::TypeManager>();
+  JSON::ReadData readData{typeManager};
+  RegisterSceneTypeAssociations(*typeManager);
 
   scene.SetActive();
 
-  auto shaders = JSON::GetDocumentFromFile("mods/orbit/res/shaders.json");
-  Resources::active->shaders.ReadFromJSON(shaders, manager);
+  JSON::Document shaders, textures, sceneDoc;
 
-  auto textures = JSON::GetDocumentFromFile("mods/orbit/res/textures.json");
-  Resources::active->textures.ReadFromJSON(textures, manager);
+  JSON::GetDataFromFile(shaders, "mods/orbit/res/shaders.json");
+  JSON::Read(Resources::active->shaders, shaders, readData);
 
-  auto document = JSON::GetDocumentFromFile("mods/orbit/res/scene.json");
-  scene.ReadFromJSON(document, manager);
+  JSON::GetDataFromFile(textures, "mods/orbit/res/textures.json");
+  JSON::Read(Resources::active->textures, textures, readData);
+
+  JSON::GetDataFromFile(sceneDoc, "mods/orbit/res/scene.json");
+  JSON::Read(scene, sceneDoc, readData);
 
   sphere = TagManager::active->Get<NMeshRenderer>("sphere");
 }

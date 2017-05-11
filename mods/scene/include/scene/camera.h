@@ -33,6 +33,14 @@ SOFTWARE.
 #include <base/window.h>
 #include <math/mat.h>
 
+class NCamera;
+
+template <>
+struct JSONImpl<NCamera> {
+  static void Read(NCamera &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const NCamera &value, JSON::Writer &writer);
+};
+
 class NCamera : public NNode {
   static std::vector<NCamera *> all;
   float currentZoom = 10.0f, minZoom = 3.0f, maxZoom = 20.0f;
@@ -66,8 +74,8 @@ public:
   Mat4 Matrix(Mat4 model) const
     { return ProjectionMatrix() * ViewMatrix() * model; }
 
-  virtual void WriteToJSON(JSON::Writer &writer) const override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
+  friend void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value, const JSON::ReadData &data);
 };
 
 #endif // _SCENE__CAMERA_H
+

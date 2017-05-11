@@ -33,8 +33,8 @@ SOFTWARE.
 #include <core/mapping.h>
 
 struct Resources {
-  DeferredLoadableMapping<Ref<Texture>, TextureSettings> textures;
-  DeferredLoadableMapping<Ref<Shader>, Shader::Settings> shaders;
+  JSONDeferredReadMapping<Ref<Texture>, TextureSettings> textures;
+  JSONDeferredReadMapping<Ref<Shader>, Shader::Settings> shaders;
 
   static Ref<Resources> active;
 };

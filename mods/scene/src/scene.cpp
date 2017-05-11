@@ -29,45 +29,34 @@ SOFTWARE.
 #include <tagmanager.h>
 #include <model.h>
 
-void Scene::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartObject();
-    writer.String("nodes", strlen("nodes"));
-    writer.StartArray();
-      for (auto &elem : root.transform)
-        elem->WriteToJSON(writer);
-    writer.EndArray();
-  writer.EndObject();
-}
+void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Scene"};
 
-bool Scene::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
-  PARSE_CHECK(data.IsObject(), "Type 'Scene' must be an object")
-  const auto &object = data.GetObject();
+  const auto &object = JSON::GetObject(value, data);
 
-  PARSE_CHECK(object.HasMember("nodes"), "'Scene' object must have member 'nodes'")
-  const auto &nodesVal = object["nodes"];
-  PARSE_CHECK(nodesVal.IsArray(), "Member 'nodes' in 'Scene' object must be of type array")
-  const auto &nodesArr = nodesVal.GetArray();
+  auto nodesIt = object.FindMember("nodes");
+  JSON::ParseAssert(nodesIt != object.MemberEnd(), data, "'Scene' object must have member 'nodes'");
+  JSON::ParseAssert(nodesIt->value.IsArray(), data, "Member 'nodes' in 'Scene' object must be of type array");
 
+  const auto &nodesArr = nodesIt->value.GetArray();
   for (auto it = nodesArr.Begin(); it != nodesArr.End(); it++) {
-    PARSE_CHECK(it->IsString(), "Member 'nodes' in 'Scene' object must alternate between type string and another type")
-    std::string string = it->GetString();
+    auto type = JSON::Read<std::string>(*it, data);
 
-    PARSE_CHECK(++it != nodesArr.End(), "Member 'nodes' in 'Scene' object must have data after each type string")
+    JSON::ParseAssert(++it != nodesArr.End(), data, "Member 'nodes' in 'Scene' object must have data after each type string");
 
     // Call a function depending on what the value of the string is.
     // This function returns a newly created node pointer using the JSON data.
     // This is then parented to the root node
-    const auto &func = manager.Get(string);
-    ((NNode *)func(*it, manager))->transform.Parent(&root);
+    const auto &func = data.typeManager->at(type);
+    reinterpret_cast<NNode *>(func(*it, data))->transform.Parent(&out.root);
   }
-
-  return true;
 }
 
 void RegisterSceneTypeAssociations(JSON::TypeManager &manager) {
-  manager.Register("NNode", DefaultTypeRegistration<NNode>);
-  manager.Register("NCamera", DefaultTypeRegistration<NCamera>);
-  manager.Register("Tagged", TagRegistration);
-  manager.Register("Model", ModelRegistration);
-  manager.Register("NMeshRenderer", MeshRendererRegistration);
+  manager["NNode"] = DefaultNodeTypeRegistration<NNode>;
+  manager["NCamera"] = DefaultNodeTypeRegistration<NCamera>;
+  manager["Tagged"] = TaggedTypeRegistration;
+  manager["Model"] = ModelTypeRegistration;
+  manager["NMeshRenderer"] = MeshRendererTypeRegistration;
 }
+

@@ -40,7 +40,7 @@ int main(int argc, char const *argv[]) {
     std::cerr << usage << '\n';
     return -1;
   }
-  
+
   struct { bool help = false, compile = false, noCompile = false, quiet = false, runTests = false; } options;
   int i;
   for (i = 1; i < argc; i++) {
@@ -94,7 +94,7 @@ int main(int argc, char const *argv[]) {
 
   ::SetupStatics(argv[0]);
   const auto &packageName = argv[i];
-  Package *package = new Package(packageName); // Garbage collected by Package::Cleanup
+  auto *package = new Package(packageName); // Garbage collected by Package::Cleanup
   if (!package->Load(!options.noCompile, options.quiet)) {
     std::cerr << "> Unable to load package '" << packageName << "'\n";
     return -1;

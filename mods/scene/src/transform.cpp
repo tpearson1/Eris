@@ -111,54 +111,39 @@ Transform Transform::GlobalTransform() const {
   return t;
 }
 
-void Transform::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartObject();
-    writer.String("location", strlen("location"));
-    location.WriteToJSON(writer);
-    writer.String("rotation", strlen("rotation"));
-    rotation.WriteToJSON(writer);
-    writer.String("scale", strlen("scale"));
-    scale.WriteToJSON(writer);
+void JSONImpl<Transform>::Write(const Transform &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
+    JSON::WritePair("location", value.Location(), writer);
+    JSON::WritePair("rotation", value.Rotation(), writer);
+    JSON::WritePair("scale", value.Scale(), writer);
 
-    writer.String("children", strlen("children"));
-    writer.StartArray();
-      for (auto &elem : children)
-        elem->WriteToJSON(writer);
-    writer.EndArray();
-  writer.EndObject();
+    JSON::Write<std::string>("children", writer);
+    auto a = JSON::ArrayEncloser{writer};
+      for (auto &elem : value)
+        JSON::Write(*elem, writer);
 }
 
-bool Transform::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
-  PARSE_CHECK(data.IsObject(), "Type 'Transform' must be an object")
+void JSONImpl<Transform>::Read(Transform &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Vec3"};
 
-  auto object = data.GetObject();
-  PARSE_CHECK(object.HasMember("location"), "'Transform' object must have member 'location'")
-  PARSE_CHECK(object.HasMember("rotation"), "'Transform' object must have member 'rotation'")
-  
-  bool res = true;
-  if (object.HasMember("scale"))
-    res = scale.ReadFromJSON(object["scale"]);
-  else
-    scale = Vec3::one;
+  const auto &object = JSON::GetObject(value, data);
+  JSON::GetMember(out.location, "location", object, data);
+  JSON::GetMember(out.rotation, "rotation", object, data);
+  JSON::TryGetMember(out.scale, "scale", object, Vec3::one, data);
 
-  if (object.HasMember("children")) {
-    const auto &childrenObj = object["children"];
-    PARSE_CHECK(childrenObj.IsArray(), "Member 'children' of 'Transform' must be of type array")
-    
-    const auto &childrenArr = childrenObj.GetArray();
+  auto childrenIt = object.FindMember("children");
+  if (childrenIt != object.MemberEnd()) {
+    JSON::ParseAssert(childrenIt->value.IsArray(), data, "Member 'children' of 'Transform' must be of type array");
+
+    const auto &childrenArr = childrenIt->value.GetArray();
     for (auto it = childrenArr.Begin(); it != childrenArr.End(); it++) {
-      PARSE_CHECK(it->IsString(), "Array members 'children' of 'Transform' must alternate between types string and another type")
-      auto str = it->GetString();
+      const auto type = JSON::Read<std::string>(*it, data);
 
-      PARSE_CHECK(++it != childrenArr.End(), "Array 'children' of 'Transform' must have data after each type string")
+      JSON::ParseAssert(++it != childrenArr.End(), data, "Array 'children' of 'Transform' must have data after each type string");
 
-      auto func = manager.Get(str);
-      ((NNode *)func(*it, manager))->transform.Parent(node);
+      auto func = data.typeManager->at(type);
+      reinterpret_cast<NNode *>(func(*it, data))->transform.Parent(out.node);
     }
   }
-
-  auto &loc = object["location"], &rot = object["rotation"];
-  return location.ReadFromJSON(loc)
-         && rotation.ReadFromJSON(rot)
-         && res;
 }
+

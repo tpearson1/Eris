@@ -28,7 +28,7 @@ SOFTWARE.
 #define _SCENE__MESH_RENDERER_H
 
 #include <functional>
-#include <core/mapping.h>
+#include <unordered_map>
 #include <base/mesh.h>
 #include <scene/node.h>
 #include <scene/camera.h>
@@ -51,7 +51,7 @@ class NMeshRenderer : public NNode {
 public:
   using PreRenderFunctionType = std::function<void(NMeshRenderer *)>;
 
-  static Mapping<std::string, PreRenderFunctionType> preRenderFunctions;
+  static std::unordered_map<std::string, PreRenderFunctionType> preRenderFunctions;
   PreRenderFunctionType preRenderFunction;
 
   MeshRenderer renderer;
@@ -65,14 +65,11 @@ public:
   NMeshRenderer(const RenderRequirements &r) {
     registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements = r);
   }
- 
-  NMeshRenderer(NMeshRenderer &mr) {
-    preRenderFunction = mr.preRenderFunction;
-    renderer = mr.renderer;
 
-    requirements = mr.requirements;
-    registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements);
-  }
+  NMeshRenderer &operator=(const NMeshRenderer &mr);
+
+  NMeshRenderer(const NMeshRenderer &mr)
+    { *this = mr; }
 
   ~NMeshRenderer() {
     Renderer::active->Unregister(registration);

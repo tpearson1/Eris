@@ -193,10 +193,6 @@ struct Vec2 {
 
   static Vec2 Reflect(Vec2 direction, Vec2 normal)
     { return direction - normal * 2 * Dot(direction, normal); }
-
-  void WriteToJSON(JSON::Writer &writer) const;
-
-  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, Vec2 v) {
@@ -322,10 +318,6 @@ struct Vec3 {
   // TODO
   // static Vec3 Reflect(Vec3 direction, Vec3 normal)
   //   {}
-
-  void WriteToJSON(JSON::Writer &writer) const;
-
-  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Vec3 &v) {
@@ -338,15 +330,29 @@ struct Vec4 {
 
   Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
   Vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
-
-  void WriteToJSON(JSON::Writer &writer) const;
-
-  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Vec4 &v) {
   os << v.x << ',' << v.y << ',' << v.z << ',' << v.w;
   return os;
 }
+
+template <>
+struct JSONImpl<Vec2> {
+  static void Read(Vec2 &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Vec2 &value, JSON::Writer &writer);
+};
+
+template <>
+struct JSONImpl<Vec3> {
+  static void Read(Vec3 &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Vec3 &value, JSON::Writer &writer);
+};
+
+template <>
+struct JSONImpl<Vec4> {
+  static void Read(Vec4 &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Vec4 &value, JSON::Writer &writer);
+};
 
 #endif // _MATH__VEC_H

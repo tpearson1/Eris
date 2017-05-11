@@ -47,15 +47,15 @@ void CanvasItem::WriteToJSON(JSON::Writer &writer) {
 }
 
 bool CanvasItem::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsObject(), "Type 'CanvasItem' must be an object")
+  JSON::ParseAssert(data.IsObject(), "Type 'CanvasItem' must be an object")
   auto object = data.GetObject();
 
-  PARSE_CHECK(object.HasMember("visible"), "'CanvasItem' object must have member 'visible'")
+  JSON::ParseAssert(object.HasMember("visible"), "'CanvasItem' object must have member 'visible'")
   auto &visVal = object["visible"];
-  PARSE_CHECK(visVal.IsBool(), "Member 'visible' in 'CanvasItem' object must be of type bool")
+  JSON::ParseAssert(visVal.IsBool(), "Member 'visible' in 'CanvasItem' object must be of type bool")
   visible = visVal.GetBool();
 
-  PARSE_CHECK(object.HasMember("transform"), "'CanvasItem' object must have member 'transform'")
+  JSON::ParseAssert(object.HasMember("transform"), "'CanvasItem' object must have member 'transform'")
   transform.node = this;
   return transform.ReadFromJSON(object["transform"]);
 }

@@ -51,88 +51,45 @@ Mat4 NCamera::ViewMatrix() const {
   return Mat4::LookAt(loc, loc + rot * Vec3::front, rot * Vec3(0.0f, 1.0f, 0.0f));
 }
 
-void NCamera::WriteToJSON(JSON::Writer &writer) const {
-  writer.String("NCamera", strlen("NCamera"));
-  writer.StartObject();
-    NNode::WriteToJSON(writer);
+void JSONImpl<NCamera>::Write(const NCamera &value, JSON::Writer &writer) {
+  JSON::WriteObject("NCamera", writer, [&value, &writer]() {
+    JSON::Write(static_cast<const NNode &>(value), writer);
 
-    writer.String("active", strlen("active"));
-    writer.Bool(active == this);
+    JSON::WritePair("active", NCamera::active == &value, writer);
 
-    writer.String("perspective", strlen("perspective"));
-    if (perspective) {
-      writer.Bool(true);
-
-      writer.String("fov", strlen("fov"));
-      writer.Double(static_cast<double>(fov));
-    }
+    JSON::WritePair("perspective", value.perspective, writer);
+    if (value.perspective)
+      JSON::WritePair("fov", value.fov, writer);
     else {
-      writer.Bool(false);
-
-      writer.String("min-zoom", strlen("min-zoom"));
-      writer.Double(static_cast<double>(minZoom));
-      writer.String("max-zoom", strlen("max-zoom"));
-      writer.Double(static_cast<double>(maxZoom));
-      writer.String("zoom", strlen("zoom"));
-      writer.Double(static_cast<double>(currentZoom));
+      JSON::WritePair("min-zoom", value.MinZoom(), writer);
+      JSON::WritePair("max-zoom", value.MaxZoom(), writer);
+      JSON::WritePair("zoom", value.Zoom(), writer);
     }
 
-    writer.String("near", strlen("near"));
-    writer.Double(static_cast<double>(near));
-    writer.String("far", strlen("far"));
-    writer.Double(static_cast<double>(far));
-  writer.EndObject();
+    JSON::WritePair("near", value.near, writer);
+    JSON::WritePair("far", value.far, writer);
+  });
 }
 
-bool NCamera::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
-  PARSE_CHECK(data.IsObject(), "Type 'NCamera' must be an object")
-  auto object = data.GetObject();
+void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "NCamera"};
 
-  PARSE_CHECK(object.HasMember("near"), "'NCamera' object must have member 'near'")
-  auto &nearVal = object["near"];
-  PARSE_CHECK(nearVal.IsNumber(), "Member 'near' of 'NCamera' must be of type float")
-  near = nearVal.GetFloat();
+  const auto &object = JSON::GetObject(value, data);
+  JSON::GetMember(out.near, "near", object, data);
+  JSON::GetMember(out.far, "far", object, data);
+  JSON::GetMember(out.perspective, "perspective", object, data);
 
-  PARSE_CHECK(object.HasMember("far"), "'NCamera' object must have member 'far'")
-  auto &farVal = object["far"];
-  PARSE_CHECK(farVal.IsNumber(), "Member 'far' of 'NCamera' must be of type float")
-  far = farVal.GetFloat();
-
-  PARSE_CHECK(object.HasMember("perspective"), "'NCamera' object must have member 'perspective'")
-  auto &perspVal = object["perspective"];
-  PARSE_CHECK(perspVal.IsBool(), "Member 'perspective' of 'NCamera' must be of type bool")
-  perspective = perspVal.GetBool();
-
-  if (perspective) {
-    PARSE_CHECK(object.HasMember("fov"), "Because the 'NCamera' object has member 'perspective' set to true, it must have member 'fov'")
-    auto &fovVal = object["fov"];
-    PARSE_CHECK(fovVal.IsNumber(), "Member 'fov' of 'NCamera' must be of type float")
-    fov = fovVal.GetFloat();
-  }
+  if (out.perspective)
+    JSON::GetMember(out.fov, "fov", object, data);
   else {
-    PARSE_CHECK(object.HasMember("min-zoom"), "Because the 'NCamera' object has member 'perspective' set to false, it must have member 'min-zoom'")
-    auto &minZoomVal = object["min-zoom"];
-    PARSE_CHECK(minZoomVal.IsNumber(), "Member 'min-zoom' of 'NCamera' must be of type float")
-    minZoom = minZoomVal.GetFloat();
-
-    PARSE_CHECK(object.HasMember("max-zoom"), "Because the 'NCamera' object has member 'perspective' set to false, it must have member 'max-zoom'")
-    auto &maxZoomVal = object["max-zoom"];
-    PARSE_CHECK(maxZoomVal.IsNumber(), "Member 'max-zoom' of 'NCamera' must be of type float")
-    maxZoom = maxZoomVal.GetFloat();
-
-    PARSE_CHECK(object.HasMember("zoom"), "Because the 'NCamera' object has member 'perspective' set to false, it must have member 'zoom'")
-    auto &zoomVal = object["zoom"];
-    PARSE_CHECK(zoomVal.IsNumber(), "Member 'zoom' of 'NCamera' must be of type float")
-    currentZoom = zoomVal.GetFloat();
+    JSON::GetMember(out.minZoom, "min-zoom", object, data);
+    JSON::GetMember(out.maxZoom, "max-zoom", object, data);
+    JSON::GetMember(out.currentZoom, "zoom", object, data);
   }
 
-  if (object.HasMember("active")) {
-    auto &activeVal = object["active"];
-    PARSE_CHECK(activeVal.IsBool(), "Member 'active' of 'NCamera' must be of type bool")
-    if (activeVal.GetBool())
-      active = this;
-  }
+  auto isActive = JSON::TryGetMember<bool>("active", object, false, data);
+  if (isActive)
+    NCamera::active = &out;
 
-  PARSE_CHECK(object.HasMember("NNode"), "'NCamera' object must have member 'NNode'")
-  return NNode::ReadFromJSON(object["NNode"], manager);
+  JSON::GetMember<NNode>(out, "NNode", object, data);
 }

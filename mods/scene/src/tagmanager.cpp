@@ -28,27 +28,22 @@ SOFTWARE.
 
 Ref<TagManager> TagManager::active;
 
-JSON::ReadWrite *TagRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
-  CHECK_RETURN(val.IsArray(), "'Tagged' object must be an array", nullptr)
-  const auto &array = val.GetArray();
+void *TaggedTypeRegistration(const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "TaggedTypeRegistration"};
+  const auto &array = JSON::GetArray(value, data);
 
-  CHECK_RETURN(array.Size() == 3, "'Tagged' object's array must be of size 3", nullptr)
-  CHECK_RETURN(array[0].IsObject(), "The first element in a 'Tagged' object's array must be of type object", nullptr)
-  CHECK_RETURN(array[1].IsString(), "The second element in a 'Tagged' object's array must be of type string", nullptr)
+  JSON::ParseAssert(array.Size() == 3, data, "'Tagged' object's array must be of size 3");
+  JSON::ParseAssert(array[1].IsString(), data, "The second element in a 'Tagged' object's array must be of type string");
 
-  const auto &tagData = array[0].GetObject();
-  const auto &typeString = array[1].GetString();
+  const auto &tagData = JSON::GetObject(array[0], data);
+  const auto typeString = JSON::Read<std::string>(array[1], data);
 
-  CHECK_RETURN(tagData.HasMember("tag"), "The first object in a 'Tagged' object's array must have member 'tag'", nullptr)
-  const auto &tag = tagData["tag"];
-  CHECK_RETURN(tag.IsString(), "The 'Tagged' object's 'tag' member must be of type string", nullptr)
+  const auto tag = JSON::GetMember<std::string>("tag", tagData, data);
 
-  auto *object = manager.Get(typeString)(array[2], manager);
+  void *object = data.typeManager->at(typeString)(array[2], data);
 
-  if (TagManager::active)
-    TagManager::active->Register(tag.GetString(), object);
-  else
-    ERROR("In order to load a 'Tagged' object, there should be an active TagManager object")
+  JSON::ParseAssert(TagManager::active, data, "In order to load a 'Tagged' object, there should be an active TagManager object");
+  TagManager::active->map[tag] = object;
 
   return object;
 }

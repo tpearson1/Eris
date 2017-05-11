@@ -158,33 +158,25 @@ Vec3 Quat::operator*(const Vec3 &r) const {
               (xz2 - wy2) * r.x + (yz2 + wx2) * r.y + (1.0f - (xx2 + yy2)) * r.z);
 }
 
-void Quat::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartArray();
-    writer.Double(static_cast<double>(x));
-    writer.Double(static_cast<double>(y));
-    writer.Double(static_cast<double>(z));
-    writer.Double(static_cast<double>(w));
-  writer.EndArray();
+void JSONImpl<Quat>::Write(const Quat &value, JSON::Writer &writer) {
+  auto a = JSON::ArrayEncloser{writer};
+  JSON::Write(value.x, writer);
+  JSON::Write(value.y, writer);
+  JSON::Write(value.z, writer);
+  JSON::Write(value.w, writer);
 }
 
-bool Quat::ReadFromJSON(const rapidjson::Value &data) {
-  PARSE_CHECK(data.IsArray(), "Type 'Quat' must be an array")
-  auto arr = data.GetArray();
+void JSONImpl<Quat>::Read(Quat &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Quat"};
 
+  const auto &arr = JSON::GetArray(value, data);
   for (auto &elem : arr)
-    PARSE_CHECK(elem.IsNumber(), "Quat's array must contain float values")
+    JSON::ParseAssert(elem.IsNumber(), data, "Quat's array must contain float values");
 
-
-  if (arr.Size() == 4) {
-    x = arr[0].GetFloat();
-    y = arr[1].GetFloat();
-    z = arr[2].GetFloat();
-    w = arr[3].GetFloat();
-  }
+  if (arr.Size() == 4)
+    out = Quat(arr[0].GetFloat(), arr[1].GetFloat(), arr[2].GetFloat(), arr[3].GetFloat());
   else if (arr.Size() == 3)
-    SetDeg(arr[0].GetFloat(), arr[1].GetFloat(), arr[2].GetFloat());
+    out = Quat({arr[0].GetFloat(), arr[1].GetFloat(), arr[2].GetFloat()});
   else
-    PARSE_ERROR("Quat's array must have either 3 or 4 elements")
-
-  return true;
+    JSON::ParseError(data, "Quat's array must have either 3 or 4 elements");
 }

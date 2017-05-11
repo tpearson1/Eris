@@ -102,7 +102,7 @@ public:
     return *this;
   }
 
-  explicit operator bool() const { return Valid(); }
+  operator bool() const { return Valid(); }
 
   operator Ref<const T>() { return Ref<const T>(stub); }
 
@@ -138,12 +138,6 @@ public:
       delete stub;
   }
 
-  void WriteToJSON(JSON::Writer &writer) const
-    { stub->data.WriteToJSON(writer); }
-
-  bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager)
-    { return stub->data.ReadFromJSON(data, manager); }
-
   template <typename Data>
   void Load(const Data &value) {
     if (!stub)
@@ -165,5 +159,16 @@ inline std::ostream &operator<<(std::ostream &os, Ref<T> &ref) {
 }
 
 void RunRefTests();
+
+template <typename T>
+struct JSONImpl<Ref<T>> {
+  static void Read(Ref<T> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "Ref"};
+    JSON::Read<T>(*out, value, data);
+  }
+
+  static void Write(const Ref<T> &value, JSON::Writer &writer)
+    { JSON::Write(*value, writer); }
+};
 
 #endif // _CORE__REF_H

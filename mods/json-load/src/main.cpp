@@ -44,7 +44,7 @@ public:
   MyGame();
   void Tick(float delta) override {
     glClearColor(0.1f, 0.6f, 0.9f, 1.0f);
-    scene.Render();  
+    scene.Render();
 
     pointLight->transform.Location(3.0f * sinf(GetElapsedTime()), 1.0f, 3.0f);
 
@@ -104,9 +104,10 @@ MyGame::MyGame() {
 
   TagManager::active = Ref<TagManager>::Create();
   Resources::active = Ref<Resources>::Create();
-  
-  JSON::TypeManager manager;
-  RegisterSceneTypeAssociations(manager);
+
+  auto typeManager = std::make_shared<JSON::TypeManager>();
+  JSON::ReadData readData{typeManager};
+  RegisterSceneTypeAssociations(*typeManager);
 
   scene.SetActive();
 
@@ -125,16 +126,18 @@ MyGame::MyGame() {
   phongSetter.specular = Vec3::one * 0.6f;
   phongSetter.shininess = 32.0f;
 
-  NMeshRenderer::preRenderFunctions.Register("Test", phongSetter); 
+  NMeshRenderer::preRenderFunctions["Test"] = phongSetter;
 
-  auto shaders = JSON::GetDocumentFromFile("mods/json-load/res/shaders.json");
-  Resources::active->shaders.ReadFromJSON(shaders, manager);
+  JSON::Document shaders, textures, sceneDoc;
 
-  auto textures = JSON::GetDocumentFromFile("mods/json-load/res/textures.json");
-  Resources::active->textures.ReadFromJSON(textures, manager);
+  JSON::GetDataFromFile(shaders, "mods/json-load/res/shaders.json");
+  JSON::Read(Resources::active->shaders, shaders, readData);
 
-  auto document = JSON::GetDocumentFromFile("mods/json-load/res/scene.json");
-  scene.ReadFromJSON(document, manager);
+  JSON::GetDataFromFile(textures, "mods/json-load/res/textures.json");
+  JSON::Read(Resources::active->textures, textures, readData);
+
+  JSON::GetDataFromFile(sceneDoc, "mods/json-load/res/scene.json");
+  JSON::Read(scene, sceneDoc, readData);
 
   tagged = TagManager::active->Get<NNode>("model");
   shape = TagManager::active->Get<NNode>("shape");

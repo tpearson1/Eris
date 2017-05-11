@@ -24,37 +24,18 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__TAG_MANAGER_H
-#define _SCENE__TAG_MANAGER_H
+#include <trace.h>
+#include <iostream>
 
-#include <string>
-#include <core/ref.h>
-#include <core/readwrite.h>
+void Trace::Unwind(const std::string &error) {
+  std::cerr << "JSON: Error: " << error << '\n';
+  if (trace.size() == 0)
+    return;
+  std::cerr << "In: " << trace.top() << '\n';
+  trace.pop();
+  for (auto i = trace.size(); i > 0; i--) {
+    std::cerr << "  called by: " << trace.top() << '\n';
+    trace.pop();
+  }
+}
 
-class TagManager {
-public:
-  std::unordered_map<std::string, void *> map;
-
-  template <typename T>
-  T *Get(const std::string &key) const
-    { return (T *)map.at(key); }
-
-  static Ref<TagManager> active;
-};
-
-/*
- * Function that can be registered for the ability to use the tag system in scene loading.
- * An example of a tagged object would be:
- *
- * [
- *   "Tagged",
- *   [
- *     { "tag": "player" },
- *     "NPlayer",
- *     { ... }
- *   ]
- * ]
- */
-void *TaggedTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
-
-#endif // _SCENE__TAG_MANAGER_H

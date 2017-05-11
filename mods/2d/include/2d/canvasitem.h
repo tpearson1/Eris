@@ -52,9 +52,6 @@ public:
     { RecursiveDestroy(this); }
 
   RectTransform transform;
-
-  virtual void WriteToJSON(JSON::Writer &writer) override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data) override;
 };
 
 #endif // _2D__CANVAS_ITEM_H

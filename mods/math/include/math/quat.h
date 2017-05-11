@@ -87,15 +87,17 @@ struct Quat {
     *this = *this * r;
     return *this;
   }
-
-  void WriteToJSON(JSON::Writer &writer) const;
-
-  bool ReadFromJSON(const rapidjson::Value &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, Quat q) {
   os << q.x << ',' << q.y << ',' << q.z << ',' << q.w;
   return os;
 }
+
+template <>
+struct JSONImpl<Quat> {
+  static void Read(Quat &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Quat &value, JSON::Writer &writer);
+};
 
 #endif // _MATH__QUAT_H

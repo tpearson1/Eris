@@ -35,40 +35,20 @@ SOFTWARE.
 const Shader *Shader::current;
 std::string Shader::openGLVersion = "330 core";
 
-void Shader::Settings::WriteToJSON(JSON::Writer &writer) const {
-  writer.StartObject();
-
-  writer.String("vertex", strlen("vertex"));
-  writer.String(vertexFilePath.c_str(), vertexFilePath.size());
-
-  writer.String("fragment", strlen("fragment"));
-  writer.String(fragmentFilePath.c_str(), fragmentFilePath.size());
-
-  writer.String("definitions", strlen("definitions"));
-  definitions.WriteToJSON(writer); 
-
-  writer.EndObject();
+void JSONImpl<Shader::Settings>::Write(const Shader::Settings &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::WritePair("vertex", value.vertexFilePath, writer);
+  JSON::WritePair("vertex", value.fragmentFilePath, writer);
+  JSON::WritePair("definitions", value.definitions, writer);
 }
 
-bool Shader::Settings::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
-  PARSE_CHECK(data.IsObject(), "Shader must be an object")
-  const auto &object = data.GetObject();
-  
-  PARSE_CHECK(object.HasMember("vertex"), "Shader must have member 'vertex'")
-  const auto &vertex = object["vertex"];
-  PARSE_CHECK(vertex.IsString(), "Member 'vertex' of object shader must be of type string")
+void JSONImpl<Shader::Settings>::Read(Shader::Settings &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Shader::Settings"};
+  const auto &object = JSON::GetObject(value, data);
 
-  PARSE_CHECK(object.HasMember("fragment"), "Shader must have member 'fragment'")
-  const auto &fragment = object["fragment"];
-  PARSE_CHECK(fragment.IsString(), "Member 'fragment' of object shader must be of type string")
-
-  vertexFilePath = vertex.GetString();
-  fragmentFilePath = fragment.GetString();
-
-  if (object.HasMember("definitions"))
-    return definitions.ReadFromJSON(object["definitions"], manager);
-
-  return true;
+  JSON::GetMember(out.vertexFilePath, "vertex", object, data);
+  JSON::GetMember(out.fragmentFilePath, "fragment", object, data);
+  JSON::TryGetMember(out.definitions, "definitions", object, {}, data);
 }
 
 static void CompileShader(GLuint shaderID, const std::string &source) {
@@ -112,7 +92,7 @@ bool Shader::Load(const Settings &settings) {
 
   std::string defs;
   for (auto &definition : settings.definitions)
-    defs += "#define " + std::get<0>(definition) + ' ' + std::get<1>(definition) + '\n'; 
+    defs += "#define " + definition.first + ' ' + definition.second + '\n';
 
   vertexShaderCode = versionText + defs + vertexShaderCode;
   fragmentShaderCode = versionText + defs + fragmentShaderCode;

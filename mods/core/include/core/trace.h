@@ -24,37 +24,40 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__TAG_MANAGER_H
-#define _SCENE__TAG_MANAGER_H
+#ifndef _CORE__TRACE_H
+#define _CORE__TRACE_H
 
+#include <stack>
 #include <string>
-#include <core/ref.h>
-#include <core/readwrite.h>
 
-class TagManager {
+class Trace {
+  std::stack<std::string> trace;
+
 public:
-  std::unordered_map<std::string, void *> map;
+  void Push(const std::string &funcName)
+    { trace.push(funcName); }
 
-  template <typename T>
-  T *Get(const std::string &key) const
-    { return (T *)map.at(key); }
+  void Pop()
+    { trace.pop(); }
 
-  static Ref<TagManager> active;
+  /*
+   * Display the stack trace. The trace is empty once executed
+   */
+  void Unwind(const std::string &error);
+
+  /*
+   * Helper using RAII to always pop the trace when needed
+   */
+  class Pusher {
+    Trace &trace;
+
+  public:
+    Pusher(Trace &t, const std::string &funcName) : trace(t)
+      { trace.Push(funcName); }
+    ~Pusher()
+      { trace.Pop(); }
+  };
 };
 
-/*
- * Function that can be registered for the ability to use the tag system in scene loading.
- * An example of a tagged object would be:
- *
- * [
- *   "Tagged",
- *   [
- *     { "tag": "player" },
- *     "NPlayer",
- *     { ... }
- *   ]
- * ]
- */
-void *TaggedTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
+#endif // _CORE__TRACE_H
 
-#endif // _SCENE__TAG_MANAGER_H

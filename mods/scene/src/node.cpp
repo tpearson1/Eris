@@ -35,30 +35,23 @@ void NNode::RecursiveDestroy(NNode *n) {
   delete n;
 }
 
-void NNode::WriteToJSON(JSON::Writer &writer) const {
-  writer.String("NNode", strlen("NNode"));
-  writer.StartObject();
-    writer.String("visible", strlen("visible"));
-    writer.Bool(visible);
-
-    writer.String("transform", strlen("transform"));
-    transform.WriteToJSON(writer);
-  writer.EndObject();
+void JSONImpl<NNode>::Write(const NNode &value, JSON::Writer &writer) {
+  JSON::WriteObject("NNode", writer, [&value, &writer]() {
+    JSON::WritePair("visible", value.visible, writer);
+    JSON::WritePair("transform", value.transform, writer);
+  });
 }
 
-bool NNode::ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) {
-  PARSE_CHECK(data.IsObject(), "Type 'NNode' must be an object")
-  auto object = data.GetObject();
+void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "NNode"};
 
-  if (object.HasMember("visible")) {
-    auto &visVal = object["visible"];
-    PARSE_CHECK(visVal.IsBool(), "Member 'visible' in 'NNode' object must be of type bool")
-    visible = visVal.GetBool();
-  }
-  else
-    visible = true;
-  
-  PARSE_CHECK(object.HasMember("transform"), "'NNode' object must have member 'transform'")
-  transform.node = this;
-  return transform.ReadFromJSON(object["transform"], manager);
+  const auto &object = JSON::GetObject(value, data);
+
+  JSON::TryGetMember(out.visible, "visible", object, true, data);
+
+  auto transformIt = object.FindMember("transform");
+  JSON::ParseAssert(transformIt != object.MemberEnd(), data, "'NNode' object must have member 'transform'");
+  out.SetTransformNodeMember();
+
+  JSON::Read(out.transform, transformIt->value, data);
 }

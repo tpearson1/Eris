@@ -33,7 +33,7 @@ SOFTWARE.
 #include <base/window.h>
 #include <unordered_map>
 
-class Scene : public JSON::ReadWrite {
+class Scene {
   Ref<Renderer> renderer;
 
 public:
@@ -46,19 +46,22 @@ public:
   }
 
   void Render() {
-    renderer->Render(); 
+    renderer->Render();
   }
 
   NNode root;
+};
 
-  virtual void WriteToJSON(JSON::Writer &writer) const override;
-  virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
+template <>
+struct JSONImpl<Scene> {
+  static void Read(Scene &out, const JSON::Value &value, const JSON::ReadData &data);
 };
 
 template <typename T>
-JSON::ReadWrite *DefaultTypeRegistration(const rapidjson::Value &val, JSON::TypeManager &manager) {
+void *DefaultNodeTypeRegistration(const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "DefaultNodeTypeRegistration"};
   auto *obj = new T;
-  obj->ReadFromJSON(val, manager);
+  JSON::Read<T>(*obj, value, data);
   return obj;
 }
 

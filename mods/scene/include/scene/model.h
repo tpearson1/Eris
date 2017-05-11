@@ -51,7 +51,7 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRen
  *   }
  * ]
  */
-NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
+NNode *ModelTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
 
 /*
  * Function that can be registered for the ability to load single meshes as shown below:
@@ -65,6 +65,6 @@ NNode *ModelRegistration(const rapidjson::Value &val, JSON::TypeManager &manager
  *   }
  * ]
  */
-NMeshRenderer *MeshRendererRegistration(const rapidjson::Value &val, JSON::TypeManager &manager);
+NMeshRenderer *MeshRendererTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
 
 #endif // _BASE__MODEL_H

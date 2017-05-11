@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef _BASE__SHADER_H
 #define _BASE__SHADER_H
 
-#include <core/mapping.h>
+#include <unordered_map>
 #include <math/vec.h>
 #include <math/mat.h>
 #include <base/gl.h>
@@ -48,15 +48,11 @@ class Shader {
   static const Shader *current;
 
 public:
-  using Definitions = SerializableMapping<std::string>;
+  using Definitions = std::unordered_map<std::string, std::string>;
 
-  struct Settings : public JSON::ReadWrite {
+  struct Settings {
     std::string vertexFilePath, fragmentFilePath;
-    Shader::Definitions definitions; 
-
-    virtual void WriteToJSON(JSON::Writer &writer) const override;
-
-    virtual bool ReadFromJSON(const rapidjson::Value &data, JSON::TypeManager &manager) override;
+    Shader::Definitions definitions;
   };
 
   static std::string openGLVersion;
@@ -153,6 +149,12 @@ public:
     { glUniformMatrix3x4fv(location, count, transpose, &v[0][0]); }
   static void SetUniformMatrix4x3(GLint location, GLsizei count, GLboolean transpose, Mat4x3 v)
     { glUniformMatrix4x3fv(location, count, transpose, &v[0][0]); }
+};
+
+template <>
+struct JSONImpl<Shader::Settings> {
+  static void Read(Shader::Settings &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Shader::Settings &value, JSON::Writer &writer);
 };
 
 #endif // _BASE__SHADER_H
