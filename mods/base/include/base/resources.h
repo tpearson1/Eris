@@ -27,16 +27,16 @@ SOFTWARE.
 #ifndef _BASE__RESOURCES_H
 #define _BASE__RESOURCES_H
 
-#include <core/ref.h>
+#include <memory>
 #include <base/texture.h>
 #include <base/shader.h>
 #include <core/mapping.h>
 
 struct Resources {
-  JSONDeferredReadMapping<Ref<Texture>, TextureSettings> textures;
-  JSONDeferredReadMapping<Ref<Shader>, Shader::Settings> shaders;
+  JSONDeferredReadMapping<std::shared_ptr<Texture>, TextureSettings> textures;
+  JSONDeferredReadMapping<std::shared_ptr<Shader>, Shader::Settings> shaders;
 
-  static Ref<Resources> active;
+  static Resources *active;
 };
 
 #endif // _BASE__RESOURCES_H

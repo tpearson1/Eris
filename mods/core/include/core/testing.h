@@ -37,3 +37,4 @@ SOFTWARE.
 }
 
 #endif // _CORE__TESTING_H
+

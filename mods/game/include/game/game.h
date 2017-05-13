@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef _GAME__GAME_H
 #define _GAME__GAME_H
 
-#include <core/ref.h>
+#include <memory>
 #include <base/window.h>
 
 class NNode;
@@ -59,7 +59,7 @@ public:
 
   float GetElapsedTime() { return elapsedTime; }
 
-  Ref<Window> window;
+  std::unique_ptr<Window> window;
 };
 
 #endif // _GAME__GAME_H

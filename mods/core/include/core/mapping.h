@@ -28,7 +28,34 @@ SOFTWARE.
 #define _CORE__MAPPING_H
 
 #include <unordered_map>
-#include <core/ref.h>
+
+/*
+ * Helper class to call Load correctly on a value type which may be a smart pointer
+ */
+template <typename Value, typename Data>
+struct LoadCallHelper {
+  // Nothing special - base case
+  static void Load(Value &value, const Data &data)
+    { value.Load(data); }
+};
+
+template <typename ValueObj, typename Data>
+struct LoadCallHelper<std::shared_ptr<ValueObj>, Data> {
+  // Shared pointer
+  static void Load(std::shared_ptr<ValueObj> &value, const Data &data) {
+    value = std::make_shared<ValueObj>();
+    value->Load(data);
+  }
+};
+
+template <typename ValueObj, typename Data>
+struct LoadCallHelper<std::unique_ptr<ValueObj>, Data> {
+  // Unique pointer
+  static void Load(std::unique_ptr<ValueObj> &value, const Data &data) {
+    value = std::make_unique<ValueObj>();
+    value->Load(data);
+  }
+};
 
 template <typename Value, typename Data, typename Hash = std::hash<std::string>>
 class JSONDeferredReadMapping {
@@ -49,7 +76,8 @@ public:
     auto dataIt = notLoaded.find(key);
     // We assume that dataIt is a valid iterator
     Value val;
-    val.Load(dataIt->second);
+    // Value type may be a smart pointer. This helper class handles that correctly
+    LoadCallHelper<Value, Data>::Load(val, dataIt->second);
 
     notLoaded.erase(dataIt);
     values[key] = val;

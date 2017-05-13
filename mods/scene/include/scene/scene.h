@@ -34,15 +34,13 @@ SOFTWARE.
 #include <unordered_map>
 
 class Scene {
-  Ref<Renderer> renderer;
+  std::unique_ptr<Renderer> renderer;
 
 public:
-  Scene() {
-    renderer = Ref<Renderer>::Create();
-  }
+  Scene() : renderer(std::make_unique<Renderer>()) {}
 
   void SetActive() {
-    Renderer::active = renderer;
+    Renderer::active = renderer.get();
   }
 
   void Render() {

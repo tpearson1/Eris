@@ -29,8 +29,8 @@ SOFTWARE.
 
 #include <tuple>
 #include <list>
+#include <memory>
 #include <functional>
-#include <core/ref.h>
 #include <scene/renderrequirements.h>
 
 class Renderable;
@@ -38,12 +38,12 @@ class Renderable;
 using RenderTuple = std::tuple<std::function<void()>, Renderable *>;
 
 struct RenderItem2 {
-  Ref<Texture> same;
+  std::shared_ptr<Texture> same;
   std::list<RenderTuple> items;
 };
 
 struct RenderItem {
-  Ref<Shader> same;
+  std::shared_ptr<Shader> same;
   std::list<RenderItem2> items;
 };
 
@@ -64,7 +64,7 @@ class Renderer {
   std::list<RenderItem> renderOrder;
 
 public:
-  static Ref<Renderer> active;
+  static Renderer *active;
 
   // A single class instance SHOULD NOT register two functions with the same requirements!
   RenderRegistration Register(std::function<void()> func, Renderable *renderable, const RenderRequirements &r);

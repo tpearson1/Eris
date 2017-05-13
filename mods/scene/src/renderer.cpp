@@ -30,7 +30,7 @@ SOFTWARE.
 #include <base/texture.h>
 #include <renderable.h>
 
-Ref<Renderer> Renderer::active;
+Renderer *Renderer::active = nullptr;
 
 RenderRegistration Renderer::Register(std::function<void()> func, Renderable *renderable, const RenderRequirements &r) {
   for (auto shaderIt = renderOrder.begin(); shaderIt != renderOrder.end(); shaderIt++) {
@@ -60,10 +60,10 @@ RenderRegistration Renderer::Register(std::function<void()> func, Renderable *re
   RenderItem2 st;
   st.same = r.texture;
   st.items.push_front({func, renderable});
-  auto renderTuple = st.items.begin(); 
+  auto renderTuple = st.items.begin();
 
   s.items.push_front(st);
-  auto textureIt = s.items.begin(); 
+  auto textureIt = s.items.begin();
 
   renderOrder.push_front(s);
   return {renderOrder.begin(), textureIt, renderTuple};

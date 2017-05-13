@@ -32,7 +32,7 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/meshrenderer.h>
 
-Ref<Mesh> LoadMesh(const std::string &path);
+std::shared_ptr<Mesh> LoadMesh(const std::string &path);
 
 NMeshRenderer *LoadMeshRenderer(const std::string &path, const RenderRequirements &rr);
 

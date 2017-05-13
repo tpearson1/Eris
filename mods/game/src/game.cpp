@@ -31,7 +31,7 @@ SOFTWARE.
 #include <scene/node.h>
 
 Game::Game() {
-  window = Ref<Window>::Create();
+  window = std::make_unique<Window>();
 
   Input::Setup();
 

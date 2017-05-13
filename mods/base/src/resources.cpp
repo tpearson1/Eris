@@ -26,4 +26,4 @@ SOFTWARE.
 
 #include <resources.h>
 
-Ref<Resources> Resources::active;
+Resources *Resources::active = nullptr;

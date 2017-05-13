@@ -27,7 +27,7 @@ SOFTWARE.
 #include <tagmanager.h>
 #include <iostream>
 
-Ref<TagManager> TagManager::active;
+TagManager *TagManager::active = nullptr;
 
 void *TaggedTypeRegistration(const JSON::Value &value, const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "TaggedTypeRegistration"};

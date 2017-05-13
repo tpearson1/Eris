@@ -28,7 +28,7 @@ SOFTWARE.
 #define _SCENE__TAG_MANAGER_H
 
 #include <string>
-#include <core/ref.h>
+#include <memory>
 #include <core/readwrite.h>
 
 class TagManager {
@@ -39,7 +39,7 @@ public:
   T *Get(const std::string &key) const
     { return (T *)map.at(key); }
 
-  static Ref<TagManager> active;
+  static TagManager *active;
 };
 
 /*

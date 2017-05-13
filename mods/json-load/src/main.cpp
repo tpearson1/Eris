@@ -101,8 +101,10 @@ MyGame::MyGame() {
 
   Input::GetMousePosition(startDragX, startDragY);
 
-  TagManager::active = Ref<TagManager>::Create();
-  Resources::active = Ref<Resources>::Create();
+  auto tm = std::make_unique<TagManager>();
+  TagManager::active = tm.get();
+  auto resources = std::make_unique<Resources>();
+  Resources::active = resources.get();
 
   auto typeManager = std::make_shared<JSON::TypeManager>();
   JSON::ReadData readData{typeManager};

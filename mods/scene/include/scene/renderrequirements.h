@@ -27,16 +27,16 @@ SOFTWARE.
 #ifndef _SCENE__RENDER_REQUIREMENTS_H
 #define _SCENE__RENDER_REQUIREMENTS_H
 
-#include <core/ref.h>
+#include <memory>
 #include <base/shader.h>
 #include <base/texture.h>
 
 struct RenderRequirements {
-  Ref<Shader> shader;
-  Ref<Texture> texture;
+  std::shared_ptr<Shader> shader;
+  std::shared_ptr<Texture> texture;
 
   RenderRequirements() {}
-  RenderRequirements(Ref<Shader> s, Ref<Texture> t) : shader(s), texture(t) {}
+  RenderRequirements(const std::shared_ptr<Shader> &s, const std::shared_ptr<Texture> &t) : shader(s), texture(t) {}
 
   bool operator==(const RenderRequirements &r) const
     { return shader == r.shader && texture == r.texture; }

@@ -85,7 +85,7 @@ public:
 
   auto RegisterResizeCallback(ResizeCallback callback)
     { resizeCallbacks.push_front(callback); return resizeCallbacks.begin(); }
-  
+
   void UnregisterResizeCallback(std::list<ResizeCallback>::iterator it)
     { resizeCallbacks.erase(it); }
 };
