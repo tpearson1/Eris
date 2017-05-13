@@ -28,7 +28,7 @@ SOFTWARE.
 #include <scene/meshrenderer.h>
 
 void PhongShaderUniformSetter::operator()(NMeshRenderer *nmr) const {
-  lightingStatus->lightManager->SetUniformsForClosestLights(
+  LightManager::active->SetUniformsForClosestLights(
     nmr->transform.Location(),
     lightingStatus->maxDirectionalLights,
     lightingStatus->maxPointLights

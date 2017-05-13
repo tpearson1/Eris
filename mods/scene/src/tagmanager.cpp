@@ -25,6 +25,7 @@ SOFTWARE.
 */
 
 #include <tagmanager.h>
+#include <iostream>
 
 Ref<TagManager> TagManager::active;
 
@@ -40,7 +41,13 @@ void *TaggedTypeRegistration(const JSON::Value &value, const JSON::ReadData &dat
 
   const auto tag = JSON::GetMember<std::string>("tag", tagData, data);
 
-  void *object = data.typeManager->at(typeString)(array[2], data);
+  auto it = data.typeManager->find(typeString);
+  if (it == std::end(*data.typeManager)) {
+    std::cerr << "Tagged type '" << typeString << "' has not been registered\n";
+    return nullptr;
+  }
+
+  void *object = it->second(array[2], data);
 
   JSON::ParseAssert(TagManager::active, data, "In order to load a 'Tagged' object, there should be an active TagManager object");
   TagManager::active->map[tag] = object;

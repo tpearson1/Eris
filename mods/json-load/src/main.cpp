@@ -37,7 +37,7 @@ SOFTWARE.
 class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
-  PointLight *pointLight;
+  NPointLight *pointLight;
   PhongShaderUniformSetter phongSetter;
 
 public:
@@ -87,7 +87,6 @@ void OnMouseMove(double xPos, double yPos) {
   else
     Input::SetMouseMode(MouseMode::NORMAL);
 
-
   startDragX = xPos;
   startDragY = yPos;
 }
@@ -111,16 +110,11 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  auto lightManager = Ref<LightManager>::Create();
-  pointLight = new PointLight;
-  pointLight->linear = 0.09f;
-  pointLight->quadratic = 0.032f;
-  lightManager->RegisterPointLight(pointLight);
+  LightManager::active = std::make_unique<LightManager>();
 
-  auto lightingStatus = Ref<LightingStatus>::Create();
+  auto lightingStatus = std::make_shared<LightingStatus>();
   lightingStatus->maxDirectionalLights = 0;
   lightingStatus->maxPointLights = 1;
-  lightingStatus->lightManager = lightManager;
 
   phongSetter.lightingStatus = lightingStatus;
   phongSetter.specular = Vec3::one * 0.6f;
@@ -141,6 +135,7 @@ MyGame::MyGame() {
 
   tagged = TagManager::active->Get<NNode>("model");
   shape = TagManager::active->Get<NNode>("shape");
+  pointLight = TagManager::active->Get<NPointLight>("point-light");
 }
 
 extern "C" bool JsonLoad_Run() {

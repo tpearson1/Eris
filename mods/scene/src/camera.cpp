@@ -52,23 +52,22 @@ Mat4 NCamera::ViewMatrix() const {
 }
 
 void JSONImpl<NCamera>::Write(const NCamera &value, JSON::Writer &writer) {
-  JSON::WriteObject("NCamera", writer, [&value, &writer]() {
-    JSON::Write(static_cast<const NNode &>(value), writer);
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::Write(static_cast<const NNode &>(value), writer);
 
-    JSON::WritePair("active", NCamera::active == &value, writer);
+  JSON::WritePair("active", NCamera::active == &value, writer);
 
-    JSON::WritePair("perspective", value.perspective, writer);
-    if (value.perspective)
-      JSON::WritePair("fov", value.fov, writer);
-    else {
-      JSON::WritePair("min-zoom", value.MinZoom(), writer);
-      JSON::WritePair("max-zoom", value.MaxZoom(), writer);
-      JSON::WritePair("zoom", value.Zoom(), writer);
-    }
+  JSON::WritePair("perspective", value.perspective, writer);
+  if (value.perspective)
+    JSON::WritePair("fov", value.fov, writer);
+  else {
+    JSON::WritePair("min-zoom", value.MinZoom(), writer);
+    JSON::WritePair("max-zoom", value.MaxZoom(), writer);
+    JSON::WritePair("zoom", value.Zoom(), writer);
+  }
 
-    JSON::WritePair("near", value.near, writer);
-    JSON::WritePair("far", value.far, writer);
-  });
+  JSON::WritePair("near", value.near, writer);
+  JSON::WritePair("far", value.far, writer);
 }
 
 void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value, const JSON::ReadData &data) {

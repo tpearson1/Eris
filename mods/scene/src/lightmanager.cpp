@@ -28,8 +28,10 @@ SOFTWARE.
 #include <base/shader.h>
 #include <scene/camera.h>
 
-void PointLight::SetUniformData(const std::string &prefix) const {
-  auto &cur = Shader::Current();  
+std::unique_ptr<LightManager> LightManager::active;
+
+void NPointLight::SetUniformData(const std::string &prefix) const {
+  auto &cur = Shader::Current();
   cur.SetUniform(cur.GetUniform(prefix + ".location"), transform.Location());
   cur.SetUniform(cur.GetUniform(prefix + ".ambient"), ambient);
   cur.SetUniform(cur.GetUniform(prefix + ".diffuse"), diffuse);
@@ -39,12 +41,59 @@ void PointLight::SetUniformData(const std::string &prefix) const {
   cur.SetUniform(cur.GetUniform(prefix + ".quadratic"), quadratic);
 }
 
-void DirectionalLight::SetUniformData(const std::string &prefix) const {
-  auto &cur = Shader::Current();  
+void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "NPointLight"};
+  const auto &object = JSON::GetObject(value, data);
+
+  JSON::TryGetMember(out.ambient, "ambient", object, Vec3::one * 0.1f, data);
+  JSON::GetMember(out.diffuse, "diffuse", object, data);
+  JSON::GetMember(out.specular, "specular", object, data);
+  JSON::TryGetMember(out.constant, "constant", object, 1.0f,  data);
+  JSON::GetMember(out.linear, "linear", object, data);
+  JSON::GetMember(out.quadratic, "quadratic", object, data);
+
+  JSON::GetMember<NNode>(out, "NNode", object, data);
+
+  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have it's static member 'active' set");
+  LightManager::active->RegisterPointLight(&out);
+}
+
+void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::Write(static_cast<const NNode &>(value), writer);
+  JSON::WritePair("ambient", value.ambient, writer);
+  JSON::WritePair("diffuse", value.diffuse, writer);
+  JSON::WritePair("specular", value.specular, writer);
+  JSON::WritePair("constant", value.constant, writer);
+  JSON::WritePair("linear", value.linear, writer);
+  JSON::WritePair("quadratic", value.quadratic, writer);
+}
+
+void NDirectionalLight::SetUniformData(const std::string &prefix) const {
+  auto &cur = Shader::Current();
   cur.SetUniform(cur.GetUniform(prefix + ".direction"), transform.GlobalRotation() * Vec3::front);
   cur.SetUniform(cur.GetUniform(prefix + ".ambient"), ambient);
   cur.SetUniform(cur.GetUniform(prefix + ".diffuse"), diffuse);
   cur.SetUniform(cur.GetUniform(prefix + ".specular"), specular);
+}
+
+void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "NDirectionalLight"};
+  const auto &object = JSON::GetObject(value, data);
+
+  JSON::TryGetMember(out.ambient, "ambient", object, Vec3::one * 0.1f, data);
+  JSON::GetMember(out.diffuse, "diffuse", object, data);
+  JSON::GetMember(out.specular, "specular", object, data);
+
+  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have it's static member 'active' set");
+  LightManager::active->RegisterDirectionalLight(&out);
+}
+
+void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::WritePair("ambient", value.ambient, writer);
+  JSON::WritePair("diffuse", value.diffuse, writer);
+  JSON::WritePair("specular", value.specular, writer);
 }
 
 void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirSizeType maxDirCount, LightManager::PointSizeType maxPointCount) {
@@ -58,12 +107,12 @@ void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirS
   for (auto i = 0u; i < less; i++, dirIt++) {
     std::stringstream iss;
     iss << "directionalLights[" << i << ']';
-    (*dirIt)->SetUniformData(iss.str()); 
+    (*dirIt)->SetUniformData(iss.str());
   }
 
   // Order point lights by distance to objects
   pointLights.sort([&location](const auto &lhs, const auto &rhs) {
-    return Vec3::Distance(lhs->transform.Location(), location) < Vec3::Distance(rhs->transform.Location(), location); 
+    return Vec3::Distance(lhs->transform.Location(), location) < Vec3::Distance(rhs->transform.Location(), location);
   });
 
   less = Math::Min(maxPointCount, pointLights.size());
@@ -72,6 +121,6 @@ void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirS
     std::stringstream iss;
     iss << "pointLights[" << i << ']';
     (*pointIt)->SetUniformData(iss.str());
-  } 
+  }
 }
 

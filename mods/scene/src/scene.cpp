@@ -28,6 +28,7 @@ SOFTWARE.
 #include <camera.h>
 #include <tagmanager.h>
 #include <model.h>
+#include <lightmanager.h>
 
 void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value, const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "Scene"};
@@ -55,6 +56,8 @@ void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value, const JSON::Rea
 void RegisterSceneTypeAssociations(JSON::TypeManager &manager) {
   manager["NNode"] = DefaultNodeTypeRegistration<NNode>;
   manager["NCamera"] = DefaultNodeTypeRegistration<NCamera>;
+  manager["NPointLight"] = DefaultNodeTypeRegistration<NPointLight>;
+  manager["NDirectionalLight"] = DefaultNodeTypeRegistration<NDirectionalLight>;
   manager["Tagged"] = TaggedTypeRegistration;
   manager["Model"] = ModelTypeRegistration;
   manager["NMeshRenderer"] = MeshRendererTypeRegistration;

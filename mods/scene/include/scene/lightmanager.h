@@ -28,45 +28,59 @@ SOFTWARE.
 #define _SCENE__LIGHT_MANAGER_H
 
 #include <list>
-#include <core/ref.h>
+#include <memory>
 #include <scene/node.h>
 
-struct Light : public NNode {
+struct NLight : public NNode {
   virtual void SetUniformData(const std::string &prefix) const = 0;
 };
 
-struct PointLight : public Light {
+struct NPointLight : public NLight {
   virtual void SetUniformData(const std::string &prefix) const override;
 
-  Vec3 ambient = Vec3::one * 0.1f, diffuse = Vec3::one * 1.0f, specular = Vec3::one * 0.6f;
+  Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
   float constant = 1.0f, linear, quadratic;
 };
 
-class DirectionalLight : public Light {
+template <>
+struct JSONImpl<NPointLight> {
+  static void Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const NPointLight &value, JSON::Writer &writer);
+};
+
+class NDirectionalLight : public NLight {
 public:
   virtual void SetUniformData(const std::string &prefix) const override;
 
-  Vec3 ambient = Vec3::one * 0.1f, diffuse = Vec3::one * 1.0f, specular = Vec3::one * 0.6f;
+  Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
+};
+
+template <>
+struct JSONImpl<NDirectionalLight> {
+  static void Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const NDirectionalLight &value, JSON::Writer &writer);
 };
 
 class LightManager {
-  std::list<PointLight *> pointLights;
-  std::list<DirectionalLight *> directionalLights;
+  std::list<NPointLight *> pointLights;
+  std::list<NDirectionalLight *> directionalLights;
 
 public:
-  auto RegisterPointLight(PointLight *light)
+  static std::unique_ptr<LightManager> active;
+
+  auto RegisterPointLight(NPointLight *light)
     { pointLights.push_front(light); return pointLights.front(); }
 
-  auto RegisterDirectionalLight(DirectionalLight *light)
+  auto RegisterDirectionalLight(NDirectionalLight *light)
     { directionalLights.push_front(light); return directionalLights.front(); }
 
-  void Unregister(std::list<PointLight *>::iterator it)
+  void Unregister(std::list<NPointLight *>::iterator it)
     { pointLights.erase(it); }
-  void Unregister(std::list<DirectionalLight *>::iterator it)
+  void Unregister(std::list<NDirectionalLight *>::iterator it)
     { directionalLights.erase(it); }
 
-  using PointSizeType = std::list<PointLight *>::size_type;
-  using DirSizeType = std::list<DirectionalLight *>::size_type;
+  using PointSizeType = std::list<NPointLight *>::size_type;
+  using DirSizeType = std::list<NDirectionalLight *>::size_type;
   void SetUniformsForClosestLights(Vec3 location, DirSizeType maxDirCount, PointSizeType maxPointCount);
 };
 

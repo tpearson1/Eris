@@ -36,10 +36,9 @@ void NNode::RecursiveDestroy(NNode *n) {
 }
 
 void JSONImpl<NNode>::Write(const NNode &value, JSON::Writer &writer) {
-  JSON::WriteObject("NNode", writer, [&value, &writer]() {
-    JSON::WritePair("visible", value.visible, writer);
-    JSON::WritePair("transform", value.transform, writer);
-  });
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::WritePair("visible", value.visible, writer);
+  JSON::WritePair("transform", value.transform, writer);
 }
 
 void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data) {

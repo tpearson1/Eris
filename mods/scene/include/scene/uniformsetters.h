@@ -34,12 +34,10 @@ class NMeshRenderer;
 struct LightingStatus {
   LightManager::DirSizeType maxDirectionalLights;
   LightManager::PointSizeType maxPointLights;
-  
-  Ref<LightManager> lightManager;
 };
 
 struct PhongShaderUniformSetter {
-  Ref<LightingStatus> lightingStatus;
+  std::shared_ptr<LightingStatus> lightingStatus;
   Vec3 specular;
   float shininess;
 
