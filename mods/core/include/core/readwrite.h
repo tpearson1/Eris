@@ -217,6 +217,30 @@ struct JSONImpl<std::unordered_map<std::string, V, Hash>> {
   }
 };
 
+template <typename T>
+struct JSONImpl<std::unique_ptr<T>> {
+  static void Read(std::unique_ptr<T> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "std::unique_ptr"};
+    out = std::make_unique<T>();
+    JSONImpl<T>::Read(*out, value, data);
+  }
+
+  static void Write(const std::unique_ptr<T> &value, JSON::Writer &writer)
+    { JSONImpl<T>::Write(*value, writer); }
+};
+
+template <typename T>
+struct JSONImpl<std::shared_ptr<T>> {
+  static void Read(std::shared_ptr<T> &out, const JSON::Value &value, const JSON::ReadData &data) {
+    auto t = Trace::Pusher{data.trace, "std::shared_ptr"};
+    out = std::make_shared<T>();
+    JSONImpl<T>::Read(*out, value, data);
+  }
+
+  static void Write(const std::shared_ptr<T> &value, JSON::Writer &writer)
+    { JSONImpl<T>::Write(*value, writer); }
+};
+
 namespace JSON {
   template <typename T>
   T Read(const Value &value, const ReadData &data) {
