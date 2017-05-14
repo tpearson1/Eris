@@ -27,7 +27,6 @@ SOFTWARE.
 #ifndef _2D__CANVAS_ITEM_H
 #define _2D__CANVAS_ITEM_H
 
-#include <deque>
 #include <2d/recttransform.h>
 #include <math/mat.h>
 #include <scene/renderrequirements.h>

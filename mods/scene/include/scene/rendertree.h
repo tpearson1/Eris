@@ -27,20 +27,21 @@ SOFTWARE.
 #ifndef _CORE_MATH__RENDER_TREE_H
 #define _CORE_MATH__RENDER_TREE_H
 
-#include <deque>
+#include <vector>
+#include <algorithm>
 
 template <typename T>
 class RenderTree {
 protected:
   T *parent = nullptr;
-  std::deque<T *> children;
+  std::vector<T *> children;
   T *node;
 
 public:
   virtual ~RenderTree() {}
 
-  using iterator = typename std::deque<T *>::iterator;
-  using const_iterator = typename std::deque<T *>::const_iterator;
+  using iterator = typename std::vector<T *>::iterator;
+  using const_iterator = typename std::vector<T *>::const_iterator;
 
   iterator begin()
     { return children.begin(); }
@@ -67,17 +68,15 @@ public:
   const T *Parent() const { return parent; }
 
   auto ChildCount() const { return children.size(); }
-  T *Child(typename std::deque<T *>::size_type i) const
+  T *Child(typename std::vector<T *>::size_type i) const
     { return children[i]; }
 
   void RemoveChild(T *child) {
-    for (auto it = std::begin(children); it != std::end(children); ++it) {
-      if (*it == child) {
-        child->transform.parent = nullptr;
-        children.erase(it);
-        return;
-      }
-    }
+    auto it = std::find(std::begin(children), std::end(children), child);
+    if (it == std::end(children))
+      return; // REVIEW: Doesn't treat as an error
+    child->transform.parent = nullptr;
+    children.erase(it);
   }
 
   friend class NNode;

@@ -27,9 +27,6 @@ SOFTWARE.
 #ifndef _SCENE__NODE_H
 #define _SCENE__NODE_H
 
-#include <deque>
-#include <algorithm>
-#include <cstddef>
 #include <scene/transform.h>
 #include <scene/renderable.h>
 
