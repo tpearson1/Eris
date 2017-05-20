@@ -83,32 +83,7 @@ bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
       delete pkg;
     }
   }
-  /* if (value.HasMember("depend")) { */
-  /*   const auto &depend = value["depend"]; */
-  /*   JSON::ParseAssert(depend.IsArray(), data, "'depend' member must be of type array"); */
-
-  /*   dependencies.reserve(depend.Size()); */
-  /*   for (rapidjson::SizeType i = 0; i < depend.Size(); i++) { */
-  /*     JSON::ParseAssert(depend[i].IsString(), data, "All members of 'depend' array must be of type string"); */
-
-  /*     std::string dep = depend[i].GetString(); */
-  /*     JSON::ParseAssert(Directory::Exists("mods/" + dep), data, "Dependency '" + dep + "' is unsatisfied"); */
-
-  /*     Package *pkg = new Package(dep); */
-  /*     if (pkg->Load(compileDependencies, quiet)) // No package will ever be loaded twice */
-  /*       dependencies.push_back(pkg); */
-  /*     else { */
-  /*       for (size_t i = 0; i < all.size(); i++) { */
-  /*         if (all[i]->name == dep) { */
-  /*           dependencies.push_back(all[i]); */
-  /*           delete pkg; */
-  /*           break; */
-  /*         } */
-  /*       } */
-  /*     } */
-  /*   } */
-  /* } */
-
+  
   return true;
 }
 
