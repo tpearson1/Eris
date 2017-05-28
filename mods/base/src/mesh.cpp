@@ -26,7 +26,8 @@ SOFTWARE.
 
 #include <mesh.h>
 
-void Mesh::Setup(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData, const std::vector<VertexAttribute<>> &&atts) {
+RawMesh::RawMesh(const std::vector<GLfloat> &verts,
+           const std::vector<GLuint> &indexData) {
   // Vertices, Element buffer and passing attribute to vertex shader
   vao.Generate();
   vao.Use();
@@ -37,53 +38,23 @@ void Mesh::Setup(const std::vector<GLfloat> &verts, const std::vector<GLuint> &i
   indices.Data(indexData);
   indices.Generate();
 
-  attrs = atts;
-  for (auto &elem : attrs)
-    elem.Setup();
-
-  VertexArray::ClearUse();
+  // We do not clear the vertex array so that deriving classes can add to it
 }
 
-void Mesh::Draw() const {
+void RawMesh::Draw() const {
   vao.Use();
 
   vertices.Enable();
-  for (auto &elem : attrs)
-    elem.Enable();
+  EnableAttributes();
 
   indices.Use();
   indices.Draw();
 
   vertices.Disable();
-  for (auto &elem : attrs)
-    elem.Disable();
+  DisableAttributes();
 
   Buffer<GLfloat>::ClearUse();
   ElementBuffer::ClearUse();
   VertexArray::ClearUse();
 }
 
-Mesh MeshTemplates::quad;
-
-void MeshTemplates::SetupStatics() {
-  quad.Setup(
-    std::vector<GLfloat>{
-      0.0f, 0.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
-      0.0f, 1.0f, 0.0f,
-      1.0f, 1.0f, 0.0f
-    },
-    std::vector<GLuint>{
-      0, 1, 2,
-      1, 2, 3
-    },
-    {
-      VertexAttribute<>(1, 2, std::vector<GLfloat>{
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f
-      })
-    }
-  );
-}

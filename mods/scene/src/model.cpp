@@ -29,7 +29,7 @@ SOFTWARE.
 #include <assimp/postprocess.h>
 #include <base/resources.h>
 
-static std::shared_ptr<Mesh> ProcessMesh(aiMesh *mesh) {
+static std::shared_ptr<RawMesh> ProcessMesh(aiMesh *mesh) {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
 
@@ -66,22 +66,11 @@ static std::shared_ptr<Mesh> ProcessMesh(aiMesh *mesh) {
   // if (mesh->mMaterialIndex >= 0) {
   //   auto *material = scene->mMaterials[mesh->mMaterialIndex];
   // }
-  std::shared_ptr<Mesh> meshPtr;
-  if (hasUVs) {
-    meshPtr = std::make_shared<Mesh>(
-      verts, indices, std::vector<VertexAttribute<>>{
-        {1, 2, uvs},
-        {2, 3, normals}
-      }
-    );
-  }
-  else {
-    meshPtr = std::make_shared<Mesh>(
-      verts, indices, std::vector<VertexAttribute<>>{
-        {2, 3, normals}
-      }
-    );
-  }
+  std::shared_ptr<RawMesh> meshPtr;
+  if (hasUVs)
+    meshPtr = std::make_shared<StandardMesh>(verts, indices, uvs, normals);
+  else
+    meshPtr = std::make_shared<NormalMesh>(verts, indices, normals);
 
   return meshPtr;
 }
@@ -122,7 +111,7 @@ NNode *LoadModel(const std::string &path, const RenderRequirements &rr, NMeshRen
   return root;
 }
 
-std::shared_ptr<Mesh> LoadMesh(const std::string &path) {
+std::shared_ptr<RawMesh> LoadMesh(const std::string &path) {
   Assimp::Importer importer;
   const auto *scene = LoadScene(path, importer, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes);
 

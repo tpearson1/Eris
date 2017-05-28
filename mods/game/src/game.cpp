@@ -47,8 +47,6 @@ Game::Game() {
   // Accept fragment if closer to the camera than the former one
   glDepthFunc(GL_LESS);
   glCullFace(GL_BACK);
-
-  MeshTemplates::SetupStatics();
 }
 
 Game::~Game() {

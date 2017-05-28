@@ -49,37 +49,77 @@ public:
     { glBindVertexArray(0); }
 };
 
-class Mesh {
+class RawMesh {
   VertexAttribute<> vertices;
-  std::vector<VertexAttribute<>> attrs;
-
   VertexArray vao;
   ElementBuffer indices;
 
 public:
-  Mesh() {}
-
-  Mesh(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData, const std::vector<VertexAttribute<>> &&atts)
-    { Setup(verts, indexData, std::forward<const std::vector<VertexAttribute<>>>(atts)); }
-
-  void Setup(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData, const std::vector<VertexAttribute<>> &&atts);
+  RawMesh(const std::vector<GLfloat> &verts,
+          const std::vector<GLuint> &indexData);
 
   void Draw() const;
 
-  template <size_t NumAttrs>
-  friend class InstancedMesh;
+  virtual void EnableAttributes() const {}
+  virtual void DisableAttributes() const {}
+
+  virtual ~RawMesh() {}
 };
 
-class MeshTemplates {
-  MeshTemplates();
-
-  static Mesh quad;
+class UVMesh : public RawMesh {
+  VertexAttribute<> uvs;
 
 public:
-  static const Mesh &Quad() { return quad; }
+  UVMesh(const std::vector<GLfloat> &verts,
+         const std::vector<GLuint> &indexData,
+         const std::vector<GLfloat> &uvData)
+      : RawMesh(verts, indexData) {
+    uvs = VertexAttribute<>{1, 2, uvData};
+    uvs.Setup();
+  }
 
-  static void SetupStatics();
+  virtual void EnableAttributes() const override { uvs.Enable(); }
+  virtual void DisableAttributes() const override { uvs.Disable(); }
 };
 
+class NormalMesh : public RawMesh {
+  VertexAttribute<> normals;
+
+public:
+  NormalMesh(const std::vector<GLfloat> &verts,
+             const std::vector<GLuint> &indexData,
+             const std::vector<GLfloat> &normalData)
+      : RawMesh(verts, indexData) {
+    normals = VertexAttribute<>{2, 3, normalData};
+    normals.Setup();
+  }
+
+  virtual void EnableAttributes() const override { normals.Enable(); }
+  virtual void DisableAttributes() const override { normals.Disable(); }
+};
+
+class StandardMesh : public UVMesh {
+  VertexAttribute<> normals;
+
+public:
+  StandardMesh(const std::vector<GLfloat> &verts,
+               const std::vector<GLuint> &indexData,
+               const std::vector<GLfloat> &uvData,
+               const std::vector<GLfloat> &normalData)
+      : UVMesh(verts, indexData, uvData) {
+    normals = VertexAttribute<>{2, 3, normalData};
+    normals.Setup();
+  }
+
+  virtual void EnableAttributes() const override {
+    UVMesh::EnableAttributes();
+    normals.Enable();
+  }
+
+  virtual void DisableAttributes() const override {
+    UVMesh::DisableAttributes();
+    normals.Disable();
+  }
+};
 
 #endif // _BASE__MESH_H

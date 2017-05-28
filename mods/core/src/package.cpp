@@ -83,7 +83,7 @@ bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
       delete pkg;
     }
   }
-  
+
   return true;
 }
 

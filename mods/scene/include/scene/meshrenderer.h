@@ -35,16 +35,16 @@ SOFTWARE.
 #include <scene/renderer.h>
 
 class MeshRenderer {
-  std::shared_ptr<Mesh> mesh;
+  std::shared_ptr<RawMesh> mesh;
 
 public:
   void Draw(const Mat4 &global);
 
   MeshRenderer() {}
-  MeshRenderer(const std::shared_ptr<Mesh> &value) : mesh(value) {}
+  MeshRenderer(const std::shared_ptr<RawMesh> &value) : mesh(value) {}
 
-  const std::shared_ptr<Mesh> Get() { return mesh; }
-  void Set(const std::shared_ptr<Mesh> &value) { mesh = value; }
+  const RawMesh *Get() { return mesh.get(); }
+  void Set(const std::shared_ptr<RawMesh> &value) { mesh = value; }
 };
 
 class NMeshRenderer : public NNode {
