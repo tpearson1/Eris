@@ -24,17 +24,44 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _CORE__TESTING_H
-#define _CORE__TESTING_H
+#ifndef _TEST__MACROS_H
+#define _TEST__MACROS_H
 
-#include <iostream>
+/*
+ * Concatenated two tokens
+ */
+#define CONCAT_IMPL(x, y) x##y
+#define CONCAT(x, y) CONCAT_IMPL(x, y)
 
-#define ASSERT(expression) {\
-  if (!(expression)) {\
-    std::cerr << "> Assertion Failed in file '" << __FILE__ << "' line:" << __LINE__ << ". '"#expression << "'\n";\
-    exit(-1);\
-  }\
-}
+/*
+ * Converts the token into a string literal
+ */
+#define STR_IMPL(x) #x
+#define STR(x) STR_IMPL(x)
 
-#endif // _CORE__TESTING_H
+/*
+ * Macro which (ideally) increments each time it is used
+ */
+#ifdef __COUNTER__
+  #define COUNTER __COUNTER__
+#else
+  #define COUNTER __LINE__
+#endif
+
+/*
+ * Suffixes 'str' with a counter, to create an anonymous variable.
+ * Not guaranteed to have a unique name to other uses of this macro in other
+ * translation units
+ */
+#define ANONYMOUS_VARIABLE(str) CONCAT(str, COUNTER)
+
+/*
+ * Provided a block of code or a single statement, the code will be executed
+ * when the library / binary is loaded
+ */
+#define STATIC_INIT(code)\
+struct CONCAT(StaticInit_, __LINE__) { CONCAT(StaticInit_, __LINE__)() { code }\
+} ANONYMOUS_VARIABLE(staticInitInst);
+
+#endif // _TEST__MACROS_H
 

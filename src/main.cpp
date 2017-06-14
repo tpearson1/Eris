@@ -26,98 +26,197 @@ SOFTWARE.
 
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <cassert>
 #include <core/package.h>
 #include <core/library.h>
 #include <core/statics.h>
+#include <core/file.h>
+
+static constexpr const auto usage = "Usage: load [options] [package]\nFor more "
+                                    "detailed help information try 'load -H'";
+
+struct LoadInfo {
+  std::string name;
+  bool compile = false;
+  bool run = true;
+  bool test = false, testRecursive = false;
+  bool quiet = false;
+  std::vector<std::string> args;
+
+  /*
+   * Check that options do not contradict each other
+   */
+  bool NoCollisions() const;
+};
+
+bool LoadInfo::NoCollisions() const {
+  if (name.empty()) {
+    if (compile) {
+      std::cerr << "Argument 'compile' requires a package to be specified\n";
+      return false;
+    }
+
+    if (run) {
+      std::cerr << "A package must be specified\n";
+      return false;
+    }
+
+    if (test || testRecursive) {
+      std::cerr << "A package must be specified if you want to run tests\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static int HandlePackage(const LoadInfo &info) {
+  if (!info.NoCollisions())
+    return -1;
+
+  auto package = Package::Create(info.name);
+
+  Package::LoadOptions lo;
+  lo.compile = info.compile;
+  lo.quiet = info.quiet;
+
+  Package::Data data{lo};
+  {
+    auto typeManager = std::make_shared<JSON::TypeManager>();
+    JSON::Document doc;
+    JSON::GetDataFromFile(doc, "mods/" + info.name + "/package.json");
+    JSON::ReadData readData{typeManager};
+    JSON::Read(data, doc, readData);
+  }
+
+  package->Load(data);
+  if (info.compile) {
+    Package::CompilationOptions co;
+    co.quiet = info.quiet;
+    if (package->Compile(co))
+      return -1;
+  }
+
+  if (info.test || info.testRecursive) {
+    Package::TestOptions to;
+    to.compileTests = info.compile;
+    to.recursive = info.testRecursive;
+    to.quiet = info.quiet;
+    if (!package->Test(to))
+      return -1;
+  }
+
+  if (info.run) {
+    Package::RunOptions ro;
+    ro.args = info.args;
+    ro.quiet = info.quiet;
+    if (!package->Run(ro))
+      return -1;
+  }
+
+  return 0;
+}
+
+// Returns false when all arguments are handled
+static bool HandleArgument(int &out, std::vector<std::string> &revArgs, LoadInfo &info) {
+  assert(!revArgs.empty());
+  auto arg = revArgs.back();
+  revArgs.pop_back();
+
+  if (arg[0] != '-') {
+    info.name = arg;
+    out = HandlePackage(info);
+
+    // Add package arguments
+    std::reverse(std::begin(revArgs), std::end(revArgs));
+    info.args = revArgs;
+
+    return false;
+  }
+
+  arg.erase(0, 1);
+
+  if (arg == "h" || arg == "-help") {
+    std::cout << usage << '\n';
+    return false;
+  }
+
+  if (arg == "H" || arg == "-help-full") {
+    std::string helpFull;
+    try {
+      File::Read("help.txt", helpFull);
+    }
+    catch (FileAccessException e) {
+      std::cerr << "Error reading help file. File 'help.txt' may not be present\n";
+    }
+    std::cout << helpFull;
+    return false;
+  }
+
+  if (arg == "v" || arg == "-version") {
+    std::cout << "Version " << ::version << '\n';
+    return false;
+  }
+
+  if (arg == "n" || arg == "-no-compile") {
+    info.compile = false;
+    return true;
+  }
+
+  if (arg == "c" || arg == "-compile") {
+    info.compile = true;
+    return true;
+  }
+
+  if (arg == "C" || arg == "-only-compile") {
+    info.compile = true;
+    info.run = false;
+    return true;
+  }
+
+  if (arg == "q" || arg == "-quiet") {
+    info.quiet = true;
+    return true;
+  }
+
+  if (arg == "t" || arg == "-run-tests") {
+    info.run = false;
+    info.test = true;
+    return true;
+  }
+
+  if (arg == "T" || arg == "-run-tests-rec") {
+    info.run = false;
+    info.testRecursive = true;
+    return true;
+  }
+
+  std::cout << usage << '\n';
+  return false;
+}
 
 /*
  * Program entry point.
- * Loads a package and tries to run it
+ * Loads a package and tries to run it.
  */
 int main(int argc, char const *argv[]) {
-  std::string usage = "Usage: game [options] [package]";
   if (argc < 2) {
     std::cerr << usage << '\n';
     return -1;
   }
 
-  struct { bool help = false, compile = false, noCompile = false, quiet = false, runTests = false; } options;
-  int i;
-  for (i = 1; i < argc; i++) {
-    if (argv[i][0] == '-' && argv[i][1] == '-') {
-      // There is an option passed
-      std::string option{argv[i]};
-      option.erase(0, 2);
-
-      if (option == "help")
-        options.help = true;
-      else if (option == "compile")
-        options.compile = true;
-      else if (option == "no-compile") {
-        options.noCompile = true;
-        // Implies 'quiet' option
-        options.quiet = true;
-      }
-      else if (option == "quiet")
-        options.quiet = true;
-      else if (option == "runtests")
-        options.runTests = true;
-      else {
-        std::cerr << "> Unrecognized argument '" << option << "'\n" << usage << '\n';
-        return -1;
-      }
-    }
-    else
-      break;
-  }
-
-  if (options.compile && options.noCompile) {
-    std::cerr << "> Arguments 'compile' and 'no-compile' cannot be used together\n";
-    return -1;
-  }
-
-  if (argc < i) {
-    if (options.compile) {
-      std::cerr << "> Argument 'compile' requires a package to be specified\n";
-      return -1;
-    }
-    if (options.noCompile) {
-      std::cerr << "> Argument 'no-compile' requires a package to be specified\n";
-      return -1;
-    }
-  }
-
-  if (options.help) {
-    std::cout << usage << '\n'; // TODO: Better help text
-    return 0;
-  }
+  // Vector with all arguments backwards and without program name
+  std::vector<std::string> args;
+  for (auto i = argc - 1; i > 0; i--)
+    args.push_back(argv[i]);
 
   ::SetupStatics(argv[0]);
-  const auto &packageName = argv[i];
-  auto *package = new Package(packageName); // Garbage collected by Package::Cleanup
-  if (!package->Load(!options.noCompile, options.quiet)) {
-    std::cerr << "> Unable to load package '" << packageName << "'\n";
-    return -1;
-  }
 
-  if (!options.compile) {
-    if (!package->Playable()) {
-      std::cerr << "> Cannot play a package that isn't playable (package '" << packageName << "')\n";
-      return -1;
-    }
+  LoadInfo info;
+  int ret = 0;
+  while (HandleArgument(ret, args, info) && !ret);
 
-    // Set the package arguments
-    for (i += 1; i < argc; i++)
-      package->args.push_back(argv[i]);
-
-    int result = package->Start(options.quiet, options.runTests);
-    if (result) {
-      std::cerr << "> Package '" << packageName << "' failed\n";
-      return -1;
-    }
-  }
-
-  Package::Cleanup();
-
-  return 0;
+  return ret;
 }
+

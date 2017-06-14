@@ -50,8 +50,8 @@ void File::Read(const std::string &path, std::string &out) {
     out = buffer.str();
   }
   else {
-    std::cerr << "> Unable to open " << fullPath << '\n';
     out = "";
+    throw FileAccessException("Unable to open file: " + fullPath);
   }
 }
 

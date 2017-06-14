@@ -2,7 +2,9 @@
   "author": "Thomas Pearson",
   "version": "0.0.1",
   "playable": false,
+  "has-headers": true,
   "uses-c++": true,
+  "compile": true,
   "depend": [
     "scene"
   ]

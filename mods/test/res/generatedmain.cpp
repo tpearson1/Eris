@@ -24,29 +24,6 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _CORE__STATICS_H
-#define _CORE__STATICS_H
+#include <test/test.h>
 
-#include <string>
-
-/*
- * Global variables
- */
-
-/*
- * Sets up the static variables
- * @param argv0 The string argv[0] from the program's main function
- */
-void SetupStatics(const std::string &argv0);
-
-/*
- * The path of the build directory
- */
-extern std::string buildPath;
-
-/*
- * The version of the core engine
- */
-static constexpr const auto version = "0.0.1";
-
-#endif // _CORE__STATICS_H
+GENERATE_TEST_MAIN(1)

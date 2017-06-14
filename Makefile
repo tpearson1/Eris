@@ -33,9 +33,10 @@ clean-mods:
 	-find mods/* -type f -name '*.d' -delete
 
 clean-mod:
-	-rm -r mods/$(mod)/lib
-	-find mods/$(mod) -type f -name '*.o' -delete
-	-find mods/$(mod) -type f -name '*.d' -delete
+	-rm -r mods/$(MOD)/lib
+	-find mods/$(MOD) -type f -name '*.o' -delete
+	-find mods/$(MOD) -type f -name '*.d' -delete
 
 -include src/*.d
 -include src/**/*.d
+

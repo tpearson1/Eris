@@ -29,6 +29,11 @@ SOFTWARE.
 
 #include <vector>
 #include <string>
+#include <stdexcept>
+
+struct FileAccessException : public std::runtime_error {
+  FileAccessException(const std::string &error) : std::runtime_error(error) {}
+};
 
 /*
  * Static class for file manipulation

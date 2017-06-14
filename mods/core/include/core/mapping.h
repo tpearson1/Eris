@@ -28,6 +28,7 @@ SOFTWARE.
 #define _CORE__MAPPING_H
 
 #include <unordered_map>
+#include <core/readwrite.h>
 
 /*
  * Helper class to call Load correctly on a value type which may be a smart pointer

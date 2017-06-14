@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <core/mapping.h>
 
 /*
  * Class for loading and manipulating a package
@@ -37,46 +39,48 @@ class Package {
   Package(const Package &other) = delete;
   Package &operator=(const Package &other) = delete;
 
-  /*
-   * Reads the JSON data associated with the file
-   * @param compileDependencies Whether or not the package's dependencies should be compiled
-   * @returns whether the operation succeeded
-   */
-  bool ReadPackageJSON(bool compileDependencies = true, bool quiet = false);
+  Package(const std::string &_name) : name(_name), path("mods/" + _name + '/') {}
 
-  /*
-   * Helper function for the Compile function
-   * @param deps The packages that are depended by the package being loaded
-   * @param out The stringstream for the string generated
-   */
-  void RecursiveInclude(const std::vector<Package *> &deps, std::vector<Package *> &processed, std::stringstream &out) const;
+  mutable bool compilation_tried = false;
+
+public:
+  static Package *Create(const std::string &name);
+
+  struct LoadOptions {
+    bool compile = true;
+    bool quiet = false;
+  };
+
+  struct Data {
+    std::string author, version;
+    std::string linkOptions;
+    bool playable = false;
+    bool hasHeaders = true, usesCPP = true, compile = true;
+
+    LoadOptions loadOptions;
+
+    std::vector<std::string> dependencies;
+
+    Data(const LoadOptions &options) : loadOptions(options) {}
+  };
+
+  static std::unordered_map<std::string, std::unique_ptr<Package>> loaded;
+
+  const std::string &name;
+  std::string author, version, path;
+  bool playable = false, usesCPP = true, compile = true, hasHeaders = true;
+  std::vector<Package *> dependencies;
+  std::string linkOptions;
+
+  struct CompilationOptions {
+    bool quiet = false;
+  };
 
   /*
    * Compiles the package, also compiling dependencies if necessary
    * @returns the exit status of the compilation
    */
-  int Compile(bool quiet = false) const;
-
-  /*
-   * Whether the package is playable and whether it contains C++ code
-   */
-  bool playable = false, usesCPP = true, headerOnly = false;
-
-  /*
-   * All the packages currently loaded
-   */
-  static std::vector<Package *> all;
-
-  /*
-   * This package's dependencies
-   */
-  std::vector<Package *> dependencies;
-
-  /*
-   * Package data; the package's path, the name of the package, it's author,
-   * version and any link options
-   */
-  std::string path, name, author, version, linkOptions;
+  int Compile(const CompilationOptions &options) const;
 
 public:
   /*
@@ -121,35 +125,41 @@ public:
   RestartOptions restartOptions;
 
   /*
-   * Arguments to the package
-   */
-  std::vector<std::string> args;
-
-  const std::vector<Package *> &Dependencies() const { return dependencies; }
-  std::string Name() const { return name; }
-  std::string Path() const { return path; }
-  bool Playable() const { return playable; }
-
-  Package() {}
-  Package(const std::string &pkgName) : name(pkgName) {}
-
-  /*
    * Loads the package
-   * @param compile Whether or not the package should try to compile
    * @returns whether the operation succeeded
    */
-  bool Load(bool compile = true, bool quiet = false);
+  bool Load(const Data &data);
+
+  struct RunOptions {
+    std::vector<std::string> args;
+    bool quiet = false;
+  };
+
+  static std::vector<std::string> args;
 
   /*
    * Starts running the package if it's playable
    * @returns whether the package succeeded
    */
-  bool Start(bool quiet = false, bool runTests = false);
+  bool Run(const RunOptions &options);
+
+  struct TestOptions {
+    bool compileTests = true;
+    bool recursive = false;
+    bool quiet = false;
+  };
 
   /*
-   * Cleans up memory
+   * Runs tests for the package
+   * @returns whether testing / compiling tests were succesful
    */
-  static void Cleanup();
+  bool Test(const TestOptions &options);
+};
+
+template <>
+struct JSONImpl<Package::Data> {
+  static void Read(Package::Data &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(const Package::Data &value, JSON::Writer &writer);
 };
 
 #endif // _CORE__PACKAGE_H

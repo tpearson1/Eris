@@ -1,0 +1,13 @@
+Usage: game [options] [package]
+
+OPTIONS
+  --help, -h           Print help information
+  --help-full, -H      Print (this) more detailed help information
+  --version, -v        Print version information
+  --no-compile, -n     Do not do any compilation
+  --compile, -c        Compile any packages loaded if applicable and then run
+  --only-compile, -C   Compile any packages loaded if applicable
+  --quiet, -q          Do not show information about loading and compiling
+  --run-tests, -t      Run all tests for the package being loaded
+  --run-tests-rec, -T  Run all tests for the package being loaded and dependencies
+

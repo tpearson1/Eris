@@ -25,119 +25,161 @@ SOFTWARE.
 */
 
 #include <package.h>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
-#include <cstdlib>
-#include <functional>
-#include <statics.h>
+#include <sstream>
+#include <iostream>
 #include <library.h>
-#include <file.h>
 #include <termcolor.h>
-#include <readwrite.h>
+#include <statics.h>
+#include <file.h>
 
-std::vector<Package *> Package::all;
-Package *Package::active = nullptr;
+Package *Package::active;
+std::vector<std::string> Package::args;
 
-bool Package::ReadPackageJSON(bool compileDependencies, bool quiet) {
-  std::string jsonPath = path + "package.json";
+std::unordered_map<std::string, std::unique_ptr<Package>> Package::loaded;
 
-  JSON::Document value;
-  JSON::GetDataFromFile(value, jsonPath);
-
-  JSON::ReadData data{std::make_shared<JSON::TypeManager>()};
-  auto t = Trace::Pusher{data.trace, "Package"};
-
-  const auto &object = JSON::GetObject(value, data);
-
-  JSON::GetMember(author, "author", object, data);
-  JSON::GetMember(version, "version", object, data);
-  JSON::GetMember(playable, "playable", object, data);
-  JSON::GetMember(usesCPP, "uses-c++", object, data);
-
-  JSON::TryGetMember(headerOnly, "header-only", object, false, data);
-  JSON::ParseFailIf(headerOnly && !usesCPP, data, "'uses-c++' member must be set to true if the package is header only");
-
-  JSON::ParseFailIf(!usesCPP && playable, data, "'playable' member is set to true and therefore the package must use C++");
-
-  linkOptions = JSON::TryGetMember<std::string>("link-options", object, "", data);
-
-  if (!object.HasMember("depend"))
-    return true;
-
-  auto dependStrings = JSON::GetMember<std::vector<std::string>>("depend", object, data);
-
-  for (auto &dep : dependStrings) {
-    auto *pkg = new Package(dep);
-    if (pkg->Load(compileDependencies, quiet))
-      dependencies.push_back(pkg);
-    else {
-      auto it = std::find_if(
-        std::begin(all), std::end(all),
-        [&dep](const auto &d) { return d->name == dep; }
-      );
-
-      if (it == std::end(all))
-        return false;
-      dependencies.push_back(*it);
-      delete pkg;
-    }
-  }
-
-  return true;
+Package *Package::Create(const std::string &name) {
+  auto it = loaded.emplace(name, nullptr).first;
+  auto &package = it->second;
+  // Cannot use make_unique because constructor private
+  package = std::unique_ptr<Package>(new Package(it->first));
+  return package.get();
 }
 
-void Package::RecursiveInclude(const std::vector<Package *> &deps, std::vector<Package *> &processed, std::stringstream &out) const {
+static void RecursiveIncludeHelper(const std::vector<Package *> &deps,
+                                   std::vector<Package *> &processed,
+                                   std::ostringstream &out,
+                                   const std::string &prefix) {
+  for (auto &elem : deps) {
+    if (std::find(std::begin(processed), std::end(processed), elem) != std::end(processed))
+      continue;
+
+    if (elem->hasHeaders) {
+      out << " -I" << prefix << elem->name << "/include";
+      processed.push_back(elem);
+    }
+    RecursiveIncludeHelper(elem->dependencies, processed, out, prefix);
+  }
+}
+
+static void RecursiveInclude(const std::vector<Package *> &deps, std::ostringstream &out, const std::string &prefix = "") {
+  std::vector<Package *> processed;
+  RecursiveIncludeHelper(deps, processed, out, prefix);
+}
+
+static void AddLibraryParameter(const std::string &name, std::ostringstream &command, const std::string &prefix = "") {
+    command << " -Wl,";
+    command << R"x(-rpath=\\$\$\$\ORIGIN/../../)x" << name << "/lib"
+               " -L" << prefix << name << "/lib -l" << name;
+}
+
+static void AddLibraryParameterRecursiveHelper(
+    const std::vector<Package *> &deps, std::vector<Package *> &processed,
+    std::ostringstream &command, const std::string &prefix = "") {
   for (auto &elem : deps) {
     if (std::find(std::begin(processed), std::end(processed), elem) != std::end(processed))
       continue;
 
     if (elem->usesCPP) {
-      out << " -I" << elem->name << "/include";
+      AddLibraryParameter(elem->name, command, prefix);
       processed.push_back(elem);
     }
-    RecursiveInclude(elem->dependencies, processed, out);
+    AddLibraryParameterRecursiveHelper(elem->dependencies, processed, command, prefix);
   }
 }
 
-int Package::Compile(bool quiet) const {
-  if (name == "core")
-    return 0; // The 'core' package is compiled by the game's makefile
-  if (headerOnly)
+static void AddLibraryParameterRecursive(const std::vector<Package *> &deps,
+                                         std::ostringstream &command,
+                                         const std::string &prefix = "") {
+  std::vector<Package *> processed;
+  AddLibraryParameterRecursiveHelper(deps, processed, command, prefix);
+}
+
+int Package::Compile(const CompilationOptions &options) const {
+  if (compilation_tried)
     return 0;
-  if (usesCPP) {
-    std::stringstream command;
-    command << "cd mods;make " << ((quiet) ? "-s " : "") << "NAME=\"" << name << "\"";
-    command << " LIBS=\"-shared " << linkOptions;
-    for (size_t i = 0; i < dependencies.size(); i++) {
-      if (!dependencies[i]->usesCPP)
-        continue;
+  compilation_tried = true;
+  for (auto &package : dependencies)
+    package->Compile(options);
+  if (!usesCPP || !compile)
+    return 0;
 
-      command << " -Wl,";
-      command << "-rpath=\\\\$\\$\\$\\ORIGIN/../../" << dependencies[i]->name << "/lib"
-                 " -L" << dependencies[i]->name << "/lib -l" << dependencies[i]->name;
-    }
+  if (!options.quiet)
+    std::clog << TermColor::FG_BLUE << "-- Compiling " << name << "@v" << version << " by " << author << TermColor::FG_DEFAULT << '\n';
 
-    command << "\" OPTFLAGS=\"-fpic -I" << name << "/include/" << name
-            << " -I" << name << "/include"
-            " -I" << name << "/src/include";
-    std::vector<Package *> processed;
-    RecursiveInclude(dependencies, processed, command);
-
-    command << "\" TARGET=\"" << name << "/lib/lib" << name << ".so\"";
-
-    int result = std::system(command.str().c_str());
-    if (result)
-      std::cerr << "> Package " << name << " failed to build\n";
-    return result;
+  std::ostringstream command;
+  command << "cd mods;make -s " << (options.quiet ? "SILENT=\".\" " : "") << "MOD=\"" << name << '"';
+  command << " LIBS=\"" << linkOptions;
+  for (auto &dep : dependencies) {
+    if (!dep->usesCPP)
+      continue;
+    AddLibraryParameter(dep->name, command);
   }
-  return 0;
+
+  command << "\" INCLUDE=\"";
+  RecursiveInclude(dependencies, command);
+
+  command << "\" TARGET=\"" << name << "/lib/lib" << name << ".so\"";
+
+  int result = WEXITSTATUS(std::system(command.str().c_str()));
+  if (result)
+    std::cerr << "> Package " << name << " failed to build\n";
+
+  return result;
+}
+
+bool Package::Load(const Data &data) {
+  path = "mods/" + name + '/';
+  author = data.author;
+  version = data.version;
+  playable = data.playable;
+  usesCPP = data.usesCPP;
+  hasHeaders = data.hasHeaders;
+  compile = data.compile;
+  linkOptions = data.linkOptions;
+
+  auto typeManager = std::make_shared<JSON::TypeManager>();
+  try {
+    for (auto &depString : data.dependencies) {
+      auto it = loaded.find(depString);
+      if (it != std::end(loaded)) {
+        dependencies.push_back(it->second.get());
+        continue;
+      }
+
+      JSON::Document doc;
+      JSON::GetDataFromFile(doc, "mods/" + depString + "/package.json");
+
+      auto newData = data;
+      newData.dependencies.clear();
+
+      JSON::ReadData readData{typeManager};
+      JSON::Read(newData, doc, readData);
+
+      auto package = Create(depString);
+      package->Load(newData);
+      dependencies.push_back(package);
+    }
+  }
+  catch (JSON::ParseException e) {
+    return false;
+  }
+
+  return true;
+}
+
+template <typename FuncSig>
+static bool CallFunction(Library &lib, const std::string &name, bool notFoundOk = false) {
+  auto func = (FuncSig)lib.GetSymbol(name, notFoundOk);
+  if (!func)
+    return notFoundOk;
+  return func();
 }
 
 /*
  * Converts a string like 'this-is-an-example-234' to 'ThisIsAnExample234'
  */
-std::string HyphenatedToPascalCasing(const std::string &input) {
+static std::string HyphenatedToPascalCasing(const std::string &input) {
   std::istringstream ss{input};
   std::string section, out;
   while (std::getline(ss, section, '-')) {
@@ -150,53 +192,15 @@ std::string HyphenatedToPascalCasing(const std::string &input) {
   return out;
 }
 
-bool CallFuncReturningBool(Library &lib, const std::string &name, bool notFoundOk = false) {
-  auto func = (bool (*)())lib.GetSymbol(name, notFoundOk);
-  if (!func)
-    return notFoundOk;
-  return func();
-}
-
-bool CallFuncOnDependenciesPrefixed(const std::vector<Package *> &deps, std::vector<Package *> &processed, Library &lib, const std::string &funcName) {
-  for (auto &elem : deps) {
-    if (std::find(std::begin(processed), std::end(processed), elem) != std::end(processed))
-      continue;
-
-    if (!CallFuncOnDependenciesPrefixed(elem->Dependencies(), processed, lib, funcName))
-      return false;
-    auto fullName = HyphenatedToPascalCasing(elem->Name()) + funcName;
-    processed.push_back(elem);
-    if (!CallFuncReturningBool(lib, fullName, true)) {
-      std::cerr << "> Function '" << fullName << "' returned false\n";
-      return false;
-    }
+bool Package::Run(const RunOptions &options) {
+  if (!playable || !usesCPP) {
+    std::cout << "Package '" << name << "' can not be played\n";
+    return false;
   }
-  return true;
-}
 
-bool Package::Load(bool compile, bool quiet) {
-  if (std::find_if(std::begin(all), std::end(all), [this](const auto &d) { return d->name == name; }) != std::end(all))
-    return false;
-
-  path = "mods/" + name + "/";
-  if (!ReadPackageJSON(compile, quiet))
-    return false;
-  if (!quiet)
-    std::clog << TermColor::FG_BLUE << "---- LOADING PACKAGE " << name << "@v" << version << " by " << author << " ----" << TermColor::FG_DEFAULT << '\n';
-
-  if (compile && Compile(quiet)) // Only compile if we should
-    exit(1);
-
-  all.push_back(this);
-  return true;
-}
-
-bool Package::Start(bool quiet, bool runTests) {
-  if (!playable || !usesCPP)
-    return false;
   std::string libPath = path + "lib/lib" + name + ".so";
-  if (!quiet)
-    std::clog << TermColor::FG_GREEN << "-- RUNNING PACKAGE " << name << " --" << TermColor::FG_DEFAULT << '\n';
+  if (!options.quiet)
+    std::clog << TermColor::FG_GREEN << "-- Running '" << name << '\'' << TermColor::FG_DEFAULT << '\n';
   int ret;
   do {
     restartOptions = RestartOptions();
@@ -205,39 +209,134 @@ bool Package::Start(bool quiet, bool runTests) {
       return false;
 
     active = this;
-    std::vector<Package *> temp;
-    if (!CallFuncOnDependenciesPrefixed({this}, temp, lib, "_Initialize"))
-      return false;
 
-    temp.clear();
-
-    if (runTests) {
-      if (CallFuncOnDependenciesPrefixed({this}, temp, lib, "_RunTests"))
-        std::cout << "Testing successful\n";
-      else if (!quiet)
-        return false;
+    if (!CallFunction<bool (*)()>(lib, HyphenatedToPascalCasing(name) + "_Run", false)) {
+      ret = false;
+      if (restartOptions.errorMessage.empty())
+        std::cerr << "Package '" << name << "' terminated with error\n";
+      else
+        std::cerr << "Package '" << name << "' terminated with error: '" << restartOptions.errorMessage << "'\n";
     }
-    else {
-      if (!CallFuncReturningBool(lib, HyphenatedToPascalCasing(name) + "_Run", false)) {
-        ret = false;
-        if (restartOptions.errorMessage.empty())
-          std::cerr << "> Package '" << name << "' terminated with error\n";
-        else
-          std::cerr << "> Package '" << name << "' terminated with error: '" << restartOptions.errorMessage << "'\n";
-      }
-      if (restartOptions.useNewArgs)
-        Package::args = restartOptions.newArgs;
-    }
+    if (restartOptions.useNewArgs)
+      Package::args = restartOptions.newArgs;
 
     lib.Close();
   } while (restartOptions.should);
-  if (!quiet)
-    std::clog << TermColor::FG_GREEN << "-- FINISHED RUNNING PACKAGE " << name << " --" << TermColor::FG_DEFAULT << '\n';
+  if (!options.quiet)
+    std::clog << TermColor::FG_GREEN << "-- Finished Running '" << name << '\'' << TermColor::FG_DEFAULT << '\n';
   return ret;
 }
 
-void Package::Cleanup() {
-  for (size_t i = 0; i < all.size(); i++)
-    delete all[i];
-  all.clear();
+static bool CompileTest(const Package *package, bool quiet) {
+  if (!Directory::Exists("mods/" + package->name + "/tests"))
+    return true;
+  std::ostringstream command;
+  command << "cd " << ::buildPath << "/mods/test/res; make -s MOD=\"" << package->name;
+  command << "\" LIBS=\"";
+  AddLibraryParameter(package->name, command, "../../");
+  AddLibraryParameterRecursive(package->dependencies, command, "../../");
+
+  command << "\" INCLUDE=\"";
+  RecursiveInclude(package->dependencies, command, "../../");
+  command << '"';
+
+  if (quiet)
+    command << " SILENT=\".\"";
+
+  auto result = WEXITSTATUS(std::system(command.str().c_str()));
+  return !result;
 }
+
+static bool RunTest(const std::string &packageName, bool quiet) {
+  auto file = "mods/" + packageName + "/tests/tests";
+  auto testsPresent = File::Exists(file);
+  if (!testsPresent) {
+    if (!quiet)
+      std::cout << TermColor::FG_GREEN << "-- No Tests For '" << packageName << '\'' << TermColor::FG_DEFAULT << '\n';
+    return true;
+  }
+
+  if (!quiet)
+    std::clog << TermColor::FG_GREEN << "-- Running Tests for '" << packageName << '\'' << TermColor::FG_DEFAULT << '\n';
+
+  auto result = File::Exists(file) ? WEXITSTATUS(std::system((::buildPath + file).c_str())) : 0;
+
+  if (!quiet)
+    std::clog << TermColor::FG_GREEN << "-- Finished Running Tests for '" << packageName << '\'' << TermColor::FG_DEFAULT << '\n';
+
+  if (result) return false;
+  return true;
+}
+
+bool Package::Test(const TestOptions &options) {
+  if (options.compileTests) {
+    if (!options.quiet)
+      std::clog << TermColor::FG_GREEN << "-- Compiling Tests" << TermColor::FG_DEFAULT << '\n';
+
+    auto printFinished = [&] {
+      if (!options.quiet)
+        std::clog << TermColor::FG_GREEN << "-- Finished Compiling Tests" << TermColor::FG_DEFAULT << '\n';
+    };
+
+    if (options.recursive) {
+      // If we are recursive we can just iterate through all loaded packages
+      for (auto &it : loaded) {
+        if (!CompileTest(it.second.get(), options.quiet)) {
+          printFinished();
+          return false;
+        }
+      }
+    }
+    else {
+      if (!CompileTest(this, options.quiet)) {
+        printFinished();
+        return false;
+      }
+    }
+
+    printFinished();
+  }
+
+  if (options.recursive) {
+    for (auto &it : loaded) {
+      if (!RunTest(it.second->name, options.quiet))
+        return false;
+    }
+  }
+  else if (!RunTest(name, options.quiet))
+    return false;
+
+  return true;
+}
+
+void JSONImpl<Package::Data>::Read(Package::Data &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "Package::Data"};
+  const auto &object = JSON::GetObject(value, data);
+
+  JSON::GetMember(out.author, "author", object, data);
+  JSON::GetMember(out.version, "version", object, data);
+  JSON::GetMember(out.playable, "playable", object, data);
+  JSON::GetMember(out.hasHeaders, "has-headers", object, data);
+  JSON::GetMember(out.usesCPP, "uses-c++", object, data);
+  JSON::TryGetMember(out.compile, "compile", object, true, data);
+  JSON::TryGetMember(out.dependencies, "depend", object, {}, data);
+
+  JSON::ParseFailIf(
+    out.playable && !out.usesCPP, data,
+    "'playable' member is set to true and therefore the package must use C++");
+
+  out.linkOptions = JSON::TryGetMember<std::string>("link-options", object, "", data);
+}
+
+void JSONImpl<Package::Data>::Write(const Package::Data &value, JSON::Writer &writer) {
+  auto obj = JSON::ObjectEncloser{writer};
+  JSON::WritePair("author", value.author, writer);
+  JSON::WritePair("version", value.version, writer);
+  JSON::WritePair("playable", value.playable, writer);
+  JSON::WritePair("has-headers", value.hasHeaders, writer);
+  JSON::WritePair("uses-c++", value.usesCPP, writer);
+  JSON::WritePair("compile", value.compile, writer);
+  JSON::WritePair("link-options", value.linkOptions, writer);
+  JSON::WritePair("depend", value.dependencies, writer);
+}
+
