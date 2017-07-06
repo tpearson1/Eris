@@ -1,13 +1,17 @@
+# Build files
 *.d
 *.o
 *.so
+/load
+build
+
+# Temporary or configuration files/directories
 *~
 *.bak
 *.sw[abcdefghijklmnop]
 /.vscode/
-/mods/**/lib/
-/load
 /tags
 /load.trace
 /.ycm_extra_conf.py
 /vgcore.*
+

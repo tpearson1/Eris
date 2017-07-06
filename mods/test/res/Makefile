@@ -1,38 +1,42 @@
 MOD_PATH:=../../$(MOD)
+BUILD_DIR:=$(MOD_PATH)/tests/build
+
 INCLUDE_DIRS:=$(INCLUDE) -I../include -I$(MOD_PATH)/include/$(MOD) -I$(MOD_PATH)/include
-CFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors
-PREFIX?=/usr/local
+CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors
+LINK_FLAGS:=-Wall
 
 SOURCES:=$(wildcard $(MOD_PATH)/tests/**/*.cpp $(MOD_PATH)/tests/*.cpp)
-SOURCES+=generatedmain.cpp
 
-OBJECTS:=$(patsubst %.cpp,%.o,$(SOURCES))
+OBJECTS:=$(patsubst $(MOD_PATH)/tests/%.cpp,$(BUILD_DIR)/%.cpp.o,$(SOURCES))
 
 TARGET:=$(MOD_PATH)/tests/tests
 
-.PHONY: all clean
+.PHONY: all
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 all: $(TARGET)
 	@: # Prevent make from outputting 'Nothing to be done for...'
 
-%.o: %.cpp $(HEADERS)
+generatedmain.o: generatedmain.cpp
+	g++ $(CXXFLAGS) -I../include -c -MMD $< -o $@
+
+$(BUILD_DIR)/%.cpp.o: $(MOD_PATH)/tests/%.cpp
 ifndef SILENT
 	$(info $<)
 endif
-	g++ $(CFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
+	@mkdir -p $(BUILD_DIR)
+	g++ $(CXXFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) generatedmain.o
 # If there are no files in the testing directory, we do not need to build
-ifneq ($(OBJECTS), generatedmain.o)
-	g++ $(OBJECTS) -Wall $(LIBS) -o $@
+ifneq ($(OBJECTS),)
+ifndef SILENT
+	$(info Linking)
+endif
+	g++ $(OBJECTS) generatedmain.o $(LINK_FLAGS) $(LIBS) -o $@
 endif
 
-clean:
-	-find $(MOD_PATH)/tests -type f -name '*.o' -delete
-	-find $(MOD_PATH)/tests -type f -name '*.d' -delete
-	-rm $(MOD_PATH)/tests/tests
-
--include $(MOD_PATH)/tests/*.d
--include $(MOD_PATH)/**/*.d
+-include $(BUILD_DIR)/*.d
+-include $(BUILD_DIR)/**/*.d
 -include generatedmain.d
+

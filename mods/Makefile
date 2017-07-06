@@ -1,30 +1,32 @@
-CFLAGS:=-g -Og -Wall -Wextra -Wfatal-errors -fpic
+CXXFLAGS:=-g -Og -Wall -Wextra -Wfatal-errors -fpic
 INCLUDE_DIRS:=$(INCLUDE) -I$(MOD)/include/$(MOD) -I$(MOD)/include -I$(MOD)/src/include
+
+BUILD_DIR:=$(MOD)/build
+
 SOURCES:=$(wildcard $(MOD)/src/**/*.cpp $(MOD)/src/*.cpp)
-OBJECTS:=$(patsubst %.cpp,%.o,$(SOURCES))
+OBJECTS:=$(patsubst $(MOD)/src/%.cpp,$(BUILD_DIR)/%.cpp.o,$(SOURCES))
 
-LINK_FLAGS:=-shared $(LIBS)
+LINK_FLAGS:=-Wall -shared $(LIBS)
 
-.PHONY: all clean
+.PHONY: all
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 all: $(TARGET)
 	@: # Prevent make from outputting 'Nothing to be done for...'
 
-%.o: %.cpp
+$(BUILD_DIR)/%.cpp.o: $(MOD)/src/%.cpp
 ifndef SILENT
 	$(info $<)
 endif
-	g++ $(CFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
+	@mkdir -p $(BUILD_DIR)
+	g++ $(CXXFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
 
 $(TARGET): $(OBJECTS)
-	-mkdir -p $(MOD)/lib
-	g++ $(OBJECTS) -Wall $(LINK_FLAGS) -o $@
+ifndef SILENT
+	$(info Linking)
+endif
+	g++ $(OBJECTS) $(LINK_FLAGS) -o $@
 
-clean:
-	-find $(MOD) -type f -name '*.o' -delete
-	-find $(MOD) -type f -name '*.d' -delete
-	-rm -r $(MOD)/lib
+-include $(BUILD_DIR)/*.d
+-include $(BUILD_DIR)/**/*.d
 
--include $(MOD)/src/*.d
--include $(MOD)/src/**/*.d

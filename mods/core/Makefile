@@ -1,31 +1,28 @@
 INCLUDE_DIRS:=-Iinclude/core -Iinclude -I../rapidjson/include
-CFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors -fpic $(INCLUDE_DIRS) $(OPTFLAGS)
-LDFLAGS:=-shared
-LIBS:=$(OPTLIBS) -ldl -lGLEW -lGL -lglfw -lpng
-PREFIX?=/usr/local
+CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors -fpic
+LDFLAGS:=-Wall -shared
+LIBS:=-ldl -lGLEW -lGL -lglfw -lpng
+
+BUILD_DIR:=build
 
 SOURCES:=$(wildcard src/**/*.cpp src/*.cpp)
-OBJECTS:=$(patsubst %.cpp,%.o,$(SOURCES))
+OBJECTS:=$(patsubst src/%.cpp,$(BUILD_DIR)/%.cpp.o,$(SOURCES))
 
-TARGET:=lib/libcore.so
+TARGET:=libcore.so
 
-.PHONY: all clean
+.PHONY: all
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 all: $(TARGET)
 	@: # Prevent make from outputting 'Nothing to be done for...'
 
-%.o: %.cpp $(HEADERS)
-	g++ $(CFLAGS) -c -MMD $< -o $@
+$(BUILD_DIR)/%.cpp.o: src/%.cpp
+	@mkdir -p $(BUILD_DIR)
+	g++ $(CXXFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
 
 $(TARGET): $(OBJECTS)
-	-mkdir -p lib
-	g++ $(OBJECTS) -Wall $(LDFLAGS) $(LIBS) -o $@
+	g++ $(OBJECTS) $(LDFLAGS) $(LIBS) -o $@
 
-clean:
-	-find . -type f -name '*.o' -delete
-	-find . -type f -name '*.d' -delete
-	-rm -r lib
+-include $(BUILD_DIR)/*.d
+-include $(BUILD_DIR)/**/*.d
 
--include src/*.d
--include src/**/*.d

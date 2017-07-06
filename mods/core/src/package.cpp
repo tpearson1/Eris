@@ -62,37 +62,43 @@ static void RecursiveIncludeHelper(const std::vector<Package *> &deps,
   }
 }
 
-static void RecursiveInclude(const std::vector<Package *> &deps, std::ostringstream &out, const std::string &prefix = "") {
+static void RecursiveInclude(const std::vector<Package *> &deps,
+                             std::ostringstream &out,
+                             const std::string &prefix = "") {
   std::vector<Package *> processed;
   RecursiveIncludeHelper(deps, processed, out, prefix);
 }
 
-static void AddLibraryParameter(const std::string &name, std::ostringstream &command, const std::string &prefix = "") {
+static void AddLibraryParameter(const std::string &name,
+                                std::ostringstream &command,
+                                const std::string &prefix = "",
+                                const std::string &originSuffix = "../") {
     command << " -Wl,";
-    command << R"x(-rpath=\\$\$\$\ORIGIN/../../)x" << name << "/lib"
-               " -L" << prefix << name << "/lib -l" << name;
+    command << R"x(-rpath=\\$\$\$\ORIGIN/)x" << originSuffix << name
+               << " -L" << prefix << name << " -l" << name;
 }
 
 static void AddLibraryParameterRecursiveHelper(
     const std::vector<Package *> &deps, std::vector<Package *> &processed,
-    std::ostringstream &command, const std::string &prefix = "") {
+    std::ostringstream &command, const std::string &prefix,
+    const std::string &originSuffix) {
   for (auto &elem : deps) {
     if (std::find(std::begin(processed), std::end(processed), elem) != std::end(processed))
       continue;
 
     if (elem->usesCPP) {
-      AddLibraryParameter(elem->name, command, prefix);
+      AddLibraryParameter(elem->name, command, prefix, originSuffix);
       processed.push_back(elem);
     }
-    AddLibraryParameterRecursiveHelper(elem->dependencies, processed, command, prefix);
+    AddLibraryParameterRecursiveHelper(elem->dependencies, processed, command, prefix, originSuffix);
   }
 }
 
-static void AddLibraryParameterRecursive(const std::vector<Package *> &deps,
-                                         std::ostringstream &command,
-                                         const std::string &prefix = "") {
+static void AddLibraryParameterRecursive(
+    const std::vector<Package *> &deps, std::ostringstream &command,
+    const std::string &prefix = "", const std::string &originSuffix = "../") {
   std::vector<Package *> processed;
-  AddLibraryParameterRecursiveHelper(deps, processed, command, prefix);
+  AddLibraryParameterRecursiveHelper(deps, processed, command, prefix, originSuffix);
 }
 
 int Package::Compile(const CompilationOptions &options) const {
@@ -119,7 +125,7 @@ int Package::Compile(const CompilationOptions &options) const {
   command << "\" INCLUDE=\"";
   RecursiveInclude(dependencies, command);
 
-  command << "\" TARGET=\"" << name << "/lib/lib" << name << ".so\"";
+  command << "\" TARGET=\"" << name << "/lib" << name << ".so\"";
 
   int result = WEXITSTATUS(std::system(command.str().c_str()));
   if (result)
@@ -198,7 +204,7 @@ bool Package::Run(const RunOptions &options) {
     return false;
   }
 
-  std::string libPath = path + "lib/lib" + name + ".so";
+  std::string libPath = path + "lib" + name + ".so";
   if (!options.quiet)
     std::clog << TermColor::FG_GREEN << "-- Running '" << name << '\'' << TermColor::FG_DEFAULT << '\n';
   int ret;
@@ -233,8 +239,8 @@ static bool CompileTest(const Package *package, bool quiet) {
   std::ostringstream command;
   command << "cd " << ::buildPath << "/mods/test/res; make -s MOD=\"" << package->name;
   command << "\" LIBS=\"";
-  AddLibraryParameter(package->name, command, "../../");
-  AddLibraryParameterRecursive(package->dependencies, command, "../../");
+  AddLibraryParameter(package->name, command, "../../", "../../");
+  AddLibraryParameterRecursive(package->dependencies, command, "../../", "../../");
 
   command << "\" INCLUDE=\"";
   RecursiveInclude(package->dependencies, command, "../../");
