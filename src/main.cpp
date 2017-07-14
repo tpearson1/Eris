@@ -94,8 +94,11 @@ static int HandlePackage(const LoadInfo &info) {
   if (info.compile) {
     Package::CompilationOptions co;
     co.quiet = info.quiet;
-    if (package->Compile(co))
+    auto result = package->Compile(co);
+    if (!result) {
+      std::cerr << "One of the loaded packages' dependencies failed to compile\n";
       return -1;
+    }
   }
 
   if (info.test || info.testRecursive) {

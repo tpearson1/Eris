@@ -101,14 +101,16 @@ static void AddLibraryParameterRecursive(
   AddLibraryParameterRecursiveHelper(deps, processed, command, prefix, originSuffix);
 }
 
-int Package::Compile(const CompilationOptions &options) const {
+Package::CompilationResult Package::Compile(const CompilationOptions &options) const {
   if (compilation_tried)
-    return 0;
+    return CompilationResult::UNNECESSARY;
   compilation_tried = true;
+
   for (auto &package : dependencies)
-    package->Compile(options);
+    if (!package->Compile(options))
+      return CompilationResult::DEPENDENCY_FAILURE;
   if (!usesCPP || !compile)
-    return 0;
+    return CompilationResult::UNNECESSARY;
 
   if (!options.quiet)
     std::clog << TermColor::FG_BLUE << "-- Compiling " << name << "@v" << version << " by " << author << TermColor::FG_DEFAULT << '\n';
@@ -129,9 +131,8 @@ int Package::Compile(const CompilationOptions &options) const {
 
   int result = WEXITSTATUS(std::system(command.str().c_str()));
   if (result)
-    std::cerr << "> Package " << name << " failed to build\n";
-
-  return result;
+    return CompilationResult::FAILURE;
+  return CompilationResult::SUCCESS;
 }
 
 bool Package::Load(const Data &data) {

@@ -72,6 +72,28 @@ public:
   std::vector<Package *> dependencies;
   std::string linkOptions;
 
+  /*
+   * The result of a package compilation
+   */
+  struct CompilationResult {
+    enum {
+      SUCCESS,
+      UNNECESSARY,
+      DEPENDENCY_FAILURE,
+      FAILURE
+    } value;
+
+    CompilationResult(decltype(value) result) : value(result) {}
+
+    bool Successful() {
+      return value == SUCCESS || value == UNNECESSARY;
+    }
+
+    operator bool() {
+      return Successful();
+    }
+  };
+
   struct CompilationOptions {
     bool quiet = false;
   };
@@ -80,7 +102,7 @@ public:
    * Compiles the package, also compiling dependencies if necessary
    * @returns the exit status of the compilation
    */
-  int Compile(const CompilationOptions &options) const;
+  Package::CompilationResult Compile(const CompilationOptions &options) const;
 
 public:
   /*

@@ -14,4 +14,5 @@ cat <<EOF > $test_dir/$1.cpp
 #include <test/test.h>
 
 TEST_CASE("Success", {})
+
 EOF
