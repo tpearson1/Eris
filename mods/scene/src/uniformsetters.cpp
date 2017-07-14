@@ -34,8 +34,8 @@ void PhongShaderUniformSetter::operator()(NMeshRenderer *nmr) const {
     lightingStatus->maxPointLights
   );
 
-  auto &cur = Shader::Current();
-  cur.SetUniform(cur.GetUniform("material.specular"), specular);
-  cur.SetUniform(cur.GetUniform("material.shininess"), shininess);
-  cur.SetUniformMatrix4(cur.GetUniform("model"), 1, false, nmr->transform.Matrix());
+  const auto *cur = Shader::Current();
+  cur->SetUniform(cur->GetUniform("material.specular"), specular);
+  cur->SetUniform(cur->GetUniform("material.shininess"), shininess);
+  cur->SetUniformMatrix4(cur->GetUniform("model"), 1, false, nmr->transform.Matrix());
 }

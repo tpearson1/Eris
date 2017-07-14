@@ -31,14 +31,14 @@ SOFTWARE.
 std::unique_ptr<LightManager> LightManager::active;
 
 void NPointLight::SetUniformData(const std::string &prefix) const {
-  auto &cur = Shader::Current();
-  cur.SetUniform(cur.GetUniform(prefix + ".location"), transform.Location());
-  cur.SetUniform(cur.GetUniform(prefix + ".ambient"), ambient);
-  cur.SetUniform(cur.GetUniform(prefix + ".diffuse"), diffuse);
-  cur.SetUniform(cur.GetUniform(prefix + ".specular"), specular);
-  cur.SetUniform(cur.GetUniform(prefix + ".constant"), constant);
-  cur.SetUniform(cur.GetUniform(prefix + ".linear"), linear);
-  cur.SetUniform(cur.GetUniform(prefix + ".quadratic"), quadratic);
+  const auto *cur = Shader::Current();
+  cur->SetUniform(cur->GetUniform(prefix + ".location"), transform.Location());
+  cur->SetUniform(cur->GetUniform(prefix + ".ambient"), ambient);
+  cur->SetUniform(cur->GetUniform(prefix + ".diffuse"), diffuse);
+  cur->SetUniform(cur->GetUniform(prefix + ".specular"), specular);
+  cur->SetUniform(cur->GetUniform(prefix + ".constant"), constant);
+  cur->SetUniform(cur->GetUniform(prefix + ".linear"), linear);
+  cur->SetUniform(cur->GetUniform(prefix + ".quadratic"), quadratic);
 }
 
 void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data) {
@@ -70,11 +70,11 @@ void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer
 }
 
 void NDirectionalLight::SetUniformData(const std::string &prefix) const {
-  auto &cur = Shader::Current();
-  cur.SetUniform(cur.GetUniform(prefix + ".direction"), transform.GlobalRotation() * Vec3::front);
-  cur.SetUniform(cur.GetUniform(prefix + ".ambient"), ambient);
-  cur.SetUniform(cur.GetUniform(prefix + ".diffuse"), diffuse);
-  cur.SetUniform(cur.GetUniform(prefix + ".specular"), specular);
+  const auto *cur = Shader::Current();
+  cur->SetUniform(cur->GetUniform(prefix + ".direction"), transform.GlobalRotation() * Vec3::front);
+  cur->SetUniform(cur->GetUniform(prefix + ".ambient"), ambient);
+  cur->SetUniform(cur->GetUniform(prefix + ".diffuse"), diffuse);
+  cur->SetUniform(cur->GetUniform(prefix + ".specular"), specular);
 }
 
 void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data) {
@@ -97,10 +97,10 @@ void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Wr
 }
 
 void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirSizeType maxDirCount, LightManager::PointSizeType maxPointCount) {
-  auto &cur = Shader::Current();
-  cur.SetUniform(cur.GetUniform("cameraLocation"), NCamera::active->transform.Location());
-  cur.SetUniform(cur.GetUniform("numPointLights"), Math::Min<GLint>(maxPointCount, pointLights.size()));
-  cur.SetUniform(cur.GetUniform("numDirectionalLights"), Math::Min<GLint>(maxDirCount, directionalLights.size()));
+  const auto *cur = Shader::Current();
+  cur->SetUniform(cur->GetUniform("cameraLocation"), NCamera::active->transform.Location());
+  cur->SetUniform(cur->GetUniform("numPointLights"), Math::Min<GLint>(maxPointCount, pointLights.size()));
+  cur->SetUniform(cur->GetUniform("numDirectionalLights"), Math::Min<GLint>(maxDirCount, directionalLights.size()));
 
   auto dirIt = directionalLights.begin();
   auto less = Math::Min(maxDirCount, directionalLights.size());

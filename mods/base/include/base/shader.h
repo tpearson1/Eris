@@ -78,7 +78,7 @@ public:
   void Use() const { current = this; glUseProgram(id); }
 
   bool IsCurrent() const { return current == this; }
-  static const Shader &Current() { return *current; }
+  static const Shader *Current() { return current; }
 
   /*
    * Sets uniform variables in the shader

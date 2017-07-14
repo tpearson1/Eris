@@ -31,8 +31,8 @@ SOFTWARE.
 std::unordered_map<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
 
 void MeshRenderer::Draw(const Mat4 &global) {
-  const Shader &current = Shader::Current();
-  GLint shaderMVP = current.GetUniform("MVP");
+  const Shader *current = Shader::Current();
+  GLint shaderMVP = current->GetUniform("MVP");
   Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, global);
 
   mesh->Draw();
