@@ -25,36 +25,45 @@ SOFTWARE.
 */
 
 #include <mesh.h>
+#include <shader.h>
 
-RawMesh::RawMesh(const std::vector<GLfloat> &verts,
-           const std::vector<GLuint> &indexData) {
+Mesh::Mesh(const std::vector<GLfloat> &verts,
+           const std::vector<GLuint> &indexData,
+           const std::shared_ptr<MeshRenderConfigs::None> &conf)
+    : vertices(0, 3, verts), config(conf) {
   // Vertices, Element buffer and passing attribute to vertex shader
   vao.Generate();
   vao.Use();
 
-  vertices = VertexAttribute<>(0, 3, verts);
   vertices.Setup();
 
   indices.Data(indexData);
   indices.Generate();
 
-  // We do not clear the vertex array so that deriving classes can add to it
+  config->Setup();
+
+  VertexArray::ClearUse();
 }
 
-void RawMesh::Draw() const {
+void Mesh::Draw(const Mat4 &mvp) const {
+  auto shaderMVP = Shader::Current()->GetUniform("MVP");
+  Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
+
+  config->PreRender();
   vao.Use();
 
   vertices.Enable();
-  EnableAttributes();
+  config->Enable();
 
   indices.Use();
   indices.Draw();
 
+  config->Disable();
   vertices.Disable();
-  DisableAttributes();
 
   Buffer<GLfloat>::ClearUse();
   ElementBuffer::ClearUse();
   VertexArray::ClearUse();
+  config->PostRender();
 }
 

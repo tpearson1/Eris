@@ -31,14 +31,14 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/camera.h>
 #include <scene/tagmanager.h>
-#include <scene/meshrenderer.h>
-#include <scene/uniformsetters.h>
+#include <scene/mesh.h>
+#include <scene/lightmanager.h>
+#include <scene/meshconfig.h>
 
 class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
   NPointLight *pointLight;
-  PhongShaderUniformSetter phongSetter;
 
 public:
   MyGame();
@@ -114,15 +114,11 @@ MyGame::MyGame() {
 
   LightManager::active = std::make_unique<LightManager>();
 
-  auto lightingStatus = std::make_shared<LightingStatus>();
-  lightingStatus->maxDirectionalLights = 0;
-  lightingStatus->maxPointLights = 1;
-
-  phongSetter.lightingStatus = lightingStatus;
-  phongSetter.specular = Vec3::one * 0.6f;
-  phongSetter.shininess = 32.0f;
-
-  NMeshRenderer::preRenderFunctions["Test"] = phongSetter;
+  {
+    using namespace MeshRenderConfigs;
+    configurationGenerators["single-texture"] = MakeGenerator<AddTextures<Standard>>();
+    configurationGenerators["single-texture-lit"] = MakeGenerator<MakeLit<AddTextures<Standard>>>();
+  }
 
   JSON::Document shaders, textures, sceneDoc;
 

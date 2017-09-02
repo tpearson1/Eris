@@ -29,46 +29,63 @@ SOFTWARE.
 
 #include <type_traits>
 #include <vector>
+#include <memory>
 #include <base/gl.h>
 #include <base/buffer.h>
 
-template <typename T = GLfloat>
 class VertexAttribute {
-  static_assert(std::is_same<T, GLfloat>::value ||
-                std::is_same<T, GLuint>::value ||
-                std::is_same<T, GLint>::value,
-                "Template Class 'VertexAttribute' must have template type GLfloat, GLuint or GLint");
+  struct Base {
+    virtual void Enable(unsigned index, unsigned columns) const = 0;
+    virtual void Setup() = 0;
+    virtual ~Base() {}
+  };
+
+  template <typename T>
+  struct Data : Base {
+    static_assert(std::is_same<T, GLfloat>::value ||
+                  std::is_same<T, GLuint>::value ||
+                  std::is_same<T, GLint>::value,
+                  "Template Class 'VertexAttribute' must have template type GLfloat, GLuint or GLint");
+
+    Buffer<T> buf;
+    std::vector<T> data;
+
+    virtual void Enable(unsigned index, unsigned columns) const override {
+      glEnableVertexAttribArray(index);
+      buf.Use();
+
+      GLenum type;
+      if (std::is_same<T, GLfloat>::value)
+        type = GL_FLOAT;
+      else if (std::is_same<T, GLuint>::value)
+        type = GL_UNSIGNED_INT;
+      else if (std::is_same<T, GLint>::value)
+        type = GL_INT;
+      glVertexAttribPointer(index, columns, type, GL_FALSE, 0, (GLvoid *)0);
+    }
+
+    virtual void Setup() override {
+      buf.Generate();
+      data.clear();
+    }
+  };
 
   unsigned index, columns;
-  std::vector<T> data;
-  Buffer<T> buf;
+  std::unique_ptr<Base> data;
 
 public:
-  VertexAttribute() {}
-  VertexAttribute(unsigned attrIndex, unsigned valuesPerRow, const std::vector<T> &_data) {
+  template <typename T>
+  VertexAttribute(unsigned attrIndex, unsigned _columns, const std::vector<T> &_data) {
     index = attrIndex;
-    columns = valuesPerRow;
-    data = _data;
+    columns = _columns;
+    auto d = std::make_unique<Data<T>>();
+    d->buf.Data(_data);
+    data = std::move(d);
   }
 
-  void Setup() {
-    buf.Data(data);
-    buf.Generate();
-  }
+  void Enable() const { data->Enable(index, columns); }
 
-  void Enable() const {
-    glEnableVertexAttribArray(index);
-    buf.Use();
-
-    GLenum type;
-    if (std::is_same<T, GLfloat>::value)
-      type = GL_FLOAT;
-    else if (std::is_same<T, GLuint>::value)
-      type = GL_UNSIGNED_INT;
-    else if (std::is_same<T, GLint>::value)
-      type = GL_INT;
-    glVertexAttribPointer(index, columns, type, GL_FALSE, 0, (GLvoid *)0);
-  }
+  void Setup() { data->Setup(); }
 
   void Disable() const
     { glDisableVertexAttribArray(index); }
@@ -78,3 +95,4 @@ public:
 };
 
 #endif // _BASE__VERTEX_ATTRIBUTE_H
+

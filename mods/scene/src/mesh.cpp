@@ -24,29 +24,15 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDER_REQUIREMENTS_H
-#define _SCENE__RENDER_REQUIREMENTS_H
-
-#include <memory>
+#include <mesh.h>
 #include <base/shader.h>
-#include <base/texture.h>
+#include <camera.h>
 
-struct RenderRequirements {
-  std::shared_ptr<Shader> shader;
-  std::shared_ptr<Texture> texture;
+NMesh &NMesh::operator=(const NMesh &mr) {
+  mesh = mr.mesh;
+  shader = mr.shader;
+  registration = Renderer::active->Register(
+    [this] { this->Draw(); }, this, shader);
+  return *this;
+}
 
-  RenderRequirements() {}
-  RenderRequirements(const std::shared_ptr<Shader> &s, const std::shared_ptr<Texture> &t) : shader(s), texture(t) {}
-
-  bool operator==(const RenderRequirements &r) const
-    { return shader == r.shader && texture == r.texture; }
-  bool operator!=(const RenderRequirements &r) const
-    { return shader != r.shader || texture != r.texture; }
-};
-
-template <>
-struct JSONImpl<RenderRequirements> {
-  static void Read(RenderRequirements &out, const JSON::Value &value, const JSON::ReadData &data);
-};
-
-#endif // _SCENE__RENDER_REQUIREMENTS_H

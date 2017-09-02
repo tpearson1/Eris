@@ -140,6 +140,13 @@ struct JSONImpl<unsigned> {
 };
 
 template <>
+struct JSONImpl<std::size_t> {
+  static void Read(std::size_t &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Write(std::size_t value, JSON::Writer &writer)
+    { writer.Uint(value); }
+};
+
+template <>
 struct JSONImpl<std::string> {
   static void Read(std::string &out, const JSON::Value &value, const JSON::ReadData &data);
   static void Write(const std::string &value, JSON::Writer &writer)

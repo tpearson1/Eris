@@ -31,14 +31,15 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/camera.h>
 #include <scene/tagmanager.h>
-#include <scene/meshrenderer.h>
+#include <scene/mesh.h>
+#include <scene/meshconfig.h>
 
 class MyGame : public Game {
   Scene scene;
-  NMeshRenderer *sphere;
+  NMesh *sphere;
   Vec3 rot;
   bool go = false;
-  std::list<NMeshRenderer *> rend;
+  std::list<NMesh *> rend;
 
 public:
   MyGame();
@@ -47,9 +48,9 @@ public:
     scene.Render();
 
     if (go) {
-      auto spawn = reinterpret_cast<NMeshRenderer *>(sphere->transform.Child(0));
+      auto spawn = reinterpret_cast<NMesh *>(sphere->transform.Child(0));
 
-      auto n = new NMeshRenderer(*spawn);
+      auto n = new NMesh(*spawn);
       n->transform.Location(spawn->transform.GlobalLocation());
       n->transform.Scale(Vec3::one * 0.1f);
 
@@ -151,6 +152,11 @@ MyGame::MyGame() {
   JSON::ReadData readData{typeManager};
   RegisterSceneTypeAssociations(*typeManager);
 
+  {
+    using namespace MeshRenderConfigs;
+    configurationGenerators["single-texture"] = MakeGenerator<AddTextures<Standard>>();
+  }
+
   scene.SetActive();
 
   JSON::Document shaders, textures, sceneDoc;
@@ -164,7 +170,7 @@ MyGame::MyGame() {
   JSON::GetDataFromFile(sceneDoc, "mods/orbit/res/scene.json");
   JSON::Read(scene, sceneDoc, readData);
 
-  sphere = TagManager::active->Get<NMeshRenderer>("sphere");
+  sphere = TagManager::active->Get<NMesh>("sphere");
 }
 
 extern "C" bool Orbit_Run() {

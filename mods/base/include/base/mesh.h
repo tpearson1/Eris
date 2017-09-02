@@ -32,6 +32,8 @@ SOFTWARE.
 #include <array>
 #include <base/vertexattribute.h>
 #include <math/vec.h>
+#include <math/mat.h>
+#include <test/macros.h>
 
 class VertexArray {
   GLuint ID = 0;
@@ -49,77 +51,64 @@ public:
     { glBindVertexArray(0); }
 };
 
-class RawMesh {
-  VertexAttribute<> vertices;
+class NMesh;
+
+namespace MeshRenderConfigs {
+  struct None {
+    std::vector<VertexAttribute> attrs;
+
+    void Setup() {
+      for (auto &attr : attrs)
+        attr.Setup();
+    }
+
+    void Enable() const {
+      for (auto &attr : attrs)
+        attr.Enable();
+    }
+
+    void Disable() const {
+      for (auto &attr : attrs)
+        attr.Disable();
+    }
+
+    virtual void PreRender() const {}
+    virtual void PostRender() const {}
+    virtual ~None() {}
+  };
+
+  struct UV : public None {
+    void SetupUV(const std::vector<GLfloat> &uvData)
+      { attrs.emplace_back(1, 2, uvData); }
+  };
+
+  struct Normal : public None {
+    void SetupNormal(const std::vector<GLfloat> &normalData)
+      { attrs.emplace_back(2, 3, normalData); }
+  };
+
+  struct Standard : public None {
+    void SetupStandard(const std::vector<GLfloat> &uvData,
+                    const std::vector<GLfloat> &normalData) {
+      attrs.emplace_back(1, 2, uvData);
+      attrs.emplace_back(2, 3, normalData);
+    }
+  };
+}
+
+class Mesh {
+  VertexAttribute vertices;
   VertexArray vao;
   ElementBuffer indices;
 
 public:
-  RawMesh(const std::vector<GLfloat> &verts,
-          const std::vector<GLuint> &indexData);
+  Mesh(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData,
+       const std::shared_ptr<MeshRenderConfigs::None> &conf);
 
-  void Draw() const;
+  void Draw(const Mat4 &mvp) const;
 
-  virtual void EnableAttributes() const {}
-  virtual void DisableAttributes() const {}
-
-  virtual ~RawMesh() {}
-};
-
-class UVMesh : public RawMesh {
-  VertexAttribute<> uvs;
-
-public:
-  UVMesh(const std::vector<GLfloat> &verts,
-         const std::vector<GLuint> &indexData,
-         const std::vector<GLfloat> &uvData)
-      : RawMesh(verts, indexData) {
-    uvs = VertexAttribute<>{1, 2, uvData};
-    uvs.Setup();
-  }
-
-  virtual void EnableAttributes() const override { uvs.Enable(); }
-  virtual void DisableAttributes() const override { uvs.Disable(); }
-};
-
-class NormalMesh : public RawMesh {
-  VertexAttribute<> normals;
-
-public:
-  NormalMesh(const std::vector<GLfloat> &verts,
-             const std::vector<GLuint> &indexData,
-             const std::vector<GLfloat> &normalData)
-      : RawMesh(verts, indexData) {
-    normals = VertexAttribute<>{2, 3, normalData};
-    normals.Setup();
-  }
-
-  virtual void EnableAttributes() const override { normals.Enable(); }
-  virtual void DisableAttributes() const override { normals.Disable(); }
-};
-
-class StandardMesh : public UVMesh {
-  VertexAttribute<> normals;
-
-public:
-  StandardMesh(const std::vector<GLfloat> &verts,
-               const std::vector<GLuint> &indexData,
-               const std::vector<GLfloat> &uvData,
-               const std::vector<GLfloat> &normalData)
-      : UVMesh(verts, indexData, uvData) {
-    normals = VertexAttribute<>{2, 3, normalData};
-    normals.Setup();
-  }
-
-  virtual void EnableAttributes() const override {
-    UVMesh::EnableAttributes();
-    normals.Enable();
-  }
-
-  virtual void DisableAttributes() const override {
-    UVMesh::DisableAttributes();
-    normals.Disable();
-  }
+  std::shared_ptr<MeshRenderConfigs::None> config;
 };
 
 #endif // _BASE__MESH_H
+

@@ -54,7 +54,7 @@ void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, con
 
   JSON::GetMember<NNode>(out, "NNode", object, data);
 
-  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have it's static member 'active' set");
+  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have its static member 'active' set");
   LightManager::active->RegisterPointLight(&out);
 }
 
@@ -85,7 +85,7 @@ void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value
   JSON::GetMember(out.diffuse, "diffuse", object, data);
   JSON::GetMember(out.specular, "specular", object, data);
 
-  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have it's static member 'active' set");
+  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have its static member 'active' set");
   LightManager::active->RegisterDirectionalLight(&out);
 }
 
@@ -96,15 +96,18 @@ void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Wr
   JSON::WritePair("specular", value.specular, writer);
 }
 
-void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirSizeType maxDirCount, LightManager::PointSizeType maxPointCount) {
+void LightManager::SetUniformsForClosestLights(Vec3 location,
+                                               const LightingConfig &config) {
   const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform("cameraLocation"), NCamera::active->transform.Location());
-  cur->SetUniform(cur->GetUniform("numPointLights"), Math::Min<GLint>(maxPointCount, pointLights.size()));
-  cur->SetUniform(cur->GetUniform("numDirectionalLights"), Math::Min<GLint>(maxDirCount, directionalLights.size()));
+  cur->SetUniform(cur->GetUniform("cameraLocation"),
+                  NCamera::active->transform.Location());
+  GLint numPointLights = std::min(config.maxPointLights, pointLights.size());
+  cur->SetUniform(cur->GetUniform("numPointLights"), numPointLights);
+  GLint numDirLights = std::min(config.maxDirectionalLights, directionalLights.size());
+  cur->SetUniform(cur->GetUniform("numDirectionalLights"), numDirLights);
 
   auto dirIt = directionalLights.begin();
-  auto less = Math::Min(maxDirCount, directionalLights.size());
-  for (auto i = 0u; i < less; i++, dirIt++) {
+  for (auto i = 0; i < numDirLights; i++, dirIt++) {
     std::stringstream iss;
     iss << "directionalLights[" << i << ']';
     (*dirIt)->SetUniformData(iss.str());
@@ -112,12 +115,12 @@ void LightManager::SetUniformsForClosestLights(Vec3 location, LightManager::DirS
 
   // Order point lights by distance to objects
   pointLights.sort([&location](const auto &lhs, const auto &rhs) {
-    return Vec3::Distance(lhs->transform.Location(), location) < Vec3::Distance(rhs->transform.Location(), location);
+    return Vec3::Distance(lhs->transform.Location(), location) <
+           Vec3::Distance(rhs->transform.Location(), location);
   });
 
-  less = Math::Min(maxPointCount, pointLights.size());
   auto pointIt = pointLights.begin();
-  for (auto i = 0u; i < less; i++, pointIt++) {
+  for (auto i = 0; i < numPointLights; i++, pointIt++) {
     std::stringstream iss;
     iss << "pointLights[" << i << ']';
     (*pointIt)->SetUniformData(iss.str());

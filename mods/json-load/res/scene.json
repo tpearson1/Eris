@@ -3,29 +3,22 @@
     "Tagged",
     [
       { "tag": "model" },
-      /*"Model",
+      "NMesh",
       {
         "path": "mods/json-load/res/monk.blend",
-        "requirements": {
-          "texture": "monk",
-          "shader": "phong"
-        },
-        "prerender-func": "Test",
-        "NNode": {
-          "transform": {
-            "location": [0, 0, 0],
-            "rotation": [0, 0, 0]
+        "shader": "phong",
+        "config": {
+          "type": "single-texture-lit",
+          "data": {
+            "textures": [
+              {"uniform": "material.diffuse", "texture": "monk"}
+            ],
+            "specular": [0.6, 0.6, 0.6],
+            "shininess": 32,
+            "max-dir-lights": 0,
+            "max-point-lights": 1
           }
-        }
-      }*/
-      "NMeshRenderer",
-      {
-        "path": "mods/json-load/res/monk.blend",
-        "requirements": {
-          "texture": "monk",
-          "shader": "phong"
         },
-        "prerender-func": "Test",
         "NNode": {
           "transform": {
             "location": [0, 0, 0],
@@ -37,12 +30,17 @@
     "Tagged",
     [
       { "tag": "shape" },
-      "Model",
+      "NMesh",
       {
         "path": "mods/json-load/res/shape.blend",
-        "requirements": {
-          "texture": "shape",
-          "shader": "unlit"
+        "shader": "unlit",
+        "config": {
+          "type": "single-texture",
+          "data": {
+            "textures": [
+              {"uniform": "material.diffuse", "texture": "shape"}
+            ]
+          }
         },
         "NNode": {
           "transform": {

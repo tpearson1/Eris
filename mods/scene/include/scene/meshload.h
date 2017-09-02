@@ -24,25 +24,48 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__UNIFORM_SETTERS_H
-#define _SCENE__UNIFORM_SETTERS_H
+#ifndef _BASE__MODEL_H
+#define _BASE__MODEL_H
 
-#include <scene/lightmanager.h>
+#include <vector>
+#include <assimp/scene.h>
+#include <assimp/Importer.hpp>
+#include <scene/scene.h>
+#include <scene/mesh.h>
 
-class NMeshRenderer;
+struct MeshData {
+  std::vector<GLfloat> verts, uvs, normals;
+  std::vector<GLuint> indices;
+  bool hasUVs = true, successful = true;
 
-struct LightingStatus {
-  LightManager::DirSizeType maxDirectionalLights;
-  LightManager::PointSizeType maxPointLights;
+  MeshData() {}
+  MeshData(const aiMesh *mesh) { Load(mesh); }
+  MeshData(const std::string &path) { Load(path); }
+
+  std::shared_ptr<Mesh>
+  GenerateMesh(const std::shared_ptr<MeshRenderConfigs::Standard> &config);
+
+  void Load(const aiMesh *mesh);
+  void Load(const std::string &path);
 };
 
-struct PhongShaderUniformSetter {
-  std::shared_ptr<LightingStatus> lightingStatus;
-  Vec3 specular;
-  float shininess;
+const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer);
 
-  void operator()(NMeshRenderer *nmr) const; 
-};
+/*
+ * Function that can be registered for the ability to load single meshes as shown below:
+ * [
+ *   "NMesh",
+ *   {
+ *     "path": "mods/mod/res/mesh.blend",
+ *     "shader": "unlit",
+ *     "config": {
+ *       "type": "none",
+ *       "data": {}
+ *     },
+ *     "NNode": { ... }
+ *   }
+ * ]
+ */
+NMesh *MeshTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
 
-#endif // _SCENE__UNIFORM_SETTERS_H
-
+#endif // _BASE__MODEL_H

@@ -3,24 +3,32 @@
     "Tagged",
     [
       { "tag": "sphere" },
-      "NMeshRenderer",
+      "NMesh",
       {
         "path": "mods/orbit/res/sphere.blend",
-        "requirements": {
-          "texture": "sphere",
-          "shader": "unlit"
+        "shader": "unlit",
+        "config": {
+          "type": "single-texture",
+          "data": {
+            "textures": [{"uniform": "material.diffuse", "texture": "sphere"}]
+          }
         },
         "NNode": {
           "transform": {
             "location": [0, 0, 0],
             "rotation": [0, 0, 0],
             "children": [
-              "NMeshRenderer",
+              "NMesh",
               {
                 "path": "mods/orbit/res/sphere.blend",
-                "requirements": {
-                  "texture": "black",
-                  "shader": "unlit"
+                "shader": "unlit",
+                "config": {
+                  "type": "single-texture",
+                  "data": {
+                    "textures": [
+                      {"uniform": "material.diffuse", "texture": "black"}
+                    ]
+                  }
                 },
                 "NNode": {
                   "transform": {

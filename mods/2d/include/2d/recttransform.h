@@ -34,7 +34,7 @@ SOFTWARE.
 
 class RectTransform : public RenderTree<class CanvasItem>, public JSON::ReadWrite {
   /*
-   * The relative position of the UI element relative to it's anchors
+   * The relative position of the UI element relative to its anchors
    */
   Vec3 location;
 

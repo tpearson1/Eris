@@ -9,9 +9,14 @@ build
 *~
 *.bak
 *.sw[abcdefghijklmnop]
+*.saved_session
 /.vscode/
 /tags
 /load.trace
 /.ycm_extra_conf.py
 /vgcore.*
+
+# Other things that do not need to be included in the repository
+todo
+session
 

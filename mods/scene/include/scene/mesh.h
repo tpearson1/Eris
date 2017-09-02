@@ -24,25 +24,49 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <meshrenderer.h>
-#include <base/shader.h>
-#include <camera.h>
+#ifndef _SCENE__MESH_H
+#define _SCENE__MESH_H
 
-std::unordered_map<std::string, NMeshRenderer::PreRenderFunctionType> NMeshRenderer::preRenderFunctions;
+#include <functional>
+#include <unordered_map>
+#include <base/mesh.h>
+#include <scene/node.h>
+#include <scene/camera.h>
+#include <scene/renderer.h>
 
-void MeshRenderer::Draw(const Mat4 &global) {
-  const Shader *current = Shader::Current();
-  GLint shaderMVP = current->GetUniform("MVP");
-  Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, global);
+class NMesh : public NNode {
+  std::shared_ptr<Mesh> mesh;
 
-  mesh->Draw();
-}
+public:
+  const Mesh *Get() { return mesh.get(); }
+  void Set(const std::shared_ptr<Mesh> &value) { mesh = std::move(value); }
 
-NMeshRenderer &NMeshRenderer::operator=(const NMeshRenderer &mr) {
-  preRenderFunction = mr.preRenderFunction;
-  renderer = mr.renderer;
-  requirements = mr.requirements;
-  registration = Renderer::active->Register([this] { this->Draw(); }, this, requirements);
-  return *this;
-}
+  const Shader *GetShader() const { return shader.get(); };
+
+  void SetShader(const std::shared_ptr<const Shader> &s) {
+    Renderer::active->UpdateRequirements(registration, shader = s);
+  }
+
+  NMesh(const std::shared_ptr<const Shader> &s) {
+    registration = Renderer::active->Register([this] { this->Draw(); }, this, shader = s);
+  }
+
+  NMesh &operator=(const NMesh &mr);
+
+  NMesh(const NMesh &mr) { *this = mr; }
+
+  ~NMesh() {
+    Renderer::active->Unregister(registration);
+  }
+
+private:
+  void Draw() {
+    mesh->Draw(NCamera::active->Matrix(transform.GlobalTransform().Matrix()));
+  }
+
+  std::shared_ptr<const Shader> shader;
+  Renderer::Registration registration;
+};
+
+#endif // _SCENE__MESH_H
 

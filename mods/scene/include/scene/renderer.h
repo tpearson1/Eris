@@ -27,51 +27,40 @@ SOFTWARE.
 #ifndef _SCENE__RENDERER_H
 #define _SCENE__RENDERER_H
 
-#include <tuple>
+#include <utility>
 #include <list>
 #include <memory>
 #include <functional>
-#include <scene/renderrequirements.h>
+#include <base/shader.h>
 
 class Renderable;
 
-using RenderTuple = std::tuple<std::function<void()>, Renderable *>;
-
-struct RenderItem2 {
-  std::shared_ptr<Texture> same;
-  std::list<RenderTuple> items;
-};
-
-struct RenderItem {
-  std::shared_ptr<Shader> same;
-  std::list<RenderItem2> items;
-};
-
-struct RenderRegistration {
-  RenderRegistration() {}
-  friend class Renderer;
-
-private:
-  RenderRegistration(std::list<RenderItem>::iterator s, std::list<RenderItem2>::iterator t, std::list<RenderTuple>::iterator r)
-    : shaderGroup(s), textureGroup(t), renderTuple(r) {}
-
-  std::list<RenderItem>::iterator shaderGroup;
-  std::list<RenderItem2>::iterator textureGroup;
-  std::list<RenderTuple>::iterator renderTuple;
-};
-
 class Renderer {
-  std::list<RenderItem> renderOrder;
+  using RenderPair = std::pair<std::function<void()>, Renderable *>;
+
+  std::unordered_map<std::shared_ptr<const Shader>, std::list<RenderPair>> renderItems;
 
 public:
+  struct Registration {
+    Registration() {}
+    friend class Renderer;
+
+  private:
+    Registration(const std::shared_ptr<const Shader> &s, std::list<RenderPair>::iterator it)
+      : shader(s), element(it) {}
+
+    std::shared_ptr<const Shader> shader;
+    std::list<RenderPair>::iterator element;
+  };
+
   static Renderer *active;
 
   // A single class instance SHOULD NOT register two functions with the same requirements!
-  RenderRegistration Register(std::function<void()> func, Renderable *renderable, const RenderRequirements &r);
+  Registration Register(std::function<void()> func, Renderable *renderable, const std::shared_ptr<const Shader> &s);
 
-  void Unregister(const RenderRegistration &registration);
+  void Unregister(const Registration &registration);
 
-  RenderRegistration UpdateRequirements(const RenderRegistration &registration, const RenderRequirements &updated);
+  Registration UpdateRequirements(const Registration &registration, const std::shared_ptr<const Shader> &updated);
 
   void Render();
 };

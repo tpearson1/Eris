@@ -59,7 +59,13 @@ void JSONImpl<int>::Read(int &out, const JSON::Value &value, const JSON::ReadDat
 
 void JSONImpl<unsigned>::Read(unsigned &out, const JSON::Value &value, const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "unsigned"};
-  JSON::ParseAssert(value.IsUint(), data, "Must be an integer");
+  JSON::ParseAssert(value.IsUint(), data, "Must be an unsigned integer");
+  out = value.GetUint();
+}
+
+void JSONImpl<std::size_t>::Read(std::size_t &out, const JSON::Value &value, const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "std::size_t"};
+  JSON::ParseAssert(value.IsUint(), data, "Must be an unsigned integer");
   out = value.GetUint();
 }
 

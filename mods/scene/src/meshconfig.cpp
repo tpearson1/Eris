@@ -24,18 +24,19 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <uniformsetters.h>
-#include <scene/meshrenderer.h>
+#include <meshconfig.h>
+#include <test/macros.h>
 
-void PhongShaderUniformSetter::operator()(NMeshRenderer *nmr) const {
-  LightManager::active->SetUniformsForClosestLights(
-    nmr->transform.Location(),
-    lightingStatus->maxDirectionalLights,
-    lightingStatus->maxPointLights
-  );
+std::unordered_map<std::string, MeshRenderConfigs::Generator>
+    MeshRenderConfigs::configurationGenerators;
 
-  const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform("material.specular"), specular);
-  cur->SetUniform(cur->GetUniform("material.shininess"), shininess);
-  cur->SetUniformMatrix4(cur->GetUniform("model"), 1, false, nmr->transform.Matrix());
+void JSONImpl<MeshRenderConfigs::NamedTexturePair>::Read(
+    MeshRenderConfigs::NamedTexturePair &out, const JSON::Value &value,
+    const JSON::ReadData &data) {
+  auto t = Trace::Pusher{data.trace, "MeshRenderConfigs::NamedTexturePair"};
+  const auto &object = JSON::GetObject(value, data);
+  JSON::GetMember(out.uniform, "uniform", object, data);
+  auto textureStr = JSON::GetMember<std::string>("texture", object, data);
+  out.texture = Resources::active->textures.Get(textureStr);
 }
+

@@ -55,7 +55,7 @@ struct Sprite {
   class SpriteSheet *sheet;
 
   /*
-   * The region of it's spritesheet
+   * The region of its spritesheet
    */
   Rect region;
 
