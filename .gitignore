@@ -10,6 +10,7 @@ build
 *.bak
 *.sw[abcdefghijklmnop]
 *.saved_session
+/.clang-format
 /.vscode/
 /tags
 /load.trace

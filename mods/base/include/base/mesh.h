@@ -62,16 +62,6 @@ namespace MeshRenderConfigs {
         attr.Setup();
     }
 
-    void Enable() const {
-      for (auto &attr : attrs)
-        attr.Enable();
-    }
-
-    void Disable() const {
-      for (auto &attr : attrs)
-        attr.Disable();
-    }
-
     virtual void PreRender() const {}
     virtual void PostRender() const {}
     virtual ~None() {}
@@ -111,4 +101,3 @@ public:
 };
 
 #endif // _BASE__MESH_H
-

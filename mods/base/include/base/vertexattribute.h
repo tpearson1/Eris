@@ -27,32 +27,34 @@ SOFTWARE.
 #ifndef _BASE__VERTEX_ATTRIBUTE_H
 #define _BASE__VERTEX_ATTRIBUTE_H
 
+#include <base/buffer.h>
+#include <base/gl.h>
+#include <memory>
 #include <type_traits>
 #include <vector>
-#include <memory>
-#include <base/gl.h>
-#include <base/buffer.h>
 
 class VertexAttribute {
   struct Base {
-    virtual void Enable(unsigned index, unsigned columns) const = 0;
-    virtual void Setup() = 0;
+    virtual void Setup(unsigned index, unsigned columns) = 0;
     virtual ~Base() {}
   };
 
   template <typename T>
   struct Data : Base {
     static_assert(std::is_same<T, GLfloat>::value ||
-                  std::is_same<T, GLuint>::value ||
-                  std::is_same<T, GLint>::value,
-                  "Template Class 'VertexAttribute' must have template type GLfloat, GLuint or GLint");
+                      std::is_same<T, GLuint>::value ||
+                      std::is_same<T, GLint>::value,
+                  "Template Class 'VertexAttribute' must have template type "
+                  "GLfloat, GLuint or GLint");
 
     Buffer<T> buf;
     std::vector<T> data;
 
-    virtual void Enable(unsigned index, unsigned columns) const override {
+    virtual void Setup(unsigned index, unsigned columns) override {
+      buf.Generate();
+      data.clear();
+
       glEnableVertexAttribArray(index);
-      buf.Use();
 
       GLenum type;
       if (std::is_same<T, GLfloat>::value)
@@ -63,11 +65,6 @@ class VertexAttribute {
         type = GL_INT;
       glVertexAttribPointer(index, columns, type, GL_FALSE, 0, (GLvoid *)0);
     }
-
-    virtual void Setup() override {
-      buf.Generate();
-      data.clear();
-    }
   };
 
   unsigned index, columns;
@@ -75,7 +72,8 @@ class VertexAttribute {
 
 public:
   template <typename T>
-  VertexAttribute(unsigned attrIndex, unsigned _columns, const std::vector<T> &_data) {
+  VertexAttribute(unsigned attrIndex, unsigned _columns,
+                  const std::vector<T> &_data) {
     index = attrIndex;
     columns = _columns;
     auto d = std::make_unique<Data<T>>();
@@ -83,16 +81,10 @@ public:
     data = std::move(d);
   }
 
-  void Enable() const { data->Enable(index, columns); }
-
-  void Setup() { data->Setup(); }
-
-  void Disable() const
-    { glDisableVertexAttribArray(index); }
+  void Setup() { data->Setup(index, columns); }
 
   template <size_t NumAttrs>
   friend class InstancedMesh;
 };
 
 #endif // _BASE__VERTEX_ATTRIBUTE_H
-

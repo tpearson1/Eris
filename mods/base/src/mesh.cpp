@@ -52,17 +52,8 @@ void Mesh::Draw(const Mat4 &mvp) const {
   config->PreRender();
   vao.Use();
 
-  vertices.Enable();
-  config->Enable();
-
-  indices.Use();
   indices.Draw();
 
-  config->Disable();
-  vertices.Disable();
-
-  Buffer<GLfloat>::ClearUse();
-  ElementBuffer::ClearUse();
   VertexArray::ClearUse();
   config->PostRender();
 }
