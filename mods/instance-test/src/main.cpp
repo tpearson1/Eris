@@ -31,37 +31,24 @@ SOFTWARE.
 #include <scene/camera.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
+#include <scene/meshload.h>
+#include <scene/renderer.h>
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
 
+struct NIM : public Renderable {
+  std::shared_ptr<Mesh> spheres;
+};
+
 class MyGame : public Game {
   Scene scene;
-  NMesh *sphere;
-  Vec3 rot;
-  bool go = false;
-  std::list<NMesh *> rend;
+  NIM nim;
 
 public:
   MyGame();
   void Tick(float delta) override {
     glClearColor(0.3f, 0.6f, 0.6f, 1.0f);
     scene.Render();
-
-    if (go) {
-      auto spawn = reinterpret_cast<NMesh *>(sphere->transform.Child(0));
-
-      auto n = new NMesh(*spawn);
-      n->transform.Location(spawn->transform.GlobalLocation());
-      n->transform.Scale(Vec3::one * 0.1f);
-
-      rend.push_back(n);
-      if (rend.size() > 99) {
-        delete rend.front();
-        rend.erase(rend.begin());
-      }
-
-      sphere->transform.Rotate(rot * delta);
-    }
 
     float mul = delta * 45.0f;
     if (Input::IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
@@ -100,71 +87,53 @@ MyGame::MyGame() {
     if (action == InputEvent::PRESS) Window::inst->Close();
   });
 
-  Input::RegisterKeyCallback(KeyCode::U, [this](InputEvent action) {
-    if (action == InputEvent::PRESS) go = !go;
-  });
-
-  Input::RegisterKeyCallback(KeyCode::I, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
-
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.x -= 30.0f;
-    else
-      rot.x += 30.0f;
-  });
-
-  Input::RegisterKeyCallback(KeyCode::O, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
-
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.y -= 30.0f;
-    else
-      rot.y += 30.0f;
-  });
-
-  Input::RegisterKeyCallback(KeyCode::P, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
-
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.z -= 30.0f;
-    else
-      rot.z += 30.0f;
-  });
-
   Input::GetMousePosition(startDragX, startDragY);
 
-  auto tm = std::make_unique<TagManager>();
-  TagManager::active = tm.get();
   auto resources = std::make_unique<Resources>();
   Resources::active = resources.get();
 
   auto typeManager = std::make_shared<JSON::TypeManager>();
   JSON::ReadData readData{typeManager};
-  RegisterSceneTypeAssociations(*typeManager);
-
-  {
-    using namespace MeshRenderConfigs;
-    configurationGenerators["single-texture"] =
-        MakeGenerator<AddTextures<Standard>>();
-  }
 
   scene.SetActive();
 
-  JSON::Document shaders, textures, sceneDoc;
+  NCamera::active = new NCamera;
+  NCamera::active->transform.Parent(&scene.root);
 
-  JSON::GetDataFromFile(shaders, "mods/orbit/res/shaders.json");
+  JSON::Document shaders, textures;
+
+  JSON::GetDataFromFile(shaders, "mods/instance-test/res/shaders.json");
   JSON::Read(Resources::active->shaders, shaders, readData);
 
-  JSON::GetDataFromFile(textures, "mods/orbit/res/textures.json");
+  JSON::GetDataFromFile(textures, "mods/instance-test/res/textures.json");
   JSON::Read(Resources::active->textures, textures, readData);
 
-  JSON::GetDataFromFile(sceneDoc, "mods/orbit/res/scene.json");
-  JSON::Read(scene, sceneDoc, readData);
+  using namespace MeshRenderConfigs;
+  auto config = std::make_shared<MakeInstanced<AddTextures<Standard>>>();
+  config->textures.push_back(
+      {"material.diffuse", Resources::active->textures.Get("sphere")});
 
-  sphere = TagManager::active->Get<NMesh>("sphere");
+  constexpr const auto width = 5, length = 5, height = 7;
+  constexpr const auto instanceCount = width * length * height;
+  constexpr const auto spacing = 4.5f;
+
+  std::vector<Mat4> mats;
+  mats.reserve(instanceCount);
+  for (int i = 0; i < width; i++)
+    for (int j = 0; j < length; j++)
+      for (int k = 0; k < height; k++)
+        mats.push_back(Mat4::Translate(i * spacing, j * spacing, k * spacing));
+  config->attrs.emplace_back(3, 16, 1, mats);
+
+  nim.spheres = MeshData{"mods/instance-test/res/sphere.blend"}.GenerateMesh(
+      config, instanceCount);
+
+  auto shader = Resources::active->shaders.Get("instanced");
+  Renderer::active->Register([&] { nim.spheres->Draw(Mat4::identity); }, &nim,
+                             shader);
 }
 
-extern "C" bool Orbit_Run() {
+extern "C" bool InstanceTest_Run() {
   MyGame().Start();
   return true;
 }

@@ -64,8 +64,6 @@ void Game::Start() {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    delta = glfwGetTime();
-    elapsedTime += delta;
     // Any nodes that are removed from the list during a 'Tick' call
     // will no longer cause problems
     auto tempList = tickNodes;
@@ -74,6 +72,9 @@ void Game::Start() {
     Tick(delta);
 
     window->SwapBuffers();
+
+    delta = glfwGetTime();
+    elapsedTime += delta;
   }
 }
 

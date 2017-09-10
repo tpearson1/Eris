@@ -1,0 +1,12 @@
+{
+  "author": "Thomas Pearson",
+  "version": "0.0.1",
+  "playable": true,
+  "has-headers": false,
+  "uses-c++": true,
+  "compile": true,
+  "depend": [
+    "game",
+    "test"
+  ]
+}

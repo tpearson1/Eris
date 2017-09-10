@@ -1,0 +1,7 @@
+{
+  "instanced": {
+    "vertex": "mods/base/res/shaders/instanced-unlit.vs",
+    "fragment": "mods/base/res/shaders/default-unlit.frag"
+  }
+}
+

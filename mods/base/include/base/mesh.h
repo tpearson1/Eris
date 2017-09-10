@@ -27,63 +27,62 @@ SOFTWARE.
 #ifndef _BASE__MESH_H
 #define _BASE__MESH_H
 
-#include <iostream>
-#include <vector>
 #include <array>
 #include <base/vertexattribute.h>
-#include <math/vec.h>
+#include <iostream>
 #include <math/mat.h>
+#include <math/vec.h>
 #include <test/macros.h>
+#include <vector>
 
 class VertexArray {
   GLuint ID = 0;
 
 public:
   VertexArray() {}
-  ~VertexArray()
-    { if (ID) glDeleteVertexArrays(1, &ID); }
+  ~VertexArray() {
+    if (ID) glDeleteVertexArrays(1, &ID);
+  }
 
-  void Generate()
-    { glGenVertexArrays(1, &ID); }
-  void Use() const
-    { glBindVertexArray(ID); }
-  static void ClearUse()
-    { glBindVertexArray(0); }
+  void Generate() { glGenVertexArrays(1, &ID); }
+  void Use() const { glBindVertexArray(ID); }
+  static void ClearUse() { glBindVertexArray(0); }
 };
 
 class NMesh;
 
 namespace MeshRenderConfigs {
-  struct None {
-    std::vector<VertexAttribute> attrs;
+struct None {
+  std::vector<VertexAttribute> attrs;
 
-    void Setup() {
-      for (auto &attr : attrs)
-        attr.Setup();
-    }
+  void Setup() {
+    for (auto &attr : attrs) attr.Setup();
+  }
 
-    virtual void PreRender() const {}
-    virtual void PostRender() const {}
-    virtual ~None() {}
-  };
+  virtual void PreRender() const {}
+  virtual void PostRender() const {}
+  virtual ~None() {}
+};
 
-  struct UV : public None {
-    void SetupUV(const std::vector<GLfloat> &uvData)
-      { attrs.emplace_back(1, 2, uvData); }
-  };
+struct UV : public None {
+  void SetupUV(const std::vector<GLfloat> &uvData) {
+    attrs.emplace_back(1, 2, 0, uvData);
+  }
+};
 
-  struct Normal : public None {
-    void SetupNormal(const std::vector<GLfloat> &normalData)
-      { attrs.emplace_back(2, 3, normalData); }
-  };
+struct Normal : public None {
+  void SetupNormal(const std::vector<GLfloat> &normalData) {
+    attrs.emplace_back(2, 3, 0, normalData);
+  }
+};
 
-  struct Standard : public None {
-    void SetupStandard(const std::vector<GLfloat> &uvData,
-                    const std::vector<GLfloat> &normalData) {
-      attrs.emplace_back(1, 2, uvData);
-      attrs.emplace_back(2, 3, normalData);
-    }
-  };
+struct Standard : public None {
+  void SetupStandard(const std::vector<GLfloat> &uvData,
+                     const std::vector<GLfloat> &normalData) {
+    attrs.emplace_back(1, 2, 0, uvData);
+    attrs.emplace_back(2, 3, 0, normalData);
+  }
+};
 }
 
 class Mesh {
@@ -91,13 +90,18 @@ class Mesh {
   VertexArray vao;
   ElementBuffer indices;
 
+  unsigned instanceCount;
+
 public:
   Mesh(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData,
-       const std::shared_ptr<MeshRenderConfigs::None> &conf);
+       const std::shared_ptr<MeshRenderConfigs::None> &conf,
+       unsigned _instanceCount);
 
   void Draw(const Mat4 &mvp) const;
 
   std::shared_ptr<MeshRenderConfigs::None> config;
+
+  friend class InstancedMesh;
 };
 
 #endif // _BASE__MESH_H

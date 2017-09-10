@@ -70,16 +70,16 @@ public:
 
   static void ClearUse() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
-  void Generate() {
-    glGenBuffers(1, &ID);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size() * sizeof(GLuint), data.data(), GL_STATIC_DRAW);
-  }
+  void Generate();
 
   void Draw() const
     { glDrawElements(GL_TRIANGLES, data.size(), GL_UNSIGNED_INT, 0); }
 
-  template <size_t NumAttrs>
+  void DrawInstanced(unsigned count) const {
+    glDrawElementsInstanced(GL_TRIANGLES, data.size(),
+                            GL_UNSIGNED_INT, 0, count);
+  }
+
   friend class InstancedMesh;
 };
 

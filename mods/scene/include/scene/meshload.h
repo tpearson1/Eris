@@ -27,11 +27,11 @@ SOFTWARE.
 #ifndef _BASE__MODEL_H
 #define _BASE__MODEL_H
 
-#include <vector>
-#include <assimp/scene.h>
 #include <assimp/Importer.hpp>
-#include <scene/scene.h>
+#include <assimp/scene.h>
 #include <scene/mesh.h>
+#include <scene/scene.h>
+#include <vector>
 
 struct MeshData {
   std::vector<GLfloat> verts, uvs, normals;
@@ -43,7 +43,8 @@ struct MeshData {
   MeshData(const std::string &path) { Load(path); }
 
   std::shared_ptr<Mesh>
-  GenerateMesh(const std::shared_ptr<MeshRenderConfigs::Standard> &config);
+  GenerateMesh(const std::shared_ptr<MeshRenderConfigs::Standard> &config,
+               unsigned instanceCount);
 
   void Load(const aiMesh *mesh);
   void Load(const std::string &path);
@@ -52,7 +53,8 @@ struct MeshData {
 const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer);
 
 /*
- * Function that can be registered for the ability to load single meshes as shown below:
+ * Function that can be registered for the ability to load single meshes as
+ * shown below:
  * [
  *   "NMesh",
  *   {
@@ -66,6 +68,7 @@ const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer);
  *   }
  * ]
  */
-NMesh *MeshTypeRegistration(const JSON::Value &value, const JSON::ReadData &data);
+NMesh *MeshTypeRegistration(const JSON::Value &value,
+                            const JSON::ReadData &data);
 
 #endif // _BASE__MODEL_H

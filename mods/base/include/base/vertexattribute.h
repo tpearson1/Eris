@@ -29,13 +29,15 @@ SOFTWARE.
 
 #include <base/buffer.h>
 #include <base/gl.h>
+#include <math/mat.h>
 #include <memory>
 #include <type_traits>
 #include <vector>
 
 class VertexAttribute {
   struct Base {
-    virtual void Setup(unsigned index, unsigned columns) = 0;
+    virtual void Setup(unsigned index, unsigned columns,
+                       unsigned instanceDivisor) = 0;
     virtual ~Base() {}
   };
 
@@ -43,18 +45,18 @@ class VertexAttribute {
   struct Data : Base {
     static_assert(std::is_same<T, GLfloat>::value ||
                       std::is_same<T, GLuint>::value ||
-                      std::is_same<T, GLint>::value,
+                      std::is_same<T, GLint>::value ||
+                      std::is_same<T, Mat4>::value,
                   "Template Class 'VertexAttribute' must have template type "
-                  "GLfloat, GLuint or GLint");
+                  "GLfloat, GLuint, GLint or Mat4");
 
     Buffer<T> buf;
     std::vector<T> data;
 
-    virtual void Setup(unsigned index, unsigned columns) override {
+    virtual void Setup(unsigned index, unsigned columns,
+                       unsigned instanceDivisor) override {
       buf.Generate();
       data.clear();
-
-      glEnableVertexAttribArray(index);
 
       GLenum type;
       if (std::is_same<T, GLfloat>::value)
@@ -63,27 +65,47 @@ class VertexAttribute {
         type = GL_UNSIGNED_INT;
       else if (std::is_same<T, GLint>::value)
         type = GL_INT;
+      else if (std::is_same<T, Mat4>::value) {
+        auto rowSize = 4 * sizeof(float);
+        for (auto i = 0; i < 4; i++) {
+          glEnableVertexAttribArray(index + i);
+          glVertexAttribPointer(index + i, 4, GL_FLOAT, GL_FALSE, sizeof(Mat4),
+                                (GLvoid *)(i * rowSize));
+          
+          if (instanceDivisor)
+            glVertexAttribDivisor(index + i, instanceDivisor);
+        }
+        return;
+      }
+
+      glEnableVertexAttribArray(index);
       glVertexAttribPointer(index, columns, type, GL_FALSE, 0, (GLvoid *)0);
+
+      if (instanceDivisor)
+        glVertexAttribDivisor(index, instanceDivisor);
     }
   };
 
-  unsigned index, columns;
+  unsigned index, columns, instanceDivisor;
   std::unique_ptr<Base> data;
 
 public:
   template <typename T>
-  VertexAttribute(unsigned attrIndex, unsigned _columns,
+  VertexAttribute(unsigned attrIndex, unsigned _columns, unsigned divisor,
                   const std::vector<T> &_data) {
     index = attrIndex;
     columns = _columns;
+    instanceDivisor = divisor;
     auto d = std::make_unique<Data<T>>();
     d->buf.Data(_data);
     data = std::move(d);
   }
 
-  void Setup() { data->Setup(index, columns); }
+  void Setup() { data->Setup(index, columns, instanceDivisor); }
 
-  template <size_t NumAttrs>
+  unsigned GetIndex() const { return index; }
+  unsigned GetColumns() const { return columns; }
+
   friend class InstancedMesh;
 };
 

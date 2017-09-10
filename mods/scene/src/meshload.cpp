@@ -24,17 +24,18 @@ SOFTWARE.
 ---------------------------------------------------------------------------
 */
 
-#include <meshload.h>
 #include <assimp/postprocess.h>
-#include <meshconfig.h>
 #include <base/resources.h>
+#include <meshconfig.h>
+#include <meshload.h>
 #include <test/macros.h>
 
-std::shared_ptr<Mesh>
-MeshData::GenerateMesh(const std::shared_ptr<MeshRenderConfigs::Standard> &config) {
+std::shared_ptr<Mesh> MeshData::GenerateMesh(
+    const std::shared_ptr<MeshRenderConfigs::Standard> &config,
+    unsigned instanceCount) {
   if (!successful) return nullptr;
   config->SetupStandard(uvs, normals);
-  auto mesh = std::make_shared<Mesh>(verts, indices, config);
+  auto mesh = std::make_shared<Mesh>(verts, indices, config, instanceCount);
   return mesh;
 }
 
@@ -57,8 +58,7 @@ void MeshData::Load(const aiMesh *mesh) {
       auto coords = mesh->mTextureCoords[0][i];
       uvs.push_back(coords.x);
       uvs.push_back(coords.y);
-    }
-    else
+    } else
       hasUVs = false;
   }
 
@@ -79,7 +79,8 @@ static constexpr const auto sceneProcessFlags =
 
 const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer) {
   const auto *scene = importer.ReadFile(path, sceneProcessFlags);
-  if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+  if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE ||
+      !scene->mRootNode) {
     std::cerr << "Failed to load Scene" << importer.GetErrorString() << '\n';
     return nullptr;
   }
@@ -92,7 +93,8 @@ void MeshData::Load(const std::string &path) {
   const auto *meshes = scene->mRootNode->mChildren[0];
 
   if (meshes->mNumMeshes != 1) {
-    std::cerr << "Failed to load mesh - there is more than one mesh in the file\n";
+    std::cerr
+        << "Failed to load mesh - there is more than one mesh in the file\n";
     successful = false;
     hasUVs = false;
     return;
@@ -101,17 +103,19 @@ void MeshData::Load(const std::string &path) {
   Load(scene->mMeshes[meshes->mMeshes[0]]);
 }
 
-static auto ReadMeshConfig(const JSON::Value &value,
-                           const JSON::ReadData &data,
+static auto ReadMeshConfig(const JSON::Value &value, const JSON::ReadData &data,
                            const NMesh &mesh) {
   auto t = Trace::Pusher{data.trace, "ReadMeshConfig"};
   const auto &object = JSON::GetObject(value, data);
 
   const auto type = JSON::GetMember<std::string>("type", object, data);
-  const auto generatorIt = MeshRenderConfigs::configurationGenerators.find(type);
+  const auto generatorIt =
+      MeshRenderConfigs::configurationGenerators.find(type);
   if (generatorIt == std::end(MeshRenderConfigs::configurationGenerators))
-    JSON::ParseError(data, "Configuration generator of type '"
-      + type + "' not found in MeshRenderConfig::configurationGenerators");
+    JSON::ParseError(
+        data,
+        "Configuration generator of type '" + type +
+            "' not found in MeshRenderConfig::configurationGenerators");
 
   const auto dataIt = object.FindMember("data");
   JSON::ParseFailIf(dataIt == object.MemberEnd(), data,
@@ -119,7 +123,8 @@ static auto ReadMeshConfig(const JSON::Value &value,
   return (generatorIt->second)(dataIt->value, data, mesh);
 }
 
-NMesh *MeshTypeRegistration(const JSON::Value &value, const JSON::ReadData &data) {
+NMesh *MeshTypeRegistration(const JSON::Value &value,
+                            const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "MeshTypeRegistration"};
 
   const auto &object = JSON::GetObject(value, data);
@@ -130,13 +135,16 @@ NMesh *MeshTypeRegistration(const JSON::Value &value, const JSON::ReadData &data
   auto *nm = new NMesh(shader);
 
   const auto configObjIt = object.FindMember("config");
-  JSON::ParseFailIf(configObjIt == object.MemberEnd(), data, "Member 'config' must be present");
+  JSON::ParseFailIf(configObjIt == object.MemberEnd(), data,
+                    "Member 'config' must be present");
   auto config = ReadMeshConfig(configObjIt->value, data, *nm);
 
-  auto m = MeshData(path).GenerateMesh(std::move(config));
+  auto instanceCount =
+      JSON::GetMember<unsigned>("instance-count", object, data);
+
+  auto m = MeshData(path).GenerateMesh(std::move(config), instanceCount);
   nm->Set(m);
 
   JSON::GetMember<NNode>(*nm, "NNode", object, data);
   return nm;
 }
-

@@ -1,0 +1,8 @@
+{
+  "sphere": {
+    "path": "mods/orbit/res/tex/sphere.png",
+    "type": "tex-2d",
+    "shrink-filter": "linear",
+    "enlarge-filter": "linear"
+  }
+}

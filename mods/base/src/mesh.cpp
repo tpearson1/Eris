@@ -29,8 +29,10 @@ SOFTWARE.
 
 Mesh::Mesh(const std::vector<GLfloat> &verts,
            const std::vector<GLuint> &indexData,
-           const std::shared_ptr<MeshRenderConfigs::None> &conf)
-    : vertices(0, 3, verts), config(conf) {
+           const std::shared_ptr<MeshRenderConfigs::None> &conf,
+           unsigned _instanceCount)
+    : vertices(0, 3, 0, verts),
+      instanceCount(_instanceCount), config(conf) {
   // Vertices, Element buffer and passing attribute to vertex shader
   vao.Generate();
   vao.Use();
@@ -46,15 +48,18 @@ Mesh::Mesh(const std::vector<GLfloat> &verts,
 }
 
 void Mesh::Draw(const Mat4 &mvp) const {
-  auto shaderMVP = Shader::Current()->GetUniform("MVP");
-  Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
-
   config->PreRender();
   vao.Use();
 
-  indices.Draw();
+  // TODO: Rework setting of MVP uniform to allow more customizability
+  if (instanceCount == 1) {
+    auto shaderMVP = Shader::Current()->GetUniform("MVP");
+    Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
+
+    indices.Draw();
+  } else
+    indices.DrawInstanced(instanceCount);
 
   VertexArray::ClearUse();
   config->PostRender();
 }
-
