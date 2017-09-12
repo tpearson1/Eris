@@ -103,26 +103,6 @@ struct AddTextures : public ConfigBase {
 };
 
 template <typename ConfigBase>
-struct MakeInstanced : public ConfigBase {
-  template <typename... Args>
-  MakeInstanced(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
-
-  virtual void PreRender() const override {
-    auto camera = NCamera::active;
-    auto VP = camera->ProjectionMatrix() * camera->ViewMatrix();
-    Shader::SetUniformMatrix4(Shader::Current()->GetUniform("VP"), 1, false,
-                              VP);
-  }
-
-  static void Read(MakeInstanced &in, const JSON::Value &value,
-                   const JSON::ReadData &data, const NMesh &mesh) {
-    auto t =
-        Trace::Pusher{data.trace, "MeshRenderConfigs::MakeInstanced<T>::Read"};
-    TryCallRead<ConfigBase>(in, value, data, mesh);
-  }
-};
-
-template <typename ConfigBase>
 struct MakeLit : public ConfigBase {
   std::shared_ptr<LightingConfig> lightingConfig;
   Vec3 specular = Vec3::one * 0.5f;

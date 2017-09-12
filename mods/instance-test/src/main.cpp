@@ -29,6 +29,7 @@ SOFTWARE.
 #include <game/game.h>
 #include <input/input.h>
 #include <scene/camera.h>
+#include <scene/instancedmeshconfig.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
 #include <scene/meshload.h>
@@ -109,7 +110,8 @@ MyGame::MyGame() {
   JSON::Read(Resources::active->textures, textures, readData);
 
   using namespace MeshRenderConfigs;
-  auto config = std::make_shared<MakeInstanced<AddTextures<Standard>>>();
+  auto config =
+      std::make_shared<Instanced::AddTransformation<AddTextures<Standard>>>();
   config->textures.push_back(
       {"material.diffuse", Resources::active->textures.Get("sphere")});
 
@@ -123,7 +125,7 @@ MyGame::MyGame() {
     for (int j = 0; j < length; j++)
       for (int k = 0; k < height; k++)
         mats.push_back(Mat4::Translate(i * spacing, j * spacing, k * spacing));
-  config->attrs.emplace_back(3, 16, 1, mats);
+  config->SetupAddTransformation(mats);
 
   nim.spheres = MeshData{"mods/instance-test/res/sphere.blend"}.GenerateMesh(
       config, instanceCount);
