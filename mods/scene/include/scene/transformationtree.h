@@ -24,43 +24,55 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _CORE_MATH__RENDER_TREE_H
-#define _CORE_MATH__RENDER_TREE_H
+#ifndef _SCENE__TRANSFORMATION_TREE_H
+#define _SCENE__TRANSFORMATION_TREE_H
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
+// Only classes of the template type argument 'T' should derive from this class
 template <typename T>
-class RenderTree {
+class TransformationTree {
+  // Since this class is should be derived by type 'T', this reinterpret_cast is
+  // justified
+  T *This() { return reinterpret_cast<T *>(this); }
+
 protected:
   T *parent = nullptr;
   std::vector<T *> children;
-  T *node;
+
+  // Prevent this class being directly instantiated
+  TransformationTree() {}
 
 public:
-  virtual ~RenderTree() {}
+  virtual ~TransformationTree() {}
+
+  TransformationTree(const TransformationTree &other) {
+    Parent(other.parent);
+    children = other.children;
+  }
+
+  TransformationTree &operator=(const TransformationTree &other) {
+    if (this == &other) return *this;
+    Parent(other);
+    children == other.children;
+    return *this;
+  }
 
   using iterator = typename std::vector<T *>::iterator;
   using const_iterator = typename std::vector<T *>::const_iterator;
 
-  iterator begin()
-    { return children.begin(); }
-  const_iterator begin() const
-    { return children.begin(); }
+  iterator begin() { return children.begin(); }
+  const_iterator begin() const { return children.begin(); }
 
-  iterator end()
-    { return children.end(); }
-  const_iterator end() const
-    { return children.end(); }
+  iterator end() { return children.end(); }
+  const_iterator end() const { return children.end(); }
 
   void Parent(T *other) {
-    if (parent == other)
-      return;
-    if (parent)
-      parent->transform.RemoveChild(node);
+    if (parent == other) return;
+    if (parent) parent->RemoveChild(This());
 
-    if (other)
-      other->transform.children.push_back(node);
+    if (other) other->children.push_back(This());
     parent = other;
   }
 
@@ -68,14 +80,12 @@ public:
   const T *Parent() const { return parent; }
 
   auto ChildCount() const { return children.size(); }
-  T *Child(typename std::vector<T *>::size_type i) const
-    { return children[i]; }
+  T *Child(typename std::vector<T *>::size_type i) const { return children[i]; }
 
   void RemoveChild(T *child) {
     auto it = std::find(std::begin(children), std::end(children), child);
-    if (it == std::end(children))
-      return; // REVIEW: Doesn't treat as an error
-    child->transform.parent = nullptr;
+    if (it == std::end(children)) return; // REVIEW: Doesn't treat as an error
+    child->parent = nullptr;
     children.erase(it);
   }
 
@@ -83,4 +93,4 @@ public:
   friend class CanvasItem;
 };
 
-#endif // _CORE_MATH__RENDER_TREE_H
+#endif // _SCENE__TRANSFORMATION_TREE_H

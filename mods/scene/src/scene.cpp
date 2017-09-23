@@ -49,7 +49,7 @@ void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value, const JSON::Rea
     // This function returns a newly created node pointer using the JSON data.
     // This is then parented to the root node
     const auto &func = data.typeManager->at(type);
-    reinterpret_cast<NNode *>(func(*it, data))->transform.Parent(&out.root);
+    reinterpret_cast<NNode *>(func(*it, data))->Parent(&out.root);
   }
 }
 

@@ -27,13 +27,18 @@ SOFTWARE.
 #ifndef _GAME__GAME_H
 #define _GAME__GAME_H
 
-#include <memory>
 #include <base/window.h>
+#include <functional>
+#include <memory>
 
 class NNode;
 
 class Game {
-  std::list<NNode *> tickNodes;
+  using TickFunction = std::function<void(float)>;
+  using TickFunctionList = std::list<TickFunction>;
+  using TickRegistration = TickFunctionList::iterator;
+
+  TickFunctionList tickFunctions;
   float elapsedTime = 0.0f;
 
 protected:
@@ -44,15 +49,13 @@ public:
   Game();
   virtual ~Game();
 
-  void RegisterTick(NNode *node)
-    { tickNodes.push_front(node); }
-  void UnregisterTick(NNode *node) {
-    for (auto it = tickNodes.begin(); it != tickNodes.end(); it++) {
-      if (*it == node) {
-        tickNodes.erase(it);
-        return;
-      }
-    }
+  TickRegistration RegisterTick(TickFunction func) {
+    tickFunctions.push_front(func);
+    return tickFunctions.begin();
+  }
+
+  void UnregisterTick(TickRegistration registration) {
+    tickFunctions.erase(registration);
   }
 
   void Start();

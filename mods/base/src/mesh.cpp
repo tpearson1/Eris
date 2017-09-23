@@ -29,37 +29,33 @@ SOFTWARE.
 
 Mesh::Mesh(const std::vector<GLfloat> &verts,
            const std::vector<GLuint> &indexData,
-           const std::shared_ptr<MeshRenderConfigs::None> &conf,
            unsigned _instanceCount)
     : vertices(0, 3, 0, verts),
-      instanceCount(_instanceCount), config(conf) {
+      instanceCount(_instanceCount) {
+  indices.Data(indexData);
+}
+
+void Mesh::Setup(std::function<void()> setupFunc) {
   // Vertices, Element buffer and passing attribute to vertex shader
   vao.Generate();
   vao.Use();
 
   vertices.Setup();
 
-  indices.Data(indexData);
   indices.Generate();
 
-  config->Setup();
+  setupFunc();
 
   VertexArray::ClearUse();
 }
 
-void Mesh::Draw(const Mat4 &mvp) const {
-  config->PreRender();
+void Mesh::Draw() const {
   vao.Use();
 
-  // TODO: Rework setting of MVP uniform to allow more customizability
-  if (instanceCount == 1) {
-    auto shaderMVP = Shader::Current()->GetUniform("MVP");
-    Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
-
+  if (instanceCount == 1)
     indices.Draw();
-  } else
+  else
     indices.DrawInstanced(instanceCount);
 
   VertexArray::ClearUse();
-  config->PostRender();
 }

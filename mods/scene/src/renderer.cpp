@@ -28,13 +28,13 @@ SOFTWARE.
 #include <iostream>
 #include <base/shader.h>
 #include <base/texture.h>
-#include <renderable.h>
+#include <renderdata.h>
 
 Renderer *Renderer::active = nullptr;
 
-Renderer::Registration Renderer::Register(std::function<void()> func, Renderable *renderable, const std::shared_ptr<const Shader> &s) {
+Renderer::Registration Renderer::Register(std::function<void()> func, RenderData *renderData, const std::shared_ptr<const Shader> &s) {
   auto &group = renderItems[s];
-  group.emplace_front(func, renderable);
+  group.emplace_front(func, renderData);
   return {s, group.begin()};
 }
 
@@ -43,7 +43,7 @@ void Renderer::Unregister(const Renderer::Registration &registration) {
   if (groupIt == std::end(renderItems)) {
     // Must have already been unregistered because Registration object can
     // only be created by Renderer
-    std::cerr << "Renderable object already unregistered\n";
+    std::cerr << "Renderer::Unregister: Function already unregistered\n";
     return;
   }
 
@@ -72,9 +72,9 @@ void Renderer::Render() {
     // Shader should be valid because it was when registered
     shader->Use();
     for (auto pair : list) {
-      auto renderable = pair.second;
+      auto renderData = pair.second;
       auto renderFunc = pair.first;
-      if (renderable->visible)
+      if (renderData->visible)
         renderFunc();
     }
   }

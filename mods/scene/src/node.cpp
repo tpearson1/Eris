@@ -29,28 +29,90 @@ SOFTWARE.
 
 void NNode::RecursiveDestroy(NNode *n) {
   n->OnDestroy();
-  for (auto &elem : n->transform)
-    RecursiveDestroy(elem);
-  n->transform.Parent(nullptr); // Make sure the parent isn't holding on to this node
+  for (auto *child : *n) RecursiveDestroy(child);
+  // Make sure the parent isn't holding on to this node
+  n->Parent(nullptr);
+
   delete n;
+}
+
+Vec3 NNode::GlobalLocation() const {
+  Vec3 pos;
+  const NNode *cur = this;
+  const NNode *par = Parent();
+  while (par) {
+    auto &pt = par->transform, &ct = cur->transform;
+    pos += pt.Rotation() * (ct.Location() * pt.Scale());
+    cur = par;
+    par = par->Parent();
+  }
+  return pos + cur->transform.Location();
+}
+
+Quat NNode::GlobalRotation() const {
+  Quat rot;
+  const NNode *cur = this;
+  const NNode *par;
+  do {
+    rot *= cur->transform.Rotation();
+    par = cur->Parent();
+    if (par) cur = par;
+  } while (par);
+  return rot;
+}
+
+Vec3 NNode::GlobalScale() const {
+  Vec3 scale{1.0f, 1.0f, 1.0f};
+  const NNode *cur = this;
+  const NNode *par;
+  do {
+    scale *= cur->transform.Scale();
+    par = cur->Parent();
+    if (par) cur = par;
+  } while (par);
+  return scale;
+}
+
+Transform NNode::GlobalTransform() const {
+  Transform t;
+  const NNode *cur = this;
+  const NNode *par;
+  do {
+    t *= cur->transform;
+    par = cur->Parent();
+    if (par) cur = par;
+  } while (par);
+  return t;
 }
 
 void JSONImpl<NNode>::Write(const NNode &value, JSON::Writer &writer) {
   auto obj = JSON::ObjectEncloser{writer};
-  JSON::WritePair("visible", value.visible, writer);
   JSON::WritePair("transform", value.transform, writer);
+  JSON::WritePair("children", value.children, writer);
 }
 
-void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data) {
+void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value,
+                           const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "NNode"};
 
   const auto &object = JSON::GetObject(value, data);
+  JSON::GetMember(out.transform, "transform", object, data);
 
-  JSON::TryGetMember(out.visible, "visible", object, true, data);
+  auto childrenIt = object.FindMember("children");
+  if (childrenIt == object.MemberEnd()) return;
 
-  auto transformIt = object.FindMember("transform");
-  JSON::ParseAssert(transformIt != object.MemberEnd(), data, "'NNode' object must have member 'transform'");
-  out.SetTransformNodeMember();
+  JSON::ParseAssert(childrenIt->value.IsArray(), data,
+                    "Member 'children' of 'Transform' must be of type array");
 
-  JSON::Read(out.transform, transformIt->value, data);
+  const auto &childrenArr = childrenIt->value.GetArray();
+  for (auto it = childrenArr.Begin(); it != childrenArr.End(); it++) {
+    const auto type = JSON::Read<std::string>(*it, data);
+
+    JSON::ParseAssert(++it != childrenArr.End(), data,
+                      "Array 'children' of 'Transform' must have data after "
+                      "each type string");
+
+    auto func = data.typeManager->at(type);
+    reinterpret_cast<NNode *>(func(*it, data))->Parent(&out);
+  }
 }

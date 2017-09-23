@@ -27,46 +27,27 @@ SOFTWARE.
 #ifndef _SCENE__MESH_H
 #define _SCENE__MESH_H
 
-#include <functional>
-#include <unordered_map>
-#include <base/mesh.h>
+#include <scene/meshconfig.h>
 #include <scene/node.h>
-#include <scene/camera.h>
-#include <scene/renderer.h>
+#include <scene/renderregistrationmanager.h>
 
-class NMesh : public NNode {
-  std::shared_ptr<Mesh> mesh;
-
+class NMesh : public NNode, public RenderRegistrationManager {
 public:
-  const Mesh *Get() { return mesh.get(); }
-  void Set(const std::shared_ptr<Mesh> &value) { mesh = std::move(value); }
-
-  const Shader *GetShader() const { return shader.get(); };
-
-  void SetShader(const std::shared_ptr<const Shader> &s) {
-    Renderer::active->UpdateRequirements(registration, shader = s);
-  }
-
-  NMesh(const std::shared_ptr<const Shader> &s) {
-    registration = Renderer::active->Register([this] { this->Draw(); }, this, shader = s);
-  }
-
-  NMesh &operator=(const NMesh &mr);
-
-  NMesh(const NMesh &mr) { *this = mr; }
-
-  ~NMesh() {
-    Renderer::active->Unregister(registration);
-  }
+  using ConfigType = MeshRenderConfigs::Single;
 
 private:
-  void Draw() {
-    mesh->Draw(NCamera::active->Matrix(transform.GlobalTransform().Matrix()));
+  std::shared_ptr<ConfigType> meshRenderer;
+
+public:
+  ConfigType *GetMeshRenderer() const { return meshRenderer.get(); }
+  void SetMeshRenderer(const std::shared_ptr<ConfigType> &mr) {
+    meshRenderer = mr;
   }
 
-  std::shared_ptr<const Shader> shader;
-  Renderer::Registration registration;
+  NMesh(const std::shared_ptr<const Shader> &s)
+      : RenderRegistrationManager(s) {}
+
+  virtual void Draw() const override;
 };
 
 #endif // _SCENE__MESH_H
-

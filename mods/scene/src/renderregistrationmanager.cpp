@@ -24,50 +24,18 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDERER_H
-#define _SCENE__RENDERER_H
+#include <renderregistrationmanager.h>
 
-#include <base/shader.h>
-#include <functional>
-#include <list>
-#include <memory>
-#include <utility>
+RenderRegistrationManager::RenderRegistrationManager(const RenderRegistrationManager &other) {
+  renderData = other.renderData;
+  Register(other.shader);
+}
 
-class RenderData;
+RenderRegistrationManager &RenderRegistrationManager::operator=(const RenderRegistrationManager &other) {
+  if (this == &other) return *this;
 
-class Renderer {
-  using RenderPair = std::pair<std::function<void()>, RenderData *>;
+  renderData = other.renderData;
+  SetShader(other.shader);
 
-  std::unordered_map<std::shared_ptr<const Shader>, std::list<RenderPair>>
-      renderItems;
-
-public:
-  struct Registration {
-    Registration() {}
-    friend class Renderer;
-
-  private:
-    Registration(const std::shared_ptr<const Shader> &s,
-                 std::list<RenderPair>::iterator it)
-        : shader(s), element(it) {}
-
-    std::shared_ptr<const Shader> shader;
-    std::list<RenderPair>::iterator element;
-  };
-
-  static Renderer *active;
-
-  // A single class instance SHOULD NOT register two functions with the same
-  // RenderData object!
-  Registration Register(std::function<void()> func, RenderData *renderData,
-                        const std::shared_ptr<const Shader> &s);
-
-  void Unregister(const Registration &registration);
-
-  Registration UpdateRequirements(const Registration &registration,
-                                  const std::shared_ptr<const Shader> &updated);
-
-  void Render();
-};
-
-#endif // _SCENE__RENDERER_H
+  return *this;
+}

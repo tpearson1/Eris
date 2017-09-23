@@ -24,50 +24,23 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDERER_H
-#define _SCENE__RENDERER_H
+#ifndef __SCENE__INSTANCED_MESH_H
+#define __SCENE__INSTANCED_MESH_H
 
-#include <base/shader.h>
-#include <functional>
-#include <list>
-#include <memory>
-#include <utility>
+#include <scene/meshrenderer.h>
+#include <scene/renderregistrationmanager.h>
 
-class RenderData;
-
-class Renderer {
-  using RenderPair = std::pair<std::function<void()>, RenderData *>;
-
-  std::unordered_map<std::shared_ptr<const Shader>, std::list<RenderPair>>
-      renderItems;
+class InstancedMesh : public RenderRegistrationManager {
+  std::shared_ptr<MeshRenderer> meshRenderer;
 
 public:
-  struct Registration {
-    Registration() {}
-    friend class Renderer;
+  InstancedMesh(const std::shared_ptr<const Shader> &s)
+      : RenderRegistrationManager(s) {}
 
-  private:
-    Registration(const std::shared_ptr<const Shader> &s,
-                 std::list<RenderPair>::iterator it)
-        : shader(s), element(it) {}
+  MeshRenderer *GetMeshRenderer() const { return meshRenderer.get(); }
+  void SetMeshRenderer(std::shared_ptr<MeshRenderer> mr) { meshRenderer = mr; }
 
-    std::shared_ptr<const Shader> shader;
-    std::list<RenderPair>::iterator element;
-  };
-
-  static Renderer *active;
-
-  // A single class instance SHOULD NOT register two functions with the same
-  // RenderData object!
-  Registration Register(std::function<void()> func, RenderData *renderData,
-                        const std::shared_ptr<const Shader> &s);
-
-  void Unregister(const Registration &registration);
-
-  Registration UpdateRequirements(const Registration &registration,
-                                  const std::shared_ptr<const Shader> &updated);
-
-  void Render();
+  virtual void Draw() const override;
 };
 
-#endif // _SCENE__RENDERER_H
+#endif // __SCENE__INSTANCED_MESH_H

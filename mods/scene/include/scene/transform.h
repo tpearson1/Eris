@@ -27,22 +27,22 @@ SOFTWARE.
 #ifndef _SCENE__TRANSFORM_H
 #define _SCENE__TRANSFORM_H
 
-#include <ostream>
-#include <iomanip>
-#include <math/vec.h>
-#include <math/quat.h>
 #include <core/readwrite.h>
-#include <scene/rendertree.h>
+#include <iomanip>
+#include <math/quat.h>
+#include <math/vec.h>
+#include <ostream>
 
 class Transform;
 
 template <>
 struct JSONImpl<Transform> {
-  static void Read(Transform &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Read(Transform &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
   static void Write(const Transform &value, JSON::Writer &writer);
 };
 
-class Transform : public RenderTree<class NNode> {
+class Transform {
   Vec3 location, scale;
   Quat rotation;
 
@@ -50,8 +50,9 @@ class Transform : public RenderTree<class NNode> {
   mutable bool dirty = true;
 
 public:
-  Transform() : scale(Vec3(1.0f, 1.0f, 1.0f)) {}
-  Transform(Vec3 loc, Quat rot, Vec3 scl) : location(loc), scale(scl), rotation(rot), dirty(true) {}
+  Transform() : scale(Vec3::one) {}
+  Transform(Vec3 loc, Quat rot, Vec3 scl)
+      : location(loc), scale(scl), rotation(rot), dirty(true) {}
 
   Vec3 Location() const { return location; }
   Quat Rotation() const { return rotation; }
@@ -63,71 +64,80 @@ public:
 
   Transform &operator*=(const Transform &other);
 
-  Vec3 GlobalLocation() const;
+  void Translate(Vec3 value) {
+    location += value;
+    dirty = true;
+  }
+  void Translate(float x, float y, float z) { Translate(Vec3(x, y, z)); }
 
-  Quat GlobalRotation() const;
+  void RotateGlobal(Vec3 value) {
+    rotation = rotation * Quat(value);
+    dirty = true;
+  }
+  void RotateGlobal(Quat value) {
+    rotation = rotation * value;
+    dirty = true;
+  }
+  void RotateGlobal(float x, float y, float z) { RotateGlobal(Vec3(x, y, z)); }
 
-  Vec3 GlobalScale() const;
+  void Rotate(Vec3 value) {
+    rotation = Quat(value) * rotation;
+    dirty = true;
+  }
+  void Rotate(Quat value) {
+    rotation = value * rotation;
+    dirty = true;
+  }
+  void Rotate(float x, float y, float z) { Rotate(Vec3(x, y, z)); }
 
-  Transform GlobalTransform() const;
+  void ChangeScale(Vec3 value) {
+    scale += value;
+    dirty = true;
+  }
+  void ChangeScale(float x, float y, float z) { ChangeScale(Vec3(x, y, z)); }
 
-  friend std::ostream &operator<<(std::ostream &os, const Transform &t);
+  void Location(Vec3 loc) {
+    location = loc;
+    dirty = true;
+  }
+  void Location(float x, float y, float z) { Location(Vec3(x, y, z)); }
 
-  void Translate(Vec3 value)
-    { location += value; dirty = true; }
-  void Translate(float x, float y, float z)
-    { Translate(Vec3(x, y, z)); }
+  void Rotation(Vec3 rot) {
+    rotation = Quat(rot);
+    dirty = true;
+  }
 
-  void RotateGlobal(Vec3 value)
-    { rotation = rotation * Quat(value); dirty = true; }
-  void RotateGlobal(Quat value)
-    { rotation = rotation * value; dirty = true; }
-  void RotateGlobal(float x, float y, float z)
-    { RotateGlobal(Vec3(x, y, z)); }
+  void Rotation(float x, float y, float z) { Rotation(Vec3(x, y, z)); }
+  void Rotation(Quat rot) {
+    rotation = rot;
+    dirty = true;
+  }
 
-  void Rotate(Vec3 value)
-    { rotation = Quat(value) * rotation; dirty = true; }
-  void Rotate(Quat value)
-    { rotation = value * rotation; dirty = true; }
-  void Rotate(float x, float y, float z)
-    { Rotate(Vec3(x, y, z)); }
+  void Scale(Vec3 scl) {
+    scale = scl;
+    dirty = true;
+  }
+  void Scale(float x, float y, float z) { Scale(Vec3(x, y, z)); }
 
-  void ChangeScale(Vec3 value)
-    { scale += value; dirty = true; }
-  void ChangeScale(float x, float y, float z)
-    { ChangeScale(Vec3(x, y, z)); }
-
-  void Location(Vec3 loc)
-    { location = loc; dirty = true; }
-  void Location(float x, float y, float z)
-    { Location(Vec3(x, y, z)); }
-
-  void Rotation(Vec3 rot)
-    { rotation = Quat(rot); dirty = true; }
-  void Rotation(float x, float y, float z)
-    { Rotation(Vec3(x, y, z)); }
-  void Rotation(Quat rot)
-    { rotation = rot; dirty = true; }
-
-  void Scale(Vec3 scl)
-    { scale = scl; dirty = true; }
-  void Scale(float x, float y, float z)
-    { Scale(Vec3(x, y, z)); }
-
-  friend void JSONImpl<Transform>::Read(Transform &out, const JSON::Value &value, const JSON::ReadData &data);
+  friend void JSONImpl<Transform>::Read(Transform &out,
+                                        const JSON::Value &value,
+                                        const JSON::ReadData &data);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Transform &t) {
-  os << "Location: " << t.location.x << "," << t.location.y << "," << t.location.z
-     << "\nRotation: " << t.rotation.x << "," << t.rotation.y << "," << t.rotation.z << "," << t.rotation.w
-     << "\nScale: " << t.scale.x << "," << t.scale.y << "," << t.scale.z;
+  auto loc = t.Location(), scl = t.Scale();
+  auto rot = t.Rotation();
+  os << "Location: " << loc.x << "," << loc.y << "," << loc.z
+     << "\nRotation: " << rot.x << "," << rot.y << "," << rot.z << "," << rot.w
+     << "\nScale: " << scl.x << "," << scl.y << "," << scl.z;
   return os;
 }
 
 inline std::ostream &operator<<(std::ostream &os, const Mat4 &m) {
   for (size_t i = 0; i < 4; i++) {
     for (size_t j = 0; j < 3; j++)
-      os << std::setw(6) << std::fixed << std::setprecision(2) << m[i][j] << ",";
+      os << std::setw(6) << std::fixed << std::setprecision(2) << m[i][j]
+         << ",";
     os << std::setw(6) << std::fixed << std::setprecision(2) << m[i][3] << '\n';
   }
   return os;

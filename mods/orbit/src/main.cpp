@@ -48,10 +48,11 @@ public:
     scene.Render();
 
     if (go) {
-      auto spawn = reinterpret_cast<NMesh *>(sphere->transform.Child(0));
+      auto spawn = reinterpret_cast<NMesh *>(sphere->Child(0));
 
       auto n = new NMesh(*spawn);
-      n->transform.Location(spawn->transform.GlobalLocation());
+      n->Parent(nullptr); // So it keeps its location
+      n->transform.Location(spawn->GlobalLocation());
       n->transform.Scale(Vec3::one * 0.1f);
 
       rend.push_back(n);
@@ -73,8 +74,8 @@ public:
     if (Input::IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
     if (Input::IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
     if (Input::IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
-    NCamera::active->transform.Translate(
-        NCamera::active->transform.GlobalRotation() * movement);
+    NCamera::active->transform.Translate(NCamera::active->GlobalRotation() *
+                                         movement);
   }
 };
 
@@ -145,7 +146,7 @@ MyGame::MyGame() {
   {
     using namespace MeshRenderConfigs;
     configurationGenerators["single-texture"] =
-        MakeGenerator<AddTextures<Standard>>();
+        MakeGenerator<AddTextures<Standard<Single>>>();
   }
 
   scene.SetActive();

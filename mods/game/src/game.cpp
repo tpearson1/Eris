@@ -64,11 +64,11 @@ void Game::Start() {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Any nodes that are removed from the list during a 'Tick' call
-    // will no longer cause problems
-    auto tempList = tickNodes;
-    for (auto &elem : tempList)
-      elem->Tick(delta);
+    // Any functions that are removed from the list during a 'Tick' call
+    // could cause problems if we do not cache the list
+    auto tempList = tickFunctions;
+    for (auto &tickFunc : tempList)
+      tickFunc(delta);
     Tick(delta);
 
     window->SwapBuffers();

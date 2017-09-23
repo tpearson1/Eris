@@ -46,8 +46,8 @@ Mat4 NCamera::ProjectionMatrix() const {
 }
 
 Mat4 NCamera::ViewMatrix() const {
-  Vec3 loc = -transform.GlobalLocation();
-  Quat rot = transform.GlobalRotation();
+  Vec3 loc = -GlobalLocation();
+  Quat rot = GlobalRotation();
   return Mat4::LookAt(loc, loc + rot * Vec3::front, rot * Vec3(0.0f, 1.0f, 0.0f));
 }
 

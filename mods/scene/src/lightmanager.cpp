@@ -71,7 +71,7 @@ void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer
 
 void NDirectionalLight::SetUniformData(const std::string &prefix) const {
   const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform(prefix + ".direction"), transform.GlobalRotation() * Vec3::front);
+  cur->SetUniform(cur->GetUniform(prefix + ".direction"), GlobalRotation() * Vec3::front);
   cur->SetUniform(cur->GetUniform(prefix + ".ambient"), ambient);
   cur->SetUniform(cur->GetUniform(prefix + ".diffuse"), diffuse);
   cur->SetUniform(cur->GetUniform(prefix + ".specular"), specular);

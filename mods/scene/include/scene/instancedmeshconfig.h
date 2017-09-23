@@ -44,7 +44,7 @@ struct AddTransformation : public ConfigBase {
       : ConfigBase(std::forward<Args>(args)...) {}
 
   void SetupAddTransformation(const std::vector<Mat4> &transformationMatrices) {
-    this->attrs.emplace_back(3, 16, 1, transformationMatrices);
+    this->vertexAttributes.emplace_back(3, 16, 1, transformationMatrices);
   }
 
   void SetupAddTransformation(const std::vector<Transform> &transformations) {
@@ -56,6 +56,8 @@ struct AddTransformation : public ConfigBase {
   }
 
   virtual void PreRender() const override {
+    ConfigBase::PreRender();
+
     auto camera = NCamera::active;
     auto VP = camera->ProjectionMatrix() * camera->ViewMatrix();
     Shader::SetUniformMatrix4(Shader::Current()->GetUniform("VP"), 1, false,
@@ -63,12 +65,12 @@ struct AddTransformation : public ConfigBase {
   }
 
   static void Read(AddTransformation &in, const JSON::Value &value,
-                   const JSON::ReadData &data, const NMesh &mesh) {
+                   const JSON::ReadData &data) {
     auto t = Trace::Pusher{data.trace,
                            "MeshRenderConfigs::AddTransformation<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data, mesh);
+    TryCallRead<ConfigBase>(in, value, data);
 
     std::vector<Transform> transformations;
     JSON::GetMember(transformations, "transformations", object, data);

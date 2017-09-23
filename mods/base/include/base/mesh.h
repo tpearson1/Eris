@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <array>
 #include <base/vertexattribute.h>
+#include <functional>
 #include <iostream>
 #include <math/mat.h>
 #include <math/vec.h>
@@ -49,42 +50,6 @@ public:
   static void ClearUse() { glBindVertexArray(0); }
 };
 
-class NMesh;
-
-namespace MeshRenderConfigs {
-struct None {
-  std::vector<VertexAttribute> attrs;
-
-  void Setup() {
-    for (auto &attr : attrs) attr.Setup();
-  }
-
-  virtual void PreRender() const {}
-  virtual void PostRender() const {}
-  virtual ~None() {}
-};
-
-struct UV : public None {
-  void SetupUV(const std::vector<GLfloat> &uvData) {
-    attrs.emplace_back(1, 2, 0, uvData);
-  }
-};
-
-struct Normal : public None {
-  void SetupNormal(const std::vector<GLfloat> &normalData) {
-    attrs.emplace_back(2, 3, 0, normalData);
-  }
-};
-
-struct Standard : public None {
-  void SetupStandard(const std::vector<GLfloat> &uvData,
-                     const std::vector<GLfloat> &normalData) {
-    attrs.emplace_back(1, 2, 0, uvData);
-    attrs.emplace_back(2, 3, 0, normalData);
-  }
-};
-}
-
 class Mesh {
   VertexAttribute vertices;
   VertexArray vao;
@@ -94,14 +59,11 @@ class Mesh {
 
 public:
   Mesh(const std::vector<GLfloat> &verts, const std::vector<GLuint> &indexData,
-       const std::shared_ptr<MeshRenderConfigs::None> &conf,
        unsigned _instanceCount);
 
-  void Draw(const Mat4 &mvp) const;
+  void Setup(std::function<void()> setupFunc);
 
-  std::shared_ptr<MeshRenderConfigs::None> config;
-
-  friend class InstancedMesh;
+  void Draw() const;
 };
 
 #endif // _BASE__MESH_H

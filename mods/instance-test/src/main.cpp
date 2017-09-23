@@ -29,21 +29,17 @@ SOFTWARE.
 #include <game/game.h>
 #include <input/input.h>
 #include <scene/camera.h>
+#include <scene/instancedmesh.h>
 #include <scene/instancedmeshconfig.h>
-#include <scene/mesh.h>
 #include <scene/meshconfig.h>
 #include <scene/meshload.h>
 #include <scene/renderer.h>
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
 
-struct NIM : public Renderable {
-  std::shared_ptr<Mesh> spheres;
-};
-
 class MyGame : public Game {
   Scene scene;
-  NIM nim;
+  std::unique_ptr<InstancedMesh> mesh;
 
 public:
   MyGame();
@@ -61,8 +57,8 @@ public:
     if (Input::IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
     if (Input::IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
     if (Input::IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
-    NCamera::active->transform.Translate(
-        NCamera::active->transform.GlobalRotation() * movement);
+    NCamera::active->transform.Translate(NCamera::active->GlobalRotation() *
+                                         movement);
   }
 };
 
@@ -99,7 +95,7 @@ MyGame::MyGame() {
   scene.SetActive();
 
   NCamera::active = new NCamera;
-  NCamera::active->transform.Parent(&scene.root);
+  NCamera::active->Parent(&scene.root);
 
   JSON::Document shaders, textures;
 
@@ -110,8 +106,8 @@ MyGame::MyGame() {
   JSON::Read(Resources::active->textures, textures, readData);
 
   using namespace MeshRenderConfigs;
-  auto config =
-      std::make_shared<Instanced::AddTransformation<AddTextures<Standard>>>();
+  auto config = std::make_shared<
+      Instanced::AddTransformation<AddTextures<Standard<MeshRenderer>>>>();
   config->textures.push_back(
       {"material.diffuse", Resources::active->textures.Get("sphere")});
 
@@ -127,12 +123,8 @@ MyGame::MyGame() {
         mats.push_back(Mat4::Translate(i * spacing, j * spacing, k * spacing));
   config->SetupAddTransformation(mats);
 
-  nim.spheres = MeshData{"mods/instance-test/res/sphere.blend"}.GenerateMesh(
-      config, instanceCount);
-
-  auto shader = Resources::active->shaders.Get("instanced");
-  Renderer::active->Register([&] { nim.spheres->Draw(Mat4::identity); }, &nim,
-                             shader);
+  mesh = MeshData{"mods/instance-test/res/sphere.blend"}.GenerateInstancedMesh(
+      Resources::active->shaders.Get("instanced"), config, instanceCount);
 }
 
 extern "C" bool InstanceTest_Run() {

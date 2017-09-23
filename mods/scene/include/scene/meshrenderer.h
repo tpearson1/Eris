@@ -24,12 +24,28 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDERABLE_H
-#define _SCENE__RENDERABLE_H
+#ifndef _SCENE__MESH_RENDERER_H
+#define _SCENE__MESH_RENDERER_H
 
-class Renderable {
+#include <base/mesh.h>
+#include <memory>
+
+class Transform;
+
+class MeshRenderer {
+  std::unique_ptr<Mesh> mesh;
+
+protected:
+  std::vector<VertexAttribute> vertexAttributes;
+
 public:
-  bool visible = true;
+  const Mesh *GetMesh() { return mesh.get(); }
+
+  void SetMeshAndSetupAttributes(std::unique_ptr<Mesh> _mesh);
+
+  virtual void PreRender() const {}
+
+  void Draw() { mesh->Draw(); }
 };
 
-#endif // _SCENE__RENDERABLE_H
+#endif // _SCENE__MESH_RENDERER_H

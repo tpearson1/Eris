@@ -24,50 +24,46 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDERER_H
-#define _SCENE__RENDERER_H
+#ifndef _SCENE__RENDER_REGISTRATION_MANAGER_H
+#define _SCENE__RENDER_REGISTRATION_MANAGER_H
 
-#include <base/shader.h>
-#include <functional>
-#include <list>
-#include <memory>
-#include <utility>
+#include <scene/renderdata.h>
+#include <scene/renderer.h>
 
-class RenderData;
+class Shader;
 
-class Renderer {
-  using RenderPair = std::pair<std::function<void()>, RenderData *>;
+class RenderRegistrationManager {
+  std::shared_ptr<const Shader> shader;
+  Renderer::Registration renderRegistration;
+  RenderData renderData;
 
-  std::unordered_map<std::shared_ptr<const Shader>, std::list<RenderPair>>
-      renderItems;
+  void Register(const std::shared_ptr<const Shader> &s) {
+    renderRegistration =
+        Renderer::active->Register([this] { Draw(); }, &renderData, shader = s);
+  }
 
 public:
-  struct Registration {
-    Registration() {}
-    friend class Renderer;
+  RenderRegistrationManager(const std::shared_ptr<const Shader> &s) {
+    assert(Renderer::active);
+    Register(s);
+  }
 
-  private:
-    Registration(const std::shared_ptr<const Shader> &s,
-                 std::list<RenderPair>::iterator it)
-        : shader(s), element(it) {}
+  RenderRegistrationManager(const RenderRegistrationManager &other);
 
-    std::shared_ptr<const Shader> shader;
-    std::list<RenderPair>::iterator element;
-  };
+  RenderRegistrationManager &operator=(const RenderRegistrationManager &other);
 
-  static Renderer *active;
+  ~RenderRegistrationManager() {
+    Renderer::active->Unregister(renderRegistration);
+  }
 
-  // A single class instance SHOULD NOT register two functions with the same
-  // RenderData object!
-  Registration Register(std::function<void()> func, RenderData *renderData,
-                        const std::shared_ptr<const Shader> &s);
+  void SetShader(const std::shared_ptr<const Shader> &s) {
+    assert(Renderer::active);
+    Renderer::active->UpdateRequirements(renderRegistration, shader = s);
+  }
 
-  void Unregister(const Registration &registration);
+  const Shader *GetShader() const { return shader.get(); };
 
-  Registration UpdateRequirements(const Registration &registration,
-                                  const std::shared_ptr<const Shader> &updated);
-
-  void Render();
+  virtual void Draw() const = 0;
 };
 
-#endif // _SCENE__RENDERER_H
+#endif // _SCENE__RENDER_REGISTRATION_MANAGER_H

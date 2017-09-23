@@ -26,17 +26,44 @@ SOFTWARE.
 
 #include <assimp/postprocess.h>
 #include <base/resources.h>
+#include <instancedmesh.h>
+#include <mesh.h>
 #include <meshconfig.h>
 #include <meshload.h>
 #include <test/macros.h>
 
-std::shared_ptr<Mesh> MeshData::GenerateMesh(
-    const std::shared_ptr<MeshRenderConfigs::Standard> &config,
+NMesh *
+MeshData::GenerateNMesh(const std::shared_ptr<const Shader> &shader,
+                        const std::shared_ptr<MeshData::SingleConfigType> &mr,
+                        unsigned instanceCount) {
+  if (!successful) return nullptr;
+
+  auto mesh = std::make_unique<Mesh>(verts, indices, instanceCount);
+
+  mr->SetupStandard(uvs, normals);
+  mr->SetMeshAndSetupAttributes(std::move(mesh));
+
+  auto nmesh = new NMesh(shader);
+  nmesh->SetMeshRenderer(mr);
+
+  return nmesh;
+}
+
+std::unique_ptr<InstancedMesh> MeshData::GenerateInstancedMesh(
+    const std::shared_ptr<const Shader> &shader,
+    const std::shared_ptr<MeshData::InstancedConfigType> &mr,
     unsigned instanceCount) {
   if (!successful) return nullptr;
-  config->SetupStandard(uvs, normals);
-  auto mesh = std::make_shared<Mesh>(verts, indices, config, instanceCount);
-  return mesh;
+
+  auto mesh = std::make_unique<Mesh>(verts, indices, instanceCount);
+
+  mr->SetupStandard(uvs, normals);
+  mr->SetMeshAndSetupAttributes(std::move(mesh));
+
+  auto imesh = std::make_unique<InstancedMesh>(shader);
+  imesh->SetMeshRenderer(mr);
+
+  return imesh;
 }
 
 void MeshData::Load(const aiMesh *mesh) {
@@ -103,8 +130,8 @@ void MeshData::Load(const std::string &path) {
   Load(scene->mMeshes[meshes->mMeshes[0]]);
 }
 
-static auto ReadMeshConfig(const JSON::Value &value, const JSON::ReadData &data,
-                           const NMesh &mesh) {
+static auto ReadMeshConfig(const JSON::Value &value,
+                           const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "ReadMeshConfig"};
   const auto &object = JSON::GetObject(value, data);
 
@@ -115,12 +142,12 @@ static auto ReadMeshConfig(const JSON::Value &value, const JSON::ReadData &data,
     JSON::ParseError(
         data,
         "Configuration generator of type '" + type +
-            "' not found in MeshRenderConfig::configurationGenerators");
+            "' not found in MeshRenderConfigs::configurationGenerators");
 
   const auto dataIt = object.FindMember("data");
   JSON::ParseFailIf(dataIt == object.MemberEnd(), data,
                     "Member 'data' must be present in 'config'");
-  return (generatorIt->second)(dataIt->value, data, mesh);
+  return (generatorIt->second)(dataIt->value, data);
 }
 
 NMesh *MeshTypeRegistration(const JSON::Value &value,
@@ -130,21 +157,20 @@ NMesh *MeshTypeRegistration(const JSON::Value &value,
   const auto &object = JSON::GetObject(value, data);
   const auto path = JSON::GetMember<std::string>("path", object, data);
 
-  auto shaderStr = JSON::GetMember<std::string>("shader", object, data);
-  auto shader = Resources::active->shaders.Get(shaderStr);
-  auto *nm = new NMesh(shader);
-
   const auto configObjIt = object.FindMember("config");
   JSON::ParseFailIf(configObjIt == object.MemberEnd(), data,
                     "Member 'config' must be present");
-  auto config = ReadMeshConfig(configObjIt->value, data, *nm);
+  auto config = ReadMeshConfig(configObjIt->value, data);
 
   auto instanceCount =
       JSON::GetMember<unsigned>("instance-count", object, data);
 
-  auto m = MeshData(path).GenerateMesh(std::move(config), instanceCount);
-  nm->Set(m);
+  auto shaderStr = JSON::GetMember<std::string>("shader", object, data);
+  auto shader = Resources::active->shaders.Get(shaderStr);
 
-  JSON::GetMember<NNode>(*nm, "NNode", object, data);
-  return nm;
+  auto nmesh =
+      MeshData(path).GenerateNMesh(shader, std::move(config), instanceCount);
+
+  JSON::GetMember<NNode>(*nmesh, "NNode", object, data);
+  return nmesh;
 }

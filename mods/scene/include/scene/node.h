@@ -28,39 +28,49 @@ SOFTWARE.
 #define _SCENE__NODE_H
 
 #include <scene/transform.h>
-#include <scene/renderable.h>
+#include <scene/transformationtree.h>
+
+class NNode;
 
 template <>
 struct JSONImpl<NNode> {
-  static void Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Read(NNode &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
   static void Write(const NNode &value, JSON::Writer &writer);
 };
 
-class NNode : public Renderable {
-  void SetTransformNodeMember()
-    { transform.node = this; }
-
+class NNode : public TransformationTree<NNode> {
 protected:
   static void RecursiveDestroy(NNode *n);
 
   virtual void OnDestroy() {}
-  virtual void _Tick(float /*delta*/) {}
 
 public:
-  NNode()
-    { SetTransformNodeMember(); }
+  Vec3 GlobalLocation() const;
 
-  virtual void Tick(float delta)
-    { if (visible) _Tick(delta); }
+  Quat GlobalRotation() const;
+
+  Vec3 GlobalScale() const;
+
+  /*
+   * This function is equivalent to:
+   * return Transform(
+   *   GlobalLocation(),
+   *   GlobalRotation(),
+   *   GlobalScale()
+   * );
+   */
+  Transform GlobalTransform() const;
 
   virtual ~NNode() {}
 
-  void Destroy()
-    { RecursiveDestroy(this); }
+  void Destroy() { RecursiveDestroy(this); }
 
   Transform transform;
 
-  friend void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value, const JSON::ReadData &data);
+  friend void JSONImpl<NNode>::Write(const NNode &value, JSON::Writer &writer);
+  friend void JSONImpl<NNode>::Read(NNode &out, const JSON::Value &value,
+                                    const JSON::ReadData &data);
 };
 
 #endif // _SCENE__NODE_H

@@ -24,27 +24,46 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__MODEL_H
-#define _BASE__MODEL_H
+#ifndef _SCENE__MESH_LOAD_H
+#define _SCENE__MESH_LOAD_H
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
-#include <scene/mesh.h>
 #include <scene/scene.h>
 #include <vector>
+
+class NMesh;
+class MeshRenderer;
+class InstancedMesh;
+
+namespace MeshRenderConfigs {
+template <typename ConfigBase>
+struct Standard;
+
+struct Single;
+}
 
 struct MeshData {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
   bool hasUVs = true, successful = true;
 
+  using SingleConfigType =
+      MeshRenderConfigs::Standard<MeshRenderConfigs::Single>;
+  using InstancedConfigType = MeshRenderConfigs::Standard<MeshRenderer>;
+
   MeshData() {}
   MeshData(const aiMesh *mesh) { Load(mesh); }
   MeshData(const std::string &path) { Load(path); }
 
-  std::shared_ptr<Mesh>
-  GenerateMesh(const std::shared_ptr<MeshRenderConfigs::Standard> &config,
-               unsigned instanceCount);
+  NMesh *GenerateNMesh(const std::shared_ptr<const Shader> &shader,
+                       const std::shared_ptr<SingleConfigType> &mr,
+                       unsigned instanceCount);
+
+  std::unique_ptr<InstancedMesh>
+  GenerateInstancedMesh(const std::shared_ptr<const Shader> &shader,
+                        const std::shared_ptr<InstancedConfigType> &mr,
+                        unsigned instanceCount);
 
   void Load(const aiMesh *mesh);
   void Load(const std::string &path);
@@ -71,4 +90,4 @@ const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer);
 NMesh *MeshTypeRegistration(const JSON::Value &value,
                             const JSON::ReadData &data);
 
-#endif // _BASE__MODEL_H
+#endif // _SCENE__MESH_LOAD_H

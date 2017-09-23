@@ -24,16 +24,16 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <game/game.h>
-#include <core/file.h>
 #include <base/resources.h>
+#include <core/file.h>
+#include <game/game.h>
 #include <input/input.h>
-#include <scene/scene.h>
 #include <scene/camera.h>
-#include <scene/tagmanager.h>
-#include <scene/mesh.h>
 #include <scene/lightmanager.h>
+#include <scene/mesh.h>
 #include <scene/meshconfig.h>
+#include <scene/scene.h>
+#include <scene/tagmanager.h>
 
 class MyGame : public Game {
   Scene scene;
@@ -52,23 +52,17 @@ public:
     shape->transform.Rotate(30.0f * delta, 60.0f * delta, 0.0f);
 
     float mul = delta * 45.0f;
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      mul *= 4.0f;
+    if (Input::IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
 
     Vec3 movement;
-    if (Input::IsKeyDown(KeyCode::W))
-      movement += Vec3(0.0f, 0.0f, -mul);
-    if (Input::IsKeyDown(KeyCode::S))
-      movement += Vec3(0.0f, 0.0f, mul);
-    if (Input::IsKeyDown(KeyCode::A))
-      movement += Vec3(-mul, 0.0f, 0.0f);
-    if (Input::IsKeyDown(KeyCode::D))
-      movement += Vec3(mul, 0.0f, 0.0f);
-    if (Input::IsKeyDown(KeyCode::Q))
-      movement += Vec3(0.0f, -mul, 0.0f);
-    if (Input::IsKeyDown(KeyCode::E))
-      movement += Vec3(0.0f, mul, 0.0f);
-    NCamera::active->transform.Translate(NCamera::active->transform.GlobalRotation() * movement);
+    if (Input::IsKeyDown(KeyCode::W)) movement += Vec3(0.0f, 0.0f, -mul);
+    if (Input::IsKeyDown(KeyCode::S)) movement += Vec3(0.0f, 0.0f, mul);
+    if (Input::IsKeyDown(KeyCode::A)) movement += Vec3(-mul, 0.0f, 0.0f);
+    if (Input::IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
+    if (Input::IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
+    if (Input::IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
+    NCamera::active->transform.Translate(
+        NCamera::active->GlobalRotation() * movement);
   }
 };
 
@@ -80,11 +74,12 @@ static double startDragX = 0.0, startDragY = 0.0;
 
 void OnMouseMove(double xPos, double yPos) {
   if (!Input::IsKeyDown(KeyCode::F)) {
-    NCamera::active->transform.RotateGlobal(0.0f, static_cast<float>(startDragX - xPos), 0.0f);
-    NCamera::active->transform.Rotate(static_cast<float>(yPos - startDragY), 0.0f, 0.0f);
+    NCamera::active->transform.RotateGlobal(
+        0.0f, static_cast<float>(startDragX - xPos), 0.0f);
+    NCamera::active->transform.Rotate(static_cast<float>(yPos - startDragY),
+                                      0.0f, 0.0f);
     Input::SetMouseMode(MouseMode::DISABLED);
-  }
-  else
+  } else
     Input::SetMouseMode(MouseMode::NORMAL);
 
   startDragX = xPos;
@@ -95,8 +90,7 @@ MyGame::MyGame() {
   Input::RegisterMouseScrollCallback(OnMouseScroll);
   Input::RegisterMouseMoveCallback(OnMouseMove);
   Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-    if (action == InputEvent::PRESS)
-      Window::inst->Close();
+    if (action == InputEvent::PRESS) Window::inst->Close();
   });
 
   Input::GetMousePosition(startDragX, startDragY);
@@ -116,8 +110,10 @@ MyGame::MyGame() {
 
   {
     using namespace MeshRenderConfigs;
-    configurationGenerators["single-texture"] = MakeGenerator<AddTextures<Standard>>();
-    configurationGenerators["single-texture-lit"] = MakeGenerator<MakeLit<AddTextures<Standard>>>();
+    configurationGenerators["single-texture"] =
+        MakeGenerator<AddTextures<Standard<Single>>>();
+    configurationGenerators["single-texture-lit"] =
+        MakeGenerator<MakeLit<AddTextures<Standard<Single>>>>();
   }
 
   JSON::Document shaders, textures, sceneDoc;

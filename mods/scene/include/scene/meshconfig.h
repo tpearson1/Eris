@@ -29,16 +29,60 @@ SOFTWARE.
 
 #include <base/resources.h>
 #include <base/texture.h>
+#include <scene/camera.h>
 #include <scene/lightmanager.h>
-#include <scene/mesh.h>
+#include <scene/meshrenderer.h>
 #include <test/macros.h>
 
 namespace MeshRenderConfigs {
-struct Standard;
+template <typename ConfigBase>
+struct UV : public ConfigBase {
+  template <typename... Args>
+  UV(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
-using Generator = std::shared_ptr<Standard> (*)(const JSON::Value &,
-                                                const JSON::ReadData &,
-                                                const NMesh &);
+  void SetupUV(const std::vector<GLfloat> &uvs) {
+    this->vertexAttributes.emplace_back(1, 2, 0, uvs);
+  }
+};
+
+template <typename ConfigBase>
+struct Normal : public ConfigBase {
+  template <typename... Args>
+  Normal(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
+
+  void SetupNormal(const std::vector<GLfloat> &normals) {
+    this->vertexAttributes.emplace_back(0, 3, 0, normals);
+  }
+};
+
+template <typename ConfigBase>
+struct Standard : public ConfigBase {
+  template <typename... Args>
+  Standard(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
+
+  void SetupStandard(const std::vector<GLfloat> &uvs,
+                     const std::vector<GLfloat> &normals) {
+    this->vertexAttributes.emplace_back(1, 2, 0, uvs);
+    this->vertexAttributes.emplace_back(2, 3, 0, normals);
+  }
+};
+
+struct Single : public MeshRenderer {
+  virtual void PreRender() const override {
+    auto shaderMVP = Shader::Current()->GetUniform("MVP");
+    auto mvp = NCamera::active->Matrix(globalTransform.Matrix());
+    Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
+  }
+
+  const Transform &GetGlobalTransform() const { return globalTransform; }
+  void SetGlobalTransform(const Transform &t) { globalTransform = t; }
+
+private:
+  Transform globalTransform;
+};
+
+using Generator = std::shared_ptr<Standard<Single>> (*)(
+    const JSON::Value &, const JSON::ReadData &);
 
 extern std::unordered_map<std::string, Generator> configurationGenerators;
 
@@ -46,12 +90,11 @@ IS_VALID_EXPR(HasReadStaticMemberFunction, Type::Read)
 
 template <typename ConfigType>
 Generator MakeGenerator() {
-  return [](const auto &value, const auto &data,
-            const auto &mesh) -> std::shared_ptr<Standard> {
+  return [](const auto &value, const auto &data) -> std::shared_ptr<Standard<Single>> {
     auto c = std::make_shared<ConfigType>();
     static_assert(HasReadStaticMemberFunction<ConfigType>::value,
                   "Must have static member 'Read' to use 'MakeGenerator'");
-    ConfigType::Read(*c, value, data, mesh);
+    ConfigType::Read(*c, value, data);
     return c;
   };
 }
@@ -59,14 +102,13 @@ Generator MakeGenerator() {
 // TODO: Refactor for if constexpr when updating to C++17
 template <typename T>
 inline std::enable_if_t<HasReadStaticMemberFunction<T>::value>
-TryCallRead(T &in, const JSON::Value &value, const JSON::ReadData &data,
-            const NMesh &mesh) {
-  T::Read(in, value, data, mesh);
+TryCallRead(T &in, const JSON::Value &value, const JSON::ReadData &data) {
+  T::Read(in, value, data);
 }
 
 template <typename T>
 inline std::enable_if_t<!HasReadStaticMemberFunction<T>::value>
-TryCallRead(T &, const JSON::Value &, const JSON::ReadData &, const NMesh &) {}
+TryCallRead(T &, const JSON::Value &, const JSON::ReadData &) {}
 
 struct NamedTexturePair {
   std::string uniform;
@@ -81,6 +123,8 @@ struct AddTextures : public ConfigBase {
   AddTextures(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
   virtual void PreRender() const override {
+    ConfigBase::PreRender();
+
     int i = 0;
     for (auto &pair : textures) {
       glActiveTexture(GL_TEXTURE0 + i);
@@ -92,12 +136,12 @@ struct AddTextures : public ConfigBase {
   }
 
   static void Read(AddTextures &in, const JSON::Value &value,
-                   const JSON::ReadData &data, const NMesh &mesh) {
+                   const JSON::ReadData &data) {
     auto t =
         Trace::Pusher{data.trace, "MeshRenderConfigs::AddTextures<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data, mesh);
+    TryCallRead<ConfigBase>(in, value, data);
     JSON::GetMember(in.textures, "textures", object, data);
   }
 };
@@ -107,7 +151,6 @@ struct MakeLit : public ConfigBase {
   std::shared_ptr<LightingConfig> lightingConfig;
   Vec3 specular = Vec3::one * 0.5f;
   float shininess = 32.0f;
-  const Transform *transform = nullptr;
 
   template <typename... Args>
   MakeLit(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
@@ -115,30 +158,23 @@ struct MakeLit : public ConfigBase {
   virtual void PreRender() const override {
     ConfigBase::PreRender();
 
-    if (!transform) {
-      std::cerr << "Member 'transform' must be specified for "
-                   "MeshRenderConfigs::SingleTextureLit\n";
-      return;
-    }
+    const auto t = this->GetGlobalTransform();
 
-    LightManager::active->SetUniformsForClosestLights(transform->Location(),
+    LightManager::active->SetUniformsForClosestLights(t.Location(),
                                                       *lightingConfig);
 
     const auto *cur = Shader::Current();
     cur->SetUniform(cur->GetUniform("material.specular"), specular);
     cur->SetUniform(cur->GetUniform("material.shininess"), shininess);
-    cur->SetUniformMatrix4(cur->GetUniform("model"), 1, false,
-                           transform->Matrix());
+    cur->SetUniformMatrix4(cur->GetUniform("model"), 1, false, t.Matrix());
   }
 
   static void Read(MakeLit &in, const JSON::Value &value,
-                   const JSON::ReadData &data, const NMesh &mesh) {
+                   const JSON::ReadData &data) {
     auto t = Trace::Pusher{data.trace, "MeshRenderConfigs::MakeLit<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data, mesh);
-
-    in.transform = &mesh.transform;
+    TryCallRead<ConfigBase>(in, value, data);
 
     JSON::GetMember(in.specular, "specular", object, data);
     JSON::GetMember(in.shininess, "shininess", object, data);

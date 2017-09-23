@@ -25,14 +25,11 @@ SOFTWARE.
 */
 
 #include <mesh.h>
-#include <base/shader.h>
-#include <camera.h>
+#include <scene/camera.h>
 
-NMesh &NMesh::operator=(const NMesh &mr) {
-  mesh = mr.mesh;
-  shader = mr.shader;
-  registration = Renderer::active->Register(
-    [this] { this->Draw(); }, this, shader);
-  return *this;
+void NMesh::Draw() const {
+  assert(meshRenderer);
+  meshRenderer->SetGlobalTransform(GlobalTransform());
+  meshRenderer->PreRender();
+  meshRenderer->Draw();
 }
-
