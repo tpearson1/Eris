@@ -27,12 +27,29 @@ SOFTWARE.
 #include <base/resources.h>
 #include <core/file.h>
 #include <game/game.h>
-#include <input/input.h>
+#include <game/controllablecamera.h>
 #include <scene/camera.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
+
+class NSpectatorCamera : public NControllableCamera {
+public:
+  virtual void OnMouseMove(Vec2 pos) override;
+};
+
+void NSpectatorCamera::OnMouseMove(Vec2 pos) {
+  if (!Input::IsKeyDown(KeyCode::F)) {
+    auto delta = GetMouseMovementChange(pos);
+
+    auto cam = NCamera::active;
+    cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
+    cam->transform.Rotate(delta.y, 0.0f, 0.0f);
+    Input::SetMouseMode(MouseMode::DISABLED);
+  } else
+    Input::SetMouseMode(MouseMode::NORMAL);
+}
 
 class MyGame : public Game {
   Scene scene;
@@ -40,6 +57,7 @@ class MyGame : public Game {
   Vec3 rot;
   bool go = false;
   std::list<NMesh *> rend;
+  std::list<KeyState::Registration> keyRegistrations;
 
 public:
   MyGame();
@@ -79,60 +97,46 @@ public:
   }
 };
 
-static double startDragX = 0.0, startDragY = 0.0;
-
-void OnMouseMove(double xPos, double yPos) {
-  if (!Input::IsKeyDown(KeyCode::F)) {
-    NCamera::active->transform.RotateGlobal(
-        0.0f, static_cast<float>(startDragX - xPos), 0.0f);
-    NCamera::active->transform.Rotate(static_cast<float>(yPos - startDragY),
-                                      0.0f, 0.0f);
-    Input::SetMouseMode(MouseMode::DISABLED);
-  } else
-    Input::SetMouseMode(MouseMode::NORMAL);
-
-  startDragX = xPos;
-  startDragY = yPos;
-}
-
 MyGame::MyGame() {
-  Input::RegisterMouseMoveCallback(OnMouseMove);
-  Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-    if (action == InputEvent::PRESS) Window::inst->Close();
-  });
+  keyRegistrations.emplace_back(
+      Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
+        if (action == InputEvent::PRESS) Window::inst->Close();
+      }));
 
-  Input::RegisterKeyCallback(KeyCode::U, [this](InputEvent action) {
-    if (action == InputEvent::PRESS) go = !go;
-  });
+  keyRegistrations.emplace_back(
+      Input::RegisterKeyCallback(KeyCode::U, [this](InputEvent action) {
+        if (action == InputEvent::PRESS) go = !go;
+      }));
 
-  Input::RegisterKeyCallback(KeyCode::I, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
+  keyRegistrations.emplace_back(
+      Input::RegisterKeyCallback(KeyCode::I, [this](InputEvent action) {
+        if (action != InputEvent::PRESS) return;
 
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.x -= 30.0f;
-    else
-      rot.x += 30.0f;
-  });
+        if (Input::IsKeyDown(KeyCode::SHIFT))
+          rot.x -= 30.0f;
+        else
+          rot.x += 30.0f;
+      }));
 
-  Input::RegisterKeyCallback(KeyCode::O, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
+  keyRegistrations.emplace_back(
+      Input::RegisterKeyCallback(KeyCode::O, [this](InputEvent action) {
+        if (action != InputEvent::PRESS) return;
 
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.y -= 30.0f;
-    else
-      rot.y += 30.0f;
-  });
+        if (Input::IsKeyDown(KeyCode::SHIFT))
+          rot.y -= 30.0f;
+        else
+          rot.y += 30.0f;
+      }));
 
-  Input::RegisterKeyCallback(KeyCode::P, [this](InputEvent action) {
-    if (action != InputEvent::PRESS) return;
+  keyRegistrations.emplace_back(
+      Input::RegisterKeyCallback(KeyCode::P, [this](InputEvent action) {
+        if (action != InputEvent::PRESS) return;
 
-    if (Input::IsKeyDown(KeyCode::SHIFT))
-      rot.z -= 30.0f;
-    else
-      rot.z += 30.0f;
-  });
-
-  Input::GetMousePosition(startDragX, startDragY);
+        if (Input::IsKeyDown(KeyCode::SHIFT))
+          rot.z -= 30.0f;
+        else
+          rot.z += 30.0f;
+      }));
 
   auto tm = std::make_unique<TagManager>();
   TagManager::active = tm.get();
@@ -142,6 +146,9 @@ MyGame::MyGame() {
   auto typeManager = std::make_shared<JSON::TypeManager>();
   JSON::ReadData readData{typeManager};
   RegisterSceneTypeAssociations(*typeManager);
+
+  (*typeManager)["NSpectatorCamera"] =
+      DefaultNodeTypeRegistration<NSpectatorCamera, NCamera>;
 
   {
     using namespace MeshRenderConfigs;

@@ -24,31 +24,43 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <scene.h>
 #include <camera.h>
-#include <tagmanager.h>
-#include <meshload.h>
 #include <lightmanager.h>
+#include <meshload.h>
+#include <scene.h>
+#include <tagmanager.h>
 
-void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value, const JSON::ReadData &data) {
+void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value,
+                           const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "Scene"};
 
   const auto &object = JSON::GetObject(value, data);
 
   auto nodesIt = object.FindMember("nodes");
-  JSON::ParseAssert(nodesIt != object.MemberEnd(), data, "'Scene' object must have member 'nodes'");
-  JSON::ParseAssert(nodesIt->value.IsArray(), data, "Member 'nodes' in 'Scene' object must be of type array");
+  JSON::ParseAssert(nodesIt != object.MemberEnd(), data,
+                    "'Scene' object must have member 'nodes'");
+  JSON::ParseAssert(nodesIt->value.IsArray(), data,
+                    "Member 'nodes' in 'Scene' object must be of type array");
 
   const auto &nodesArr = nodesIt->value.GetArray();
   for (auto it = nodesArr.Begin(); it != nodesArr.End(); it++) {
-    auto type = JSON::Read<std::string>(*it, data);
+    const auto type = JSON::Read<std::string>(*it, data);
 
-    JSON::ParseAssert(++it != nodesArr.End(), data, "Member 'nodes' in 'Scene' object must have data after each type string");
+    JSON::ParseAssert(++it != nodesArr.End(), data, "Member 'nodes' in 'Scene' "
+                                                    "object must have data "
+                                                    "after each type string");
 
-    // Call a function depending on what the value of the string is.
+    const auto funcIt = data.typeManager->find(type);
+    if (funcIt == std::end(*data.typeManager)) {
+      std::cerr << "Type '" << type
+                << "' is not registered in the current TypeManager\n";
+      return;
+    }
+
+    // Call the registered function.
     // This function returns a newly created node pointer using the JSON data.
     // This is then parented to the root node
-    const auto &func = data.typeManager->at(type);
+    const auto &func = funcIt->second;
     reinterpret_cast<NNode *>(func(*it, data))->Parent(&out.root);
   }
 }
@@ -61,4 +73,3 @@ void RegisterSceneTypeAssociations(JSON::TypeManager &manager) {
   manager["Tagged"] = TaggedTypeRegistration;
   manager["NMesh"] = MeshTypeRegistration;
 }
-

@@ -32,6 +32,7 @@ SOFTWARE.
 #include <list>
 #include <functional>
 #include <base/window.h>
+#include <math/vec.h>
 
 enum class InputEvent {
   PRESS = GLFW_PRESS,
@@ -42,6 +43,43 @@ struct KeyState {
   bool down = false;
 
   using Callback = std::function<void(InputEvent)>;
+  class Registration {
+    KeyState *key;
+
+    using It = std::list<Callback>::iterator;
+    std::unique_ptr<It> it;
+
+    Registration(KeyState *_key, It _it)
+        : key(_key), it(std::make_unique<It>(_it)) {}
+
+    void UnregisterUnchecked() {
+      key->callbacks.erase(*it);
+      it = nullptr;
+    }
+
+  public:
+    Registration() {}
+
+    // Copying a registration is not permitted but moving is
+    Registration(const Registration &) = delete;
+    Registration(Registration &&) = default;
+    Registration &operator=(Registration &&) = default;
+
+    bool Registered() const { return static_cast<bool>(it); }
+
+    void Unregister() {
+      assert(Registered());
+      UnregisterUnchecked();
+    }
+
+    ~Registration() {
+      if (Registered())
+        UnregisterUnchecked();
+    }
+
+    friend class Input;
+  };
+
   std::list<Callback> callbacks;
 };
 
@@ -88,8 +126,8 @@ class Input {
   static std::unordered_map<KeyCode, KeyState> keyStates;
 
   using MouseButtonCallback = std::function<void(int, int)>;
-  using MouseMoveCallback = std::function<void(double, double)>;
-  using MouseScrollCallback = std::function<void(double, double)>;
+  using MouseMoveCallback = std::function<void(Vec2)>;
+  using MouseScrollCallback = std::function<void(Vec2)>;
 
   static std::unordered_map<MouseButton, std::list<MouseButtonCallback>> mouseButtonCallbacks;
   static std::list<MouseMoveCallback> mouseMoveCallbacks;
@@ -99,6 +137,41 @@ class Input {
 
   static void UpdateKeyState(int action, KeyCode key);
   static void UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both);
+
+  template <typename Callback, std::list<Callback> &CallbackList>
+  class MouseRegistration {
+    using It = typename std::list<Callback>::iterator;
+    std::unique_ptr<It> it;
+
+    MouseRegistration(It _it) : it(std::make_unique<It>(_it)) {}
+
+    void UnregisterUnchecked() {
+      CallbackList.erase(*it);
+      it = nullptr;
+    }
+
+  public:
+    MouseRegistration() {}
+
+    // Copying a registration is not permitted but moving is
+    MouseRegistration(const MouseRegistration &) = delete;
+    MouseRegistration(MouseRegistration &&) = default;
+    MouseRegistration &operator=(MouseRegistration &&) = default;
+
+    bool Registered() const { return static_cast<bool>(it); }
+
+    void Unregister() {
+      assert(Registered());
+      UnregisterUnchecked();
+    }
+
+    ~MouseRegistration() {
+      if (Registered())
+        UnregisterUnchecked();
+    }
+
+    friend class Input;
+  };
 
 public:
   static void Setup();
@@ -113,44 +186,80 @@ public:
   static void GetKeyName(int key, std::string &out)
     { out = glfwGetKeyName(key, 0); }
 
-  static auto RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
+  class MouseButtonRegistration {
+    using It = std::list<MouseButtonCallback>::iterator;
+    MouseButton button;
+    std::unique_ptr<It> it;
+
+    MouseButtonRegistration(MouseButton _button, It _it)
+        : button(_button), it(std::make_unique<It>(_it)) {}
+
+    void UnregisterUnchecked() {
+      auto &callbacks = mouseButtonCallbacks[button];
+      callbacks.erase(*it);
+      it = nullptr;
+    }
+
+  public:
+    MouseButtonRegistration() {}
+
+    // Copying a registration is not permitted but moving is
+    MouseButtonRegistration(const MouseButtonRegistration &) = delete;
+    MouseButtonRegistration(MouseButtonRegistration &&) = default;
+    MouseButtonRegistration &operator=(MouseButtonRegistration &&) = default;
+
+    bool Registered() const { return static_cast<bool>(it); }
+
+    void Unregister() {
+      assert(Registered());
+      UnregisterUnchecked();
+    }
+
+    ~MouseButtonRegistration() {
+      if (Registered())
+        UnregisterUnchecked();
+    }
+
+    friend class Input;
+  };
+
+  using MouseMoveRegistration = MouseRegistration<MouseMoveCallback, mouseMoveCallbacks>;
+  using MouseScrollRegistration = MouseRegistration<MouseScrollCallback, mouseScrollCallbacks>;
+
+  static KeyState::Registration RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
     auto &l = keyStates[key];
     l.callbacks.push_front(callback);
-    return l.callbacks.begin();
+    return {&l, std::begin(l.callbacks)};
   }
-
-  static void UnregisterKeyCallback(KeyCode key, std::list<KeyState::Callback>::iterator it)
-    { keyStates[key].callbacks.erase(it); }
 
   static void SetCursor(const std::string &path);
 
   static int GetMouseButton(int button)
     { return glfwGetMouseButton(Window::inst->window, button); }
 
-  static void GetMousePosition(double &outX, double &outY)
-    { glfwGetCursorPos(Window::inst->window, &outX, &outY); }
-  static void SetMousePosition(int x, int y)
-    { glfwSetCursorPos(Window::inst->window, x, y); }
+  static Vec2 GetMousePosition();
+
+  static void SetMousePosition(Vec2 pos)
+    { glfwSetCursorPos(Window::inst->window, pos.x, pos.y); }
 
   static void SetMouseMode(MouseMode mode)
     { glfwSetInputMode(Window::inst->window, GLFW_CURSOR, (int)mode); }
 
-  static auto RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
+  static MouseButtonRegistration RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
     auto &l = mouseButtonCallbacks[button];
     l.push_front(callback);
-    return l.begin();
+    return {button, l.begin()};
   }
-  static auto RegisterMouseMoveCallback(MouseMoveCallback callback)
-    { mouseMoveCallbacks.push_front(callback); return mouseMoveCallbacks.begin(); }
-  static auto RegisterMouseScrollCallback(MouseScrollCallback callback)
-    { mouseScrollCallbacks.push_front(callback); return mouseScrollCallbacks.begin(); }
 
-  static void UnregisterMouseButtonCallback(std::list<MouseButtonCallback>::iterator it, MouseButton button)
-    { mouseButtonCallbacks[button].erase(it); }
-  static void UnregisterMouseMoveCallback(std::list<MouseMoveCallback>::iterator it)
-    { mouseMoveCallbacks.erase(it); }
-  static void UnregisterMouseScrollCallback(std::list<MouseScrollCallback>::iterator it)
-    { mouseScrollCallbacks.erase(it); }
+  static MouseMoveRegistration RegisterMouseMoveCallback(MouseMoveCallback callback) {
+    mouseMoveCallbacks.push_front(callback);
+    return {std::move(std::begin(mouseMoveCallbacks))};
+  }
+
+  static MouseScrollRegistration RegisterMouseScrollCallback(MouseScrollCallback callback) {
+    mouseScrollCallbacks.push_front(callback);
+    return {std::move(std::begin(mouseScrollCallbacks))};
+  }
 };
 
 #endif // _INPUT__INPUT_H

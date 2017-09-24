@@ -39,25 +39,25 @@ std::unordered_map<KeyCode, KeyState> Input::keyStates;
 struct GLFWcursor *Input::cursor = nullptr;
 
 void Input::OnMouseButton(GLFWwindow * /* window */, int button, int action, int mods) {
-  for (auto &elem : mouseButtonCallbacks[static_cast<MouseButton>(button)])
-    elem(action, mods);
+  for (auto &callback : mouseButtonCallbacks[static_cast<MouseButton>(button)])
+    callback(action, mods);
 }
 
 void Input::OnMouseMove(GLFWwindow * /* window */, double xPos, double yPos) {
-  for (auto &elem : mouseMoveCallbacks)
-    elem(xPos, yPos);
+  for (auto &callback : mouseMoveCallbacks)
+    callback({static_cast<float>(xPos), static_cast<float>(yPos)});
 }
 
 void Input::OnMouseScroll(GLFWwindow * /* window */, double xOffset, double yOffset) {
-  for (auto &elem : mouseScrollCallbacks)
-    elem(xOffset, yOffset);
+  for (auto &callback : mouseScrollCallbacks)
+    callback({static_cast<float>(xOffset), static_cast<float>(yOffset)});
 }
 
 void Input::Setup() {
   glfwSetCursorPosCallback(Window::inst->window, Input::OnMouseMove);
   glfwSetMouseButtonCallback(Window::inst->window, Input::OnMouseButton);
   glfwSetScrollCallback(Window::inst->window, Input::OnMouseScroll);
-  
+
   glfwSetKeyCallback(Window::inst->window, Input::OnKey);
   // glfwSetCharCallback(Window::inst->window, Input::OnChar);
 }
@@ -81,6 +81,12 @@ void Input::SetCursor(const std::string &path) {
 
   cursor = glfwCreateCursor(&image, 0, 0);
   glfwSetCursor(Window::inst->window, cursor);
+}
+
+Vec2 Input::GetMousePosition() {
+  double x, y;
+  glfwGetCursorPos(Window::inst->window, &x, &y);
+  return {static_cast<float>(x), static_cast<float>(y)};
 }
 
 void Input::UpdateKeyState(int action, KeyCode key) {
@@ -117,7 +123,7 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, 
         callback(event);
     }
   }
-  
+
   for (auto &callback : pressedState.callbacks)
     callback(event);
 }

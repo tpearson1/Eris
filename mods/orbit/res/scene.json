@@ -45,7 +45,7 @@
         }
       }
     ],
-    "NCamera",
+    "NSpectatorCamera",
     {
       "active": true,
       "near": 0.1,

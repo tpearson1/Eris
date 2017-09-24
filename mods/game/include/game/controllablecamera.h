@@ -24,45 +24,31 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__SCENE_H
-#define _SCENE__SCENE_H
+#ifndef _GAME__CONTROLLABLE_CAMERA_H
+#define _GAME__CONTROLLABLE_CAMERA_H
 
-#include <core/readwrite.h>
-#include <scene/renderer.h>
-#include <scene/node.h>
-#include <base/window.h>
-#include <unordered_map>
+#include <input/input.h>
+#include <scene/camera.h>
 
-class Scene {
-  std::unique_ptr<Renderer> renderer;
+class NControllableCamera : public NCamera {
+  Vec2 prevPosition;
+  Input::MouseMoveRegistration moveRegistration;
+
+protected:
+  virtual void OnMouseMove(Vec2 mousePosition) = 0;
+
+  Vec2 GetMouseMovementChange(Vec2 mousePosition) const {
+    return mousePosition - prevPosition;
+  }
 
 public:
-  Scene() : renderer(std::make_unique<Renderer>()) {}
-
-  void SetActive() {
-    Renderer::active = renderer.get();
+  NControllableCamera() {
+    prevPosition = Input::GetMousePosition();
+    moveRegistration = Input::RegisterMouseMoveCallback([this](auto pos) {
+      OnMouseMove(pos);
+      prevPosition = pos;
+    });
   }
-
-  void Render() {
-    renderer->Render();
-  }
-
-  NNode root;
 };
 
-template <>
-struct JSONImpl<Scene> {
-  static void Read(Scene &out, const JSON::Value &value, const JSON::ReadData &data);
-};
-
-template <typename Instantiated, typename ReadType = Instantiated>
-void *DefaultNodeTypeRegistration(const JSON::Value &value, const JSON::ReadData &data) {
-  auto t = Trace::Pusher{data.trace, "DefaultNodeTypeRegistration"};
-  auto *obj = new Instantiated;
-  JSON::Read<ReadType>(*obj, value, data);
-  return obj;
-}
-
-void RegisterSceneTypeAssociations(JSON::TypeManager &manager);
-
-#endif // _SCENE__SCENE_H
+#endif // _GAME__CONTROLLABLE_CAMERA_H

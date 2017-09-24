@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <base/resources.h>
 #include <core/file.h>
+#include <game/controllablecamera.h>
 #include <game/game.h>
-#include <input/input.h>
 #include <scene/camera.h>
 #include <scene/lightmanager.h>
 #include <scene/mesh.h>
@@ -35,10 +35,28 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
 
+class NSpectatorCamera : public NControllableCamera {
+public:
+  virtual void OnMouseMove(Vec2 pos) override;
+};
+
+void NSpectatorCamera::OnMouseMove(Vec2 pos) {
+  if (!Input::IsKeyDown(KeyCode::F)) {
+    auto delta = GetMouseMovementChange(pos);
+
+    auto cam = NCamera::active;
+    cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
+    cam->transform.Rotate(delta.y, 0.0f, 0.0f);
+    Input::SetMouseMode(MouseMode::DISABLED);
+  } else
+    Input::SetMouseMode(MouseMode::NORMAL);
+}
+
 class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
   NPointLight *pointLight;
+  KeyState::Registration escapeRegistration;
 
 public:
   MyGame();
@@ -61,39 +79,19 @@ public:
     if (Input::IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
     if (Input::IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
     if (Input::IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
-    NCamera::active->transform.Translate(
-        NCamera::active->GlobalRotation() * movement);
+    NCamera::active->transform.Translate(NCamera::active->GlobalRotation() *
+                                         movement);
   }
 };
 
-void OnMouseScroll(double /* xOffset */, double yOffset) {
-  NCamera::active->fov -= yOffset * 0.1f;
-}
-
-static double startDragX = 0.0, startDragY = 0.0;
-
-void OnMouseMove(double xPos, double yPos) {
-  if (!Input::IsKeyDown(KeyCode::F)) {
-    NCamera::active->transform.RotateGlobal(
-        0.0f, static_cast<float>(startDragX - xPos), 0.0f);
-    NCamera::active->transform.Rotate(static_cast<float>(yPos - startDragY),
-                                      0.0f, 0.0f);
-    Input::SetMouseMode(MouseMode::DISABLED);
-  } else
-    Input::SetMouseMode(MouseMode::NORMAL);
-
-  startDragX = xPos;
-  startDragY = yPos;
-}
+void OnMouseScroll(Vec2 delta) { NCamera::active->fov -= delta.y * 0.1f; }
 
 MyGame::MyGame() {
   Input::RegisterMouseScrollCallback(OnMouseScroll);
-  Input::RegisterMouseMoveCallback(OnMouseMove);
-  Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-    if (action == InputEvent::PRESS) Window::inst->Close();
-  });
-
-  Input::GetMousePosition(startDragX, startDragY);
+  escapeRegistration =
+      Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
+        if (action == InputEvent::PRESS) Window::inst->Close();
+      });
 
   auto tm = std::make_unique<TagManager>();
   TagManager::active = tm.get();
@@ -103,6 +101,9 @@ MyGame::MyGame() {
   auto typeManager = std::make_shared<JSON::TypeManager>();
   JSON::ReadData readData{typeManager};
   RegisterSceneTypeAssociations(*typeManager);
+
+  (*typeManager)["NSpectatorCamera"] =
+      DefaultNodeTypeRegistration<NSpectatorCamera, NCamera>;
 
   scene.SetActive();
 

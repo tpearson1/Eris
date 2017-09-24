@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <base/resources.h>
 #include <core/file.h>
+#include <game/controllablecamera.h>
 #include <game/game.h>
-#include <input/input.h>
 #include <scene/camera.h>
 #include <scene/instancedmesh.h>
 #include <scene/instancedmeshconfig.h>
@@ -37,9 +37,27 @@ SOFTWARE.
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
 
+class NSpectatorCamera : public NControllableCamera {
+public:
+  virtual void OnMouseMove(Vec2 pos) override;
+};
+
+void NSpectatorCamera::OnMouseMove(Vec2 pos) {
+  if (!Input::IsKeyDown(KeyCode::F)) {
+    auto delta = GetMouseMovementChange(pos);
+
+    auto cam = NCamera::active;
+    cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
+    cam->transform.Rotate(delta.y, 0.0f, 0.0f);
+    Input::SetMouseMode(MouseMode::DISABLED);
+  } else
+    Input::SetMouseMode(MouseMode::NORMAL);
+}
+
 class MyGame : public Game {
   Scene scene;
   std::unique_ptr<InstancedMesh> mesh;
+  KeyState::Registration escapeRegistration;
 
 public:
   MyGame();
@@ -62,29 +80,11 @@ public:
   }
 };
 
-static double startDragX = 0.0, startDragY = 0.0;
-
-void OnMouseMove(double xPos, double yPos) {
-  if (!Input::IsKeyDown(KeyCode::F)) {
-    NCamera::active->transform.RotateGlobal(
-        0.0f, static_cast<float>(startDragX - xPos), 0.0f);
-    NCamera::active->transform.Rotate(static_cast<float>(yPos - startDragY),
-                                      0.0f, 0.0f);
-    Input::SetMouseMode(MouseMode::DISABLED);
-  } else
-    Input::SetMouseMode(MouseMode::NORMAL);
-
-  startDragX = xPos;
-  startDragY = yPos;
-}
-
 MyGame::MyGame() {
-  Input::RegisterMouseMoveCallback(OnMouseMove);
-  Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-    if (action == InputEvent::PRESS) Window::inst->Close();
-  });
-
-  Input::GetMousePosition(startDragX, startDragY);
+  escapeRegistration =
+      Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
+        if (action == InputEvent::PRESS) Window::inst->Close();
+      });
 
   auto resources = std::make_unique<Resources>();
   Resources::active = resources.get();
@@ -94,7 +94,7 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  NCamera::active = new NCamera;
+  NCamera::active = new NSpectatorCamera;
   NCamera::active->Parent(&scene.root);
 
   JSON::Document shaders, textures;
