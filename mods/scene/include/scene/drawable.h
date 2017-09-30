@@ -24,46 +24,44 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__RENDER_REGISTRATION_MANAGER_H
-#define _SCENE__RENDER_REGISTRATION_MANAGER_H
+#ifndef _SCENE__DRAWABLE_H
+#define _SCENE__DRAWABLE_H
 
 #include <scene/renderdata.h>
 #include <scene/renderer.h>
 
 class Shader;
 
-class RenderRegistrationManager {
-  std::shared_ptr<const Shader> shader;
-  Renderer::Registration renderRegistration;
-  RenderData renderData;
-
-  void Register(const std::shared_ptr<const Shader> &s) {
-    renderRegistration =
-        Renderer::active->Register([this] { Draw(); }, &renderData, shader = s);
-  }
+class Drawable {
+  Renderer::Registration registration;
 
 public:
-  RenderRegistrationManager(const std::shared_ptr<const Shader> &s) {
-    assert(Renderer::active);
-    Register(s);
+  Drawable() = default;
+  Drawable(const std::shared_ptr<const Shader> &s) { Register(s); }
+
+  void Register(const std::shared_ptr<const Shader> &s);
+
+  Drawable(const Drawable &other);
+  Drawable &operator=(const Drawable &other);
+
+  Drawable(Drawable &&other);
+  Drawable &operator=(Drawable &&other);
+
+  bool GetVisible() const {
+    return registration.GetRenderData().visible;
   }
 
-  RenderRegistrationManager(const RenderRegistrationManager &other);
+  void SetVisible(bool visible) { registration.SetRenderData({visible}); }
 
-  RenderRegistrationManager &operator=(const RenderRegistrationManager &other);
-
-  ~RenderRegistrationManager() {
-    Renderer::active->Unregister(renderRegistration);
-  }
+  std::shared_ptr<const Shader> GetShader() const {
+    return registration.GetShader();
+  };
 
   void SetShader(const std::shared_ptr<const Shader> &s) {
-    assert(Renderer::active);
-    Renderer::active->UpdateRequirements(renderRegistration, shader = s);
+    registration.ChangeShader(s);
   }
-
-  const Shader *GetShader() const { return shader.get(); };
 
   virtual void Draw() const = 0;
 };
 
-#endif // _SCENE__RENDER_REGISTRATION_MANAGER_H
+#endif // _SCENE__DRAWABLE_H

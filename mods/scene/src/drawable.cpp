@@ -24,18 +24,30 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <renderregistrationmanager.h>
+#include <drawable.h>
 
-RenderRegistrationManager::RenderRegistrationManager(const RenderRegistrationManager &other) {
-  renderData = other.renderData;
-  Register(other.shader);
+void Drawable::Register(const std::shared_ptr<const Shader> &s) {
+  assert(Renderer::active);
+  Renderer::active->Register(registration, s);
+  registration.SetDrawFunction([this] { Draw(); });
 }
 
-RenderRegistrationManager &RenderRegistrationManager::operator=(const RenderRegistrationManager &other) {
+Drawable::Drawable(const Drawable &other) {
+  registration.CreateFrom(other.registration, [this] { Draw(); });
+}
+
+Drawable &Drawable::operator=(const Drawable &other) {
   if (this == &other) return *this;
+  registration.CreateFrom(other.registration, [this] { Draw(); });
+  return *this;
+}
 
-  renderData = other.renderData;
-  SetShader(other.shader);
+Drawable::Drawable(Drawable &&other) {
+  registration.CreateFrom(other.registration, [this] { Draw(); });
+}
 
+Drawable &Drawable::operator=(Drawable &&other) {
+  if (this == &other) return *this;
+  registration.CreateFrom(other.registration, [this] { Draw(); });
   return *this;
 }

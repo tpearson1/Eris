@@ -27,11 +27,11 @@ SOFTWARE.
 #ifndef _SCENE__MESH_H
 #define _SCENE__MESH_H
 
+#include <scene/drawable.h>
 #include <scene/meshconfig.h>
 #include <scene/node.h>
-#include <scene/renderregistrationmanager.h>
 
-class NMesh : public NNode, public RenderRegistrationManager {
+class NMesh : public NNode, public Drawable {
 public:
   using ConfigType = MeshRenderConfigs::Single;
 
@@ -44,8 +44,7 @@ public:
     meshRenderer = mr;
   }
 
-  NMesh(const std::shared_ptr<const Shader> &s)
-      : RenderRegistrationManager(s) {}
+  NMesh(const std::shared_ptr<const Shader> &s) : Drawable(s) {}
 
   virtual void Draw() const override;
 };

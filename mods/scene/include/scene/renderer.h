@@ -31,41 +31,79 @@ SOFTWARE.
 #include <functional>
 #include <list>
 #include <memory>
+#include <scene/renderdata.h>
 #include <utility>
 
-class RenderData;
-
 class Renderer {
-  using RenderPair = std::pair<std::function<void()>, RenderData *>;
+  using RenderFunction = std::function<void()>;
+  using RenderPair = std::pair<RenderFunction, RenderData>;
 
-  std::unordered_map<std::shared_ptr<const Shader>, std::list<RenderPair>>
-      renderItems;
+  std::unordered_map<const Shader *, std::list<RenderPair>> renderItems;
 
 public:
-  struct Registration {
-    Registration() {}
-    friend class Renderer;
-
-  private:
-    Registration(const std::shared_ptr<const Shader> &s,
-                 std::list<RenderPair>::iterator it)
-        : shader(s), element(it) {}
-
+  class Registration {
     std::shared_ptr<const Shader> shader;
-    std::list<RenderPair>::iterator element;
+    using It = typename std::list<RenderPair>::iterator;
+    std::unique_ptr<It> it;
+    Renderer *renderer;
+
+    void SetRenderer(Renderer *r) { renderer = r; }
+    void SetRenderPairIterator(It _it) { it = std::make_unique<It>(_it); }
+
+    void UnregisterUnchecked();
+
+  public:
+    Registration() = default;
+
+    void CreateFrom(const Registration &other, RenderFunction newRenderFunc);
+    void CreateFrom(Registration &&other, RenderFunction newRenderFunc);
+
+    Registration(const Registration &) = delete;
+    Registration &operator=(const Registration &) = delete;
+
+    std::function<void()> GetDrawFunction() const {
+      assert(Registered());
+      return (*it)->first;
+    }
+
+    void SetDrawFunction(std::function<void()> func) {
+      assert(Registered());
+      (*it)->first = std::move(func);
+    }
+
+    const RenderData &GetRenderData() const {
+      assert(Registered());
+      return (*it)->second;
+    }
+
+    void SetRenderData(const RenderData &changed) {
+      assert(Registered());
+      (*it)->second = changed;
+    }
+
+    std::shared_ptr<const Shader> GetShader() const { return shader; }
+    void ChangeShader(const std::shared_ptr<const Shader> &changed);
+
+    bool Registered() const { return static_cast<bool>(it); }
+
+    void Unregister() {
+      assert(Registered());
+      UnregisterUnchecked();
+    }
+
+    ~Registration() {
+      if (Registered()) UnregisterUnchecked();
+    }
+
+    friend class Renderer;
   };
 
   static Renderer *active;
 
   // A single class instance SHOULD NOT register two functions with the same
   // RenderData object!
-  Registration Register(std::function<void()> func, RenderData *renderData,
-                        const std::shared_ptr<const Shader> &s);
-
-  void Unregister(const Registration &registration);
-
-  Registration UpdateRequirements(const Registration &registration,
-                                  const std::shared_ptr<const Shader> &updated);
+  void Register(Registration &registration,
+                const std::shared_ptr<const Shader> &s);
 
   void Render();
 };

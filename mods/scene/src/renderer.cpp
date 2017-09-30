@@ -24,59 +24,89 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <renderer.h>
-#include <iostream>
 #include <base/shader.h>
 #include <base/texture.h>
+#include <iostream>
 #include <renderdata.h>
+#include <renderer.h>
 
 Renderer *Renderer::active = nullptr;
 
-Renderer::Registration Renderer::Register(std::function<void()> func, RenderData *renderData, const std::shared_ptr<const Shader> &s) {
-  auto &group = renderItems[s];
-  group.emplace_front(func, renderData);
-  return {s, group.begin()};
-}
+void Renderer::Registration::UnregisterUnchecked() {
+  auto shaderGroup = renderer->renderItems.find(shader.get());
 
-void Renderer::Unregister(const Renderer::Registration &registration) {
-  auto groupIt = renderItems.find(registration.shader);
-  if (groupIt == std::end(renderItems)) {
-    // Must have already been unregistered because Registration object can
-    // only be created by Renderer
-    std::cerr << "Renderer::Unregister: Function already unregistered\n";
-    return;
+  auto &renderPairs = shaderGroup->second;
+  renderPairs.erase(*it);
+
+  if (renderPairs.empty()) {
+    // Need to remove the shader group because nothing is registered under this
+    // shader anymore
+    renderer->renderItems.erase(shaderGroup);
   }
 
-  auto &group = groupIt->second;
-  group.erase(registration.element);
-
-  if (group.empty()) {
-    renderItems.erase(groupIt);
-    return;
-  }
+  // Indicate that the registration is no longer registered
+  it = nullptr;
 }
 
-Renderer::Registration
-Renderer::UpdateRequirements(const Renderer::Registration &registration,
-                             const std::shared_ptr<const Shader> &updated) {
-  const auto &renderTuple = *registration.element;
-  auto reg = Register(renderTuple.first, renderTuple.second, updated);
-  Unregister(registration);
-  return reg;
+void Renderer::Registration::CreateFrom(const Registration &other, RenderFunction newRenderFunc) {
+  if (this == &other) return;
+  if (Registered()) UnregisterUnchecked();
+
+  other.renderer->Register(*this, other.shader);
+  SetRenderData(other.GetRenderData());
+  SetDrawFunction(newRenderFunc);
+}
+
+void Renderer::Registration::CreateFrom(Registration &&other, RenderFunction newRenderFunc) {
+  if (this == &other) return;
+  if (Registered()) UnregisterUnchecked();
+
+  renderer = other.renderer;
+  it = std::move(other.it);
+  shader = std::move(other.shader);
+
+  SetDrawFunction(newRenderFunc);
+}
+
+void Renderer::Registration::ChangeShader(
+    const std::shared_ptr<const Shader> &changed) {
+  assert(it);
+  if (changed == shader) return;
+
+  // Add to new location
+  auto &changedShaderGroup = renderer->renderItems[changed.get()];
+  changedShaderGroup.emplace_front(GetDrawFunction(), GetRenderData());
+
+  // Unregister the old data.
+  // Checking unnecessary since 'it' was asserted to be non-null
+  UnregisterUnchecked();
+  // Change the iterator and the shader to represent the changes
+  *it = changedShaderGroup.begin();
+  shader = changed;
+}
+
+void Renderer::Register(Renderer::Registration &registration,
+                        const std::shared_ptr<const Shader> &s) {
+  registration.SetRenderer(this);
+  registration.shader = s;
+
+  auto &shaderGroup = renderItems[s.get()];
+  shaderGroup.emplace_front(nullptr, RenderData{});
+  registration.SetRenderPairIterator(shaderGroup.begin());
 }
 
 void Renderer::Render() {
   for (auto group : renderItems) {
-    const auto &shader = group.first;
+    const auto shader = group.first;
     const auto &list = group.second;
-    // Shader should be valid because it was when registered
+    assert(shader);
     shader->Use();
     for (auto pair : list) {
       auto renderData = pair.second;
       auto renderFunc = pair.first;
-      if (renderData->visible)
-        renderFunc();
+
+      assert(renderFunc);
+      if (renderData.visible) renderFunc();
     }
   }
 }
-

@@ -36,6 +36,7 @@ class TransformationTree {
   // Since this class is should be derived by type 'T', this reinterpret_cast is
   // justified
   T *This() { return reinterpret_cast<T *>(this); }
+  const T *This() const { return reinterpret_cast<const T *>(this); }
 
 protected:
   T *parent = nullptr;
@@ -54,7 +55,7 @@ public:
 
   TransformationTree &operator=(const TransformationTree &other) {
     if (this == &other) return *this;
-    Parent(other);
+    Parent(other.parent);
     children == other.children;
     return *this;
   }

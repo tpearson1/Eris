@@ -27,15 +27,14 @@ SOFTWARE.
 #ifndef __SCENE__INSTANCED_MESH_H
 #define __SCENE__INSTANCED_MESH_H
 
+#include <scene/drawable.h>
 #include <scene/meshrenderer.h>
-#include <scene/renderregistrationmanager.h>
 
-class InstancedMesh : public RenderRegistrationManager {
+class InstancedMesh : public Drawable {
   std::shared_ptr<MeshRenderer> meshRenderer;
 
 public:
-  InstancedMesh(const std::shared_ptr<const Shader> &s)
-      : RenderRegistrationManager(s) {}
+  InstancedMesh(const std::shared_ptr<const Shader> &s) : Drawable(s) {}
 
   MeshRenderer *GetMeshRenderer() const { return meshRenderer.get(); }
   void SetMeshRenderer(std::shared_ptr<MeshRenderer> mr) { meshRenderer = mr; }
