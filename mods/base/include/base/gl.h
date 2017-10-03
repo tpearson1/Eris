@@ -28,10 +28,40 @@ SOFTWARE.
 #define _BASE__GL_H
 
 /*
- * Wrapper header for including all files necessary for OpenGL and GLFW
+ * Wrapper header for including all files necessary for OpenGL, GLEW and GLFW
  */
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <string>
+
+namespace GL {
+constexpr const auto majorVersion = 3;
+constexpr const auto minorVersion = 3;
+constexpr const auto shaderVersion = "330 core";
+} // namespace GL
+
+namespace GLEW {
+namespace Detail {
+extern bool setup;
+}
+
+inline bool IsSetup() { return Detail::setup; }
+
+GLenum Setup();
+std::string GetError(GLenum error);
+void Terminate();
+} // namespace GLEW
+
+namespace GLFW {
+namespace Detail {
+extern bool setup;
+}
+
+inline bool IsSetup() { return Detail::setup; }
+
+bool Setup();
+void Terminate();
+} // namespace GLFW
 
 #endif // _BASE__GL_H

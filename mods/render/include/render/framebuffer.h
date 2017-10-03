@@ -50,7 +50,7 @@ public:
   void Bind()
     { glBindRenderbuffer(GL_RENDERBUFFER, id); }
 
-  void Initialize(GLenum internalFormat, int width = Window::inst->width, int height = Window::inst->height)
+  void Initialize(GLenum internalFormat, int width = Window::GetActive()->width, int height = Window::GetActive()->height)
     { glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height); }
 };
 

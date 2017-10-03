@@ -90,7 +90,7 @@ MyGame::MyGame() {
   Input::RegisterMouseScrollCallback(OnMouseScroll);
   escapeRegistration =
       Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-        if (action == InputEvent::PRESS) Window::inst->Close();
+        if (action == InputEvent::PRESS) Window::GetActive()->Close();
       });
 
   auto tm = std::make_unique<TagManager>();

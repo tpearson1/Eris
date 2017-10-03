@@ -24,22 +24,27 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <game.h>
-#include <iostream>
 #include <base/mesh.h>
+#include <cstdlib>
+#include <game.h>
 #include <input/input.h>
+#include <iostream>
 #include <scene/node.h>
 
 Game::Game() {
-  window = std::make_unique<Window>();
+  if (!GLFW::Setup()) {
+    std::cerr << "Failed to initialize GLFW\n";
+    std::exit(-1);
+  }
 
-  Input::Setup();
+  window = std::make_unique<Window>(IVec2{640, 480});
+  inputHandler = std::make_unique<Input>(window.get());
 
-  glewExperimental = GL_TRUE; // Needed in core profile
-  GLenum error;
-  if ((error = glewInit()) != GLEW_OK) {
-    std::cerr << "> Failed to initialize GLEW: '" << glewGetErrorString(error) << "'\n";
-    exit(-1);
+  auto errorCode = GLEW::Setup();
+  if (errorCode != GLEW_OK) {
+    std::cerr << "Failed to initialize GLEW: '" << GLEW::GetError(errorCode)
+              << "'\n";
+    std::exit(-1);
   }
 
   // Enable depth testing
@@ -49,9 +54,7 @@ Game::Game() {
   glCullFace(GL_BACK);
 }
 
-Game::~Game() {
-  Input::Cleanup();
-}
+Game::~Game() { GLFW::Terminate(); }
 
 void Game::Start() {
   Initialize();
@@ -67,8 +70,7 @@ void Game::Start() {
     // Any functions that are removed from the list during a 'Tick' call
     // could cause problems if we do not cache the list
     auto tempList = tickFunctions;
-    for (auto &tickFunc : tempList)
-      tickFunc(delta);
+    for (auto &tickFunc : tempList) tickFunc(delta);
     Tick(delta);
 
     window->SwapBuffers();
@@ -77,4 +79,3 @@ void Game::Start() {
     elapsedTime += delta;
   }
 }
-

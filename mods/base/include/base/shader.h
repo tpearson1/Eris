@@ -55,8 +55,6 @@ public:
     Shader::Definitions definitions;
   };
 
-  static std::string openGLVersion;
-
   GLuint ID() const { return id; }
 
   Shader() {}

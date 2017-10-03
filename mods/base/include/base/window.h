@@ -27,9 +27,11 @@ SOFTWARE.
 #ifndef _BASE__WINDOW_H
 #define _BASE__WINDOW_H
 
+#include <base/gl.h>
 #include <functional>
 #include <list>
-#include <base/gl.h>
+#include <math/vec.h>
+#include <unordered_map>
 
 struct GLFWwindow;
 
@@ -37,35 +39,45 @@ struct GLFWwindow;
  * Class for creating and manipulating a window
  */
 class Window {
+  static std::unordered_map<GLFWwindow *, Window *> windowMapping;
+  static Window *active;
+
   /*
    * Prevent copying
    */
-  Window(const Window &other);
-  Window &operator=(const Window &other);
+  Window(const Window &other) = delete;
+  Window &operator=(const Window &other) = delete;
 
-  using ResizeCallback = std::function<void(int, int)>;
+  using ResizeCallback = std::function<void(IVec2)>;
   std::list<ResizeCallback> resizeCallbacks;
 
   static void OnResize(GLFWwindow *window, int width, int height);
 
-public:
-  /*
-   * The window instance
-   */
-  static Window *inst;
-
-  /*
-   * The width and height of the window in pixels
-   */
-  int width = 640, height = 480;
+  IVec2 size;
 
   /*
    * The GLFW representation of the window
    */
   GLFWwindow *window;
 
-  Window();
-  ~Window();
+  static void SetViewportSize(IVec2 size);
+
+public:
+  /*
+   * The size of the window in pixels
+   */
+  IVec2 GetSize() const { return size; }
+
+  Window(IVec2 size);
+  ~Window() { Close(); }
+
+  static Window *GetActive() { return active; }
+
+  bool IsActive() const { return GetActive() == this; }
+  void MakeActive() {
+    glfwMakeContextCurrent(window);
+    active = this;
+  }
 
   /*
    * Whether or not the window should Close
@@ -83,11 +95,16 @@ public:
    */
   void Close();
 
-  auto RegisterResizeCallback(ResizeCallback callback)
-    { resizeCallbacks.push_front(callback); return resizeCallbacks.begin(); }
+  auto RegisterResizeCallback(ResizeCallback callback) {
+    resizeCallbacks.push_front(callback);
+    return resizeCallbacks.begin();
+  }
 
-  void UnregisterResizeCallback(std::list<ResizeCallback>::iterator it)
-    { resizeCallbacks.erase(it); }
+  void UnregisterResizeCallback(std::list<ResizeCallback>::iterator it) {
+    resizeCallbacks.erase(it);
+  }
+
+  friend class Input;
 };
 
 #endif // _BASE__WINDOW_H

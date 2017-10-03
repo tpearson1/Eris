@@ -41,6 +41,8 @@ class Game {
   TickFunctionList tickFunctions;
   float elapsedTime = 0.0f;
 
+  std::unique_ptr<class Input> inputHandler;
+
 protected:
   virtual void Initialize() {}
   virtual void Tick(float /* delta */) {}

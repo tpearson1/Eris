@@ -63,9 +63,9 @@ Mat4 RectTransform::Matrix() const {
     0.0f, 0.0f, 0.0f, 1.0f
   };
 
-  return Mat4::Scale({2.0f / Window::inst->width, 2.0f / Window::inst->height, 1.0f})
+  return Mat4::Scale({2.0f / Window::GetActive()->width, 2.0f / Window::GetActive()->height, 1.0f})
          * rotMat
-         * Mat4::Translate((loc * 2.0f) - size * 0.5f - Vec2(Window::inst->width, Window::inst->height) / 2.0f)
+         * Mat4::Translate((loc * 2.0f) - size * 0.5f - Vec2(Window::GetActive()->width, Window::GetActive()->height) / 2.0f)
          * Mat4::Scale({size.x, size.y, 1.0f});
 }
 

@@ -33,7 +33,6 @@ SOFTWARE.
 #include <core/statics.h>
 
 const Shader *Shader::current;
-std::string Shader::openGLVersion = "330 core";
 
 void JSONImpl<Shader::Settings>::Write(const Shader::Settings &value, JSON::Writer &writer) {
   auto obj = JSON::ObjectEncloser{writer};
@@ -84,11 +83,11 @@ bool Shader::Load(const Settings &settings) {
   File::Read(settings.vertexFilePath, vertexShaderCode);
   File::Read(settings.fragmentFilePath, fragmentShaderCode);
   if (vertexShaderCode.empty() || fragmentShaderCode.empty()) {
-    std::cerr << "> Unable to load shader files\n";
+    std::cerr << "Unable to load shader files\n";
     return false;
   }
 
-  std::string versionText = "#version " + openGLVersion + '\n';
+  auto versionText = std::string("#version ") + GL::shaderVersion + '\n';
 
   std::string defs;
   for (auto &definition : settings.definitions)

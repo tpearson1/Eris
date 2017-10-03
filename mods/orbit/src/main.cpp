@@ -100,7 +100,7 @@ public:
 MyGame::MyGame() {
   keyRegistrations.emplace_back(
       Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-        if (action == InputEvent::PRESS) Window::inst->Close();
+        if (action == InputEvent::PRESS) Window::GetActive()->Close();
       }));
 
   keyRegistrations.emplace_back(

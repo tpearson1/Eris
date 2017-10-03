@@ -24,51 +24,55 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <window.h>
-#include <iostream>
 #include <base/gl.h>
+#include <cstdlib>
+#include <iostream>
+#include <window.h>
 
-Window *Window::inst;
+std::unordered_map<GLFWwindow *, Window *> Window::windowMapping;
+Window *Window::active = nullptr;
 
-void Window::OnResize(GLFWwindow * /* window */, int width, int height) {
-  inst->width = width;
-  inst->height = height;
-  glViewport(0, 0, width, height);
+void Window::SetViewportSize(IVec2 size) { glViewport(0, 0, size.x, size.y); }
 
-  for (auto &elem : inst->resizeCallbacks)
-    elem(width, height);
+void Window::OnResize(GLFWwindow *glfwWindow, int width, int height) {
+  auto window = windowMapping[glfwWindow];
+  window->size = {width, height};
+
+  if (!window->IsActive()) {
+    auto cachedActive = GetActive();
+    window->MakeActive();
+    SetViewportSize(window->size);
+    cachedActive->MakeActive();
+  } else
+    SetViewportSize(window->size);
+
+  for (auto &callback : window->resizeCallbacks) callback(window->size);
 }
 
-Window::Window() {
-  inst = this;
-  if (!glfwInit()) {
-    std::cerr << "> Failed to initialize GLFW\n";
-    exit(-1);
-  }
+Window::Window(IVec2 _size) {
+  assert(GLFW::IsSetup());
+  size = _size;
 
   glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // OpenGL 3.3
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, GL::majorVersion);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GL::minorVersion);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
+  // We don't want the old OpenGL
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // Open a window and create OpenGL context
-  window = glfwCreateWindow(width, height, "Game", NULL, NULL);
+  window = glfwCreateWindow(size.x, size.y, "Game", NULL, NULL);
   if (!window) {
-    std::cerr << "> Failed to open window\n";
+    std::cerr << "Failed to open window\n";
     glfwTerminate();
-    exit(-1);
+    std::exit(-1);
   }
-  glfwMakeContextCurrent(window);
 
-  glfwSetFramebufferSizeCallback(inst->window, OnResize);
+  auto activeTmp = active;
+  MakeActive();
+  glfwSetFramebufferSizeCallback(window, OnResize);
+  if (activeTmp && activeTmp != this)
+    activeTmp->MakeActive();
 }
 
-void Window::Close() {
-  glfwSetWindowShouldClose(window, true);
-}
-
-Window::~Window() {
-  // Close OpenGL window and terminate GLFW
-  glfwTerminate();
-}
+void Window::Close() { glfwSetWindowShouldClose(window, true); }

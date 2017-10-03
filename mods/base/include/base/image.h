@@ -27,12 +27,13 @@ SOFTWARE.
 #ifndef _BASE__IMAGE_H
 #define _BASE__IMAGE_H
 
+#include <base/gl.h>
+#include <math/vec.h>
 #include <string>
 #include <vector>
-#include <base/gl.h>
 
 struct RawImage {
-  int width = 0, height = 0;
+  IVec2 size;
   std::vector<unsigned char> data;
 
   bool Load(const std::string &path, bool flip = false);

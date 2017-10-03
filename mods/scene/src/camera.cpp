@@ -31,12 +31,13 @@ NCamera *NCamera::active = nullptr;
 
 NCamera::~NCamera() {
   auto it = std::find(all.begin(), all.end(), this);
-  if (it != all.end())
-    all.erase(it);
+  if (it != all.end()) all.erase(it);
 }
 
 Mat4 NCamera::ProjectionMatrix() const {
-  float aspect = (float)Window::inst->width / (float)Window::inst->height;
+  const auto windowSize = Window::GetActive()->GetSize();
+  float aspect =
+      static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
   if (perspective)
     return Mat4::PerspectiveFOV(fov, aspect, near, far);
   else {
@@ -48,7 +49,8 @@ Mat4 NCamera::ProjectionMatrix() const {
 Mat4 NCamera::ViewMatrix() const {
   Vec3 loc = -GlobalLocation();
   Quat rot = GlobalRotation();
-  return Mat4::LookAt(loc, loc + rot * Vec3::front, rot * Vec3(0.0f, 1.0f, 0.0f));
+  return Mat4::LookAt(loc, loc + rot * Vec3::front,
+                      rot * Vec3(0.0f, 1.0f, 0.0f));
 }
 
 void JSONImpl<NCamera>::Write(const NCamera &value, JSON::Writer &writer) {
@@ -70,7 +72,8 @@ void JSONImpl<NCamera>::Write(const NCamera &value, JSON::Writer &writer) {
   JSON::WritePair("far", value.far, writer);
 }
 
-void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value, const JSON::ReadData &data) {
+void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value,
+                             const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "NCamera"};
 
   const auto &object = JSON::GetObject(value, data);
@@ -87,8 +90,7 @@ void JSONImpl<NCamera>::Read(NCamera &out, const JSON::Value &value, const JSON:
   }
 
   auto isActive = JSON::TryGetMember<bool>("active", object, false, data);
-  if (isActive)
-    NCamera::active = &out;
+  if (isActive) NCamera::active = &out;
 
   JSON::GetMember<NNode>(out, "NNode", object, data);
 }

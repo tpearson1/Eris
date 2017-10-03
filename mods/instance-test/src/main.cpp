@@ -83,7 +83,7 @@ public:
 MyGame::MyGame() {
   escapeRegistration =
       Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-        if (action == InputEvent::PRESS) Window::inst->Close();
+        if (action == InputEvent::PRESS) Window::GetActive()->Close();
       });
 
   auto resources = std::make_unique<Resources>();

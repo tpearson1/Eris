@@ -53,16 +53,16 @@ void Input::OnMouseScroll(GLFWwindow * /* window */, double xOffset, double yOff
     callback({static_cast<float>(xOffset), static_cast<float>(yOffset)});
 }
 
-void Input::Setup() {
-  glfwSetCursorPosCallback(Window::inst->window, Input::OnMouseMove);
-  glfwSetMouseButtonCallback(Window::inst->window, Input::OnMouseButton);
-  glfwSetScrollCallback(Window::inst->window, Input::OnMouseScroll);
+Input::Input(Window *w) : window(w) {
+  glfwSetCursorPosCallback(w->window, Input::OnMouseMove);
+  glfwSetMouseButtonCallback(w->window, Input::OnMouseButton);
+  glfwSetScrollCallback(w->window, Input::OnMouseScroll);
 
-  glfwSetKeyCallback(Window::inst->window, Input::OnKey);
-  // glfwSetCharCallback(Window::inst->window, Input::OnChar);
+  glfwSetKeyCallback(w->window, Input::OnKey);
+  // glfwSetCharCallback(w->window, Input::OnChar);
 }
 
-void Input::Cleanup() {
+Input::~Input() {
   if (cursor)
     glfwDestroyCursor(cursor);
 }
@@ -72,20 +72,20 @@ void Input::SetCursor(const std::string &path) {
   r.Load(path);
 
   GLFWimage image;
-  image.width = r.width;
-  image.height = r.height;
+  image.width = r.size.x;
+  image.height = r.size.y;
   image.pixels = r.data.data();
 
   if (cursor)
     glfwDestroyCursor(cursor);
 
   cursor = glfwCreateCursor(&image, 0, 0);
-  glfwSetCursor(Window::inst->window, cursor);
+  glfwSetCursor(Window::GetActive()->window, cursor);
 }
 
 Vec2 Input::GetMousePosition() {
   double x, y;
-  glfwGetCursorPos(Window::inst->window, &x, &y);
+  glfwGetCursorPos(Window::GetActive()->window, &x, &y);
   return {static_cast<float>(x), static_cast<float>(y)};
 }
 

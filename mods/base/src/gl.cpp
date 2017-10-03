@@ -24,29 +24,34 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _BASE__TEXTURE_H
-#define _BASE__TEXTURE_H
-
 #include <base/gl.h>
-#include <base/image.h>
-#include <base/texturesettings.h>
-#include <base/window.h>
+#include <cstdlib>
+#include <iostream>
 
-class Texture {
-  GLuint id = 0;
-  IVec2 size;
+bool GLEW::Detail::setup = false;
+bool GLFW::Detail::setup = false;
 
-public:
-  bool Load(const TextureSettings &settings);
-  void Load(const RawImage &raw, const TextureSettings &settings);
+bool GLFW::Setup() {
+  auto result = glfwInit();
+  if (result) Detail::setup = true;
+  return result;
+}
 
-  void CreateForFramebuffer(IVec2 size);
+GLenum GLEW::Setup() {
+  glewExperimental = GL_TRUE; // Needed in core profile
+  GLenum error = glewInit();
+  if (error == GLEW_OK) Detail::setup = true;
+  return error;
+}
 
-  ~Texture()
-    { if (id) glDeleteTextures(1, &id); }
+std::string GLEW::GetError(GLenum error) {
+  static_assert(
+      sizeof(GLubyte) == sizeof(char),
+      "These types must be the same for this function to work");
+  return reinterpret_cast<const char *>(glewGetErrorString(error));
+}
 
-  GLuint ID() const { return id; }
-  IVec2 Size() const { return size; }
-};
-
-#endif // _BASE__TEXTURE_H
+void GLFW::Terminate() {
+  glfwTerminate();
+  Detail::setup = false;
+}

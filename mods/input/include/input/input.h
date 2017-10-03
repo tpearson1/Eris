@@ -117,6 +117,8 @@ enum class MouseButton : int {
 };
 
 class Input {
+  Window *window;
+
   static void OnKey(struct GLFWwindow *window, int key, int scanCode, int action, int mods);
   // static void OnChar(struct GLFWwindow *window, unsigned codePoint);
   static void OnMouseButton(GLFWwindow *window, int button, int action, int mods);
@@ -174,14 +176,14 @@ class Input {
   };
 
 public:
-  static void Setup();
-  static void Cleanup();
+  Input(Window *w);
+  ~Input();
 
   static bool IsKeyDown(KeyCode code)
     { return keyStates[code].down; }
 
   static int GetKey(int key)
-    { return glfwGetKey(Window::inst->window, key); }
+    { return glfwGetKey(Window::GetActive()->window, key); }
 
   static void GetKeyName(int key, std::string &out)
     { out = glfwGetKeyName(key, 0); }
@@ -235,15 +237,15 @@ public:
   static void SetCursor(const std::string &path);
 
   static int GetMouseButton(int button)
-    { return glfwGetMouseButton(Window::inst->window, button); }
+    { return glfwGetMouseButton(Window::GetActive()->window, button); }
 
   static Vec2 GetMousePosition();
 
   static void SetMousePosition(Vec2 pos)
-    { glfwSetCursorPos(Window::inst->window, pos.x, pos.y); }
+    { glfwSetCursorPos(Window::GetActive()->window, pos.x, pos.y); }
 
   static void SetMouseMode(MouseMode mode)
-    { glfwSetInputMode(Window::inst->window, GLFW_CURSOR, (int)mode); }
+    { glfwSetInputMode(Window::GetActive()->window, GLFW_CURSOR, (int)mode); }
 
   static MouseButtonRegistration RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
     auto &l = mouseButtonCallbacks[button];

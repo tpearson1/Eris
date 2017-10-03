@@ -65,8 +65,8 @@ bool RawImage::Load(const std::string &path, bool flip) {
   png_init_io(png, fp);
   png_read_info(png, info);
 
-  width = png_get_image_width(png, info);
-  height = png_get_image_height(png, info);
+  size.x = png_get_image_width(png, info);
+  size.y = png_get_image_height(png, info);
   png_byte colorType = png_get_color_type(png, info);
   png_byte bitDepth = png_get_bit_depth(png, info);
 
@@ -96,9 +96,9 @@ bool RawImage::Load(const std::string &path, bool flip) {
   png_read_update_info(png, info);
 
   int rowBytes = png_get_rowbytes(png, info);
-  png_bytep rowPointers[height];
+  png_bytep rowPointers[size.y];
 
-  for (int y = 0; y < height; y++)
+  for (int y = 0; y < size.y; y++)
     rowPointers[y] = new png_byte[rowBytes];
 
   png_read_image(png, rowPointers);
@@ -106,19 +106,19 @@ bool RawImage::Load(const std::string &path, bool flip) {
   png_destroy_read_struct(&png, &info, NULL);
   fclose(fp);
 
-  data.reserve(rowBytes * height);
+  data.reserve(rowBytes * size.y);
 
   unsigned char *tmp = data.data();
 
   if (flip) {
-    for (int i = 0; i < height; i++) {
-      auto row = height - i - 1;
+    for (int i = 0; i < size.y; i++) {
+      auto row = size.y - i - 1;
       memcpy(tmp + (rowBytes * row), rowPointers[i], rowBytes);
       delete[] rowPointers[i];
     }
   }
   else {
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < size.y; i++) {
       memcpy(tmp + (rowBytes * i), rowPointers[i], rowBytes);
       delete[] rowPointers[i];
     }
