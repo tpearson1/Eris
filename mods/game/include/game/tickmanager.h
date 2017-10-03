@@ -24,55 +24,29 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <base/mesh.h>
-#include <cstdlib>
-#include <game.h>
-#include <input/input.h>
-#include <iostream>
-#include <scene/node.h>
+#ifndef _GAME__TICK_MANAGER_H
+#define _GAME__TICK_MANAGER_H
 
-Game::Game() {
-  if (!GLFW::Setup()) {
-    std::cerr << "Failed to initialize GLFW\n";
-    std::exit(-1);
-  }
+#include <functional>
+#include <list>
+#include <vector>
 
-  window = std::make_unique<Window>(IVec2{640, 480});
-  inputHandler = std::make_unique<Input>(window.get());
+class TickManager {
+  using TickFunction = std::function<void(float)>;
+  using TickFunctionList = std::list<TickFunction>;
+  using TickRegistration = TickFunctionList::iterator;
 
-  auto errorCode = GLEW::Setup();
-  if (errorCode != GLEW_OK) {
-    std::cerr << "Failed to initialize GLEW: '" << GLEW::GetError(errorCode)
-              << "'\n";
-    std::exit(-1);
-  }
+  TickFunctionList tickFunctions;
+  std::vector<TickRegistration> toUnregister;
 
-  // Enable depth testing
-  glEnable(GL_DEPTH_TEST);
-  // Accept fragment if closer to the camera than the former one
-  glDepthFunc(GL_LESS);
-  glCullFace(GL_BACK);
-}
+  bool inTick = false;
 
-Game::~Game() { GLFW::Terminate(); }
+public:
+  void Tick(float delta);
 
-void Game::Start() {
-  Initialize();
+  TickRegistration RegisterTick(TickFunction func);
 
-  float delta = 0.0f;
-  glfwSetTime(0.0);
-  while (!window->ShouldClose()) {
-    glfwSetTime(0.0);
+  void UnregisterTick(TickRegistration registration);
+};
 
-    glfwPollEvents();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    tickManager.Tick(delta);
-    Tick(delta);
-
-    window->SwapBuffers();
-
-    delta = glfwGetTime();
-    elapsedTime += delta;
-  }
-}
+#endif // _GAME__TICK_MANAGER_H

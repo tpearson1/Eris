@@ -28,17 +28,13 @@ SOFTWARE.
 #define _GAME__GAME_H
 
 #include <base/window.h>
-#include <functional>
+#include <game/tickmanager.h>
 #include <memory>
 
 class NNode;
 
 class Game {
-  using TickFunction = std::function<void(float)>;
-  using TickFunctionList = std::list<TickFunction>;
-  using TickRegistration = TickFunctionList::iterator;
-
-  TickFunctionList tickFunctions;
+  TickManager tickManager;
   float elapsedTime = 0.0f;
 
   std::unique_ptr<class Input> inputHandler;
@@ -51,14 +47,7 @@ public:
   Game();
   virtual ~Game();
 
-  TickRegistration RegisterTick(TickFunction func) {
-    tickFunctions.push_front(func);
-    return tickFunctions.begin();
-  }
-
-  void UnregisterTick(TickRegistration registration) {
-    tickFunctions.erase(registration);
-  }
+  TickManager &GetTickManager() { return tickManager; }
 
   void Start();
 

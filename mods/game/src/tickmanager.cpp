@@ -24,55 +24,30 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <base/mesh.h>
-#include <cstdlib>
-#include <game.h>
-#include <input/input.h>
-#include <iostream>
-#include <scene/node.h>
+#include <tickmanager.h>
 
-Game::Game() {
-  if (!GLFW::Setup()) {
-    std::cerr << "Failed to initialize GLFW\n";
-    std::exit(-1);
-  }
-
-  window = std::make_unique<Window>(IVec2{640, 480});
-  inputHandler = std::make_unique<Input>(window.get());
-
-  auto errorCode = GLEW::Setup();
-  if (errorCode != GLEW_OK) {
-    std::cerr << "Failed to initialize GLEW: '" << GLEW::GetError(errorCode)
-              << "'\n";
-    std::exit(-1);
-  }
-
-  // Enable depth testing
-  glEnable(GL_DEPTH_TEST);
-  // Accept fragment if closer to the camera than the former one
-  glDepthFunc(GL_LESS);
-  glCullFace(GL_BACK);
+void TickManager::Tick(float delta) {
+  inTick = true;
+  for (auto &tickFunc : tickFunctions) tickFunc(delta);
+  inTick = false;
+  for (auto registrationIt : toUnregister)
+    tickFunctions.erase(registrationIt);
 }
 
-Game::~Game() { GLFW::Terminate(); }
-
-void Game::Start() {
-  Initialize();
-
-  float delta = 0.0f;
-  glfwSetTime(0.0);
-  while (!window->ShouldClose()) {
-    glfwSetTime(0.0);
-
-    glfwPollEvents();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    tickManager.Tick(delta);
-    Tick(delta);
-
-    window->SwapBuffers();
-
-    delta = glfwGetTime();
-    elapsedTime += delta;
-  }
+TickManager::TickRegistration TickManager::RegisterTick(TickFunction func) {
+  tickFunctions.push_front(func);
+  return tickFunctions.begin();
 }
+
+void TickManager::UnregisterTick(TickRegistration registration) {
+  if (!inTick) {
+    tickFunctions.erase(registration);
+    return;
+  }
+
+  // We are currently executing the tick functions, and thus it is dangerous to
+  // erase an element. Instead we wait until the tick functions are done being
+  // executed and then remove it
+  toUnregister.push_back(registration);
+}
+
