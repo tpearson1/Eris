@@ -25,9 +25,12 @@ SOFTWARE.
 */
 
 #include <input.h>
-#include <iostream>
+
 #include <cstring>
-#include <base/image.h>
+#include <iostream>
+
+#include <image.h>
+
 #include <core/statics.h>
 
 std::unordered_map<MouseButton, Input::MouseButtonCallbacks> Input::mouseButtonCallbacks;

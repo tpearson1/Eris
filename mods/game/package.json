@@ -6,7 +6,6 @@
   "uses-c++": true,
   "compile": true,
   "depend": [
-    "input",
     "scene"
   ]
 }

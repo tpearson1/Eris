@@ -24,10 +24,10 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
+#include <base/input.h>
 #include <base/mesh.h>
 #include <cstdlib>
 #include <game.h>
-#include <input/input.h>
 #include <iostream>
 #include <scene/node.h>
 

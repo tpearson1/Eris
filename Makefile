@@ -1,6 +1,6 @@
 CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors -Isrc/include -Imods/core/include
 LDFLAGS:=-Wall
-LIBS:=-ldl -lGLEW -lGL -lglfw -lpng mods/core/libcore.so
+LIBS:=mods/core/libcore.so
 
 BUILD_DIR:=build
 

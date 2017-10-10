@@ -24,8 +24,8 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _INPUT__INPUT_H
-#define _INPUT__INPUT_H
+#ifndef _BASE__INPUT_H
+#define _BASE__INPUT_H
 
 #include <base/callbacklist.h>
 #include <base/window.h>
@@ -157,4 +157,4 @@ public:
   }
 };
 
-#endif // _INPUT__INPUT_H
+#endif // _BASE__INPUT_H

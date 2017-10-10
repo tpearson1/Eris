@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef _GAME__CONTROLLABLE_CAMERA_H
 #define _GAME__CONTROLLABLE_CAMERA_H
 
-#include <input/input.h>
+#include <base/input.h>
 #include <scene/camera.h>
 
 class NControllableCamera : public NCamera {

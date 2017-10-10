@@ -9,5 +9,5 @@
     "core",
     "math"
   ],
-  "link-options": "-lassimp"
+  "link-options": "-lGLEW -lGL -lglfw -lassimp -lpng"
 }

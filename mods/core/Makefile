@@ -1,7 +1,7 @@
 INCLUDE_DIRS:=-Iinclude/core -Iinclude -I../rapidjson/include
 CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors -fpic
 LDFLAGS:=-Wall -shared
-LIBS:=-ldl -lGLEW -lGL -lglfw -lpng
+LIBS:=-ldl
 
 BUILD_DIR:=build
 
