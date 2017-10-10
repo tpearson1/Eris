@@ -40,6 +40,12 @@ class Renderer {
 
   std::unordered_map<const Shader *, std::list<RenderPair>> renderItems;
 
+  // Used for debug purposes to check that a 'Registration' is not unregistered
+  // during a 'Render'
+#ifndef NDEBUG
+  bool currentlyRendering = false;
+#endif
+
 public:
   class Registration {
     std::shared_ptr<const Shader> shader;

@@ -27,12 +27,14 @@ SOFTWARE.
 #ifndef _INPUT__INPUT_H
 #define _INPUT__INPUT_H
 
+#include <base/callbacklist.h>
+#include <base/window.h>
+#include <functional>
+#include <list>
+#include <math/vec.h>
 #include <string>
 #include <unordered_map>
-#include <list>
-#include <functional>
-#include <base/window.h>
-#include <math/vec.h>
+#include <vector>
 
 enum class InputEvent {
   PRESS = GLFW_PRESS,
@@ -42,45 +44,12 @@ enum class InputEvent {
 struct KeyState {
   bool down = false;
 
-  using Callback = std::function<void(InputEvent)>;
-  class Registration {
-    KeyState *key;
+  using CallbackSignature = void(InputEvent);
+  using Callbacks = CallbackList<CallbackSignature, true>;
+  using Callback = typename Callbacks::Function;
+  Callbacks callbacks;
 
-    using It = std::list<Callback>::iterator;
-    std::unique_ptr<It> it;
-
-    Registration(KeyState *_key, It _it)
-        : key(_key), it(std::make_unique<It>(_it)) {}
-
-    void UnregisterUnchecked() {
-      key->callbacks.erase(*it);
-      it = nullptr;
-    }
-
-  public:
-    Registration() {}
-
-    // Copying a registration is not permitted but moving is
-    Registration(const Registration &) = delete;
-    Registration(Registration &&) = default;
-    Registration &operator=(Registration &&) = default;
-
-    bool Registered() const { return static_cast<bool>(it); }
-
-    void Unregister() {
-      assert(Registered());
-      UnregisterUnchecked();
-    }
-
-    ~Registration() {
-      if (Registered())
-        UnregisterUnchecked();
-    }
-
-    friend class Input;
-  };
-
-  std::list<Callback> callbacks;
+  using RegistrationType = Registration<Callbacks>;
 };
 
 enum class KeyCode {
@@ -127,53 +96,19 @@ class Input {
 
   static std::unordered_map<KeyCode, KeyState> keyStates;
 
-  using MouseButtonCallback = std::function<void(int, int)>;
-  using MouseMoveCallback = std::function<void(Vec2)>;
-  using MouseScrollCallback = std::function<void(Vec2)>;
+  using MouseButtonCallbacks = CallbackList<void(InputEvent, int), true>;
+  using MouseButtonCallback = MouseButtonCallbacks::Function;
 
-  static std::unordered_map<MouseButton, std::list<MouseButtonCallback>> mouseButtonCallbacks;
-  static std::list<MouseMoveCallback> mouseMoveCallbacks;
-  static std::list<MouseScrollCallback> mouseScrollCallbacks;
+  static std::unordered_map<MouseButton, MouseButtonCallbacks> mouseButtonCallbacks;
+  static CallbackList<void(Vec2), true> mouseMoveCallbacks, mouseScrollCallbacks;
 
   static struct GLFWcursor *cursor;
 
   static void UpdateKeyState(int action, KeyCode key);
   static void UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both);
 
-  template <typename Callback, std::list<Callback> &CallbackList>
-  class MouseRegistration {
-    using It = typename std::list<Callback>::iterator;
-    std::unique_ptr<It> it;
-
-    MouseRegistration(It _it) : it(std::make_unique<It>(_it)) {}
-
-    void UnregisterUnchecked() {
-      CallbackList.erase(*it);
-      it = nullptr;
-    }
-
-  public:
-    MouseRegistration() {}
-
-    // Copying a registration is not permitted but moving is
-    MouseRegistration(const MouseRegistration &) = delete;
-    MouseRegistration(MouseRegistration &&) = default;
-    MouseRegistration &operator=(MouseRegistration &&) = default;
-
-    bool Registered() const { return static_cast<bool>(it); }
-
-    void Unregister() {
-      assert(Registered());
-      UnregisterUnchecked();
-    }
-
-    ~MouseRegistration() {
-      if (Registered())
-        UnregisterUnchecked();
-    }
-
-    friend class Input;
-  };
+  template <typename FuncSig>
+  using MouseRegistration = Registration<CallbackList<FuncSig, true>>;
 
 public:
   Input(Window *w);
@@ -188,50 +123,12 @@ public:
   static void GetKeyName(int key, std::string &out)
     { out = glfwGetKeyName(key, 0); }
 
-  class MouseButtonRegistration {
-    using It = std::list<MouseButtonCallback>::iterator;
-    MouseButton button;
-    std::unique_ptr<It> it;
+  using MouseButtonRegistration = MouseRegistration<void(InputEvent, int)>;
+  using MouseMoveRegistration = MouseRegistration<void(Vec2)>;
+  using MouseScrollRegistration = MouseRegistration<void(Vec2)>;
 
-    MouseButtonRegistration(MouseButton _button, It _it)
-        : button(_button), it(std::make_unique<It>(_it)) {}
-
-    void UnregisterUnchecked() {
-      auto &callbacks = mouseButtonCallbacks[button];
-      callbacks.erase(*it);
-      it = nullptr;
-    }
-
-  public:
-    MouseButtonRegistration() {}
-
-    // Copying a registration is not permitted but moving is
-    MouseButtonRegistration(const MouseButtonRegistration &) = delete;
-    MouseButtonRegistration(MouseButtonRegistration &&) = default;
-    MouseButtonRegistration &operator=(MouseButtonRegistration &&) = default;
-
-    bool Registered() const { return static_cast<bool>(it); }
-
-    void Unregister() {
-      assert(Registered());
-      UnregisterUnchecked();
-    }
-
-    ~MouseButtonRegistration() {
-      if (Registered())
-        UnregisterUnchecked();
-    }
-
-    friend class Input;
-  };
-
-  using MouseMoveRegistration = MouseRegistration<MouseMoveCallback, mouseMoveCallbacks>;
-  using MouseScrollRegistration = MouseRegistration<MouseScrollCallback, mouseScrollCallbacks>;
-
-  static KeyState::Registration RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
-    auto &l = keyStates[key];
-    l.callbacks.push_front(callback);
-    return {&l, std::begin(l.callbacks)};
+  static KeyState::RegistrationType RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
+    return KeyState::RegistrationType{callback, keyStates[key].callbacks};
   }
 
   static void SetCursor(const std::string &path);
@@ -248,19 +145,15 @@ public:
     { glfwSetInputMode(Window::GetActive()->window, GLFW_CURSOR, (int)mode); }
 
   static MouseButtonRegistration RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
-    auto &l = mouseButtonCallbacks[button];
-    l.push_front(callback);
-    return {button, l.begin()};
+    return {callback, mouseButtonCallbacks[button]};
   }
 
-  static MouseMoveRegistration RegisterMouseMoveCallback(MouseMoveCallback callback) {
-    mouseMoveCallbacks.push_front(callback);
-    return {std::move(std::begin(mouseMoveCallbacks))};
+  static MouseMoveRegistration RegisterMouseMoveCallback(MouseMoveRegistration::Callback callback) {
+    return {callback, mouseMoveCallbacks};
   }
 
-  static MouseScrollRegistration RegisterMouseScrollCallback(MouseScrollCallback callback) {
-    mouseScrollCallbacks.push_front(callback);
-    return {std::move(std::begin(mouseScrollCallbacks))};
+  static MouseScrollRegistration RegisterMouseScrollCallback(MouseScrollRegistration::Callback callback) {
+    return {callback, mouseScrollCallbacks};
   }
 };
 

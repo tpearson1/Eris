@@ -30,27 +30,26 @@ SOFTWARE.
 #include <base/image.h>
 #include <core/statics.h>
 
-std::unordered_map<MouseButton, std::list<Input::MouseButtonCallback>> Input::mouseButtonCallbacks;
-std::list<Input::MouseMoveCallback> Input::mouseMoveCallbacks;
-std::list<Input::MouseScrollCallback> Input::mouseScrollCallbacks;
+std::unordered_map<MouseButton, Input::MouseButtonCallbacks> Input::mouseButtonCallbacks;
+CallbackList<void(Vec2), true> Input::mouseMoveCallbacks, Input::mouseScrollCallbacks;
 
 std::unordered_map<KeyCode, KeyState> Input::keyStates;
 
 struct GLFWcursor *Input::cursor = nullptr;
 
 void Input::OnMouseButton(GLFWwindow * /* window */, int button, int action, int mods) {
-  for (auto &callback : mouseButtonCallbacks[static_cast<MouseButton>(button)])
-    callback(action, mods);
+  auto &callbackList = mouseButtonCallbacks[static_cast<MouseButton>(button)];
+  callbackList.CallAll(static_cast<InputEvent>(action), mods);
 }
 
 void Input::OnMouseMove(GLFWwindow * /* window */, double xPos, double yPos) {
-  for (auto &callback : mouseMoveCallbacks)
-    callback({static_cast<float>(xPos), static_cast<float>(yPos)});
+  mouseMoveCallbacks.CallAll(
+      Vec2{static_cast<float>(xPos), static_cast<float>(yPos)});
 }
 
 void Input::OnMouseScroll(GLFWwindow * /* window */, double xOffset, double yOffset) {
-  for (auto &callback : mouseScrollCallbacks)
-    callback({static_cast<float>(xOffset), static_cast<float>(yOffset)});
+  mouseScrollCallbacks.CallAll(
+      Vec2{static_cast<float>(xOffset), static_cast<float>(yOffset)});
 }
 
 Input::Input(Window *w) : window(w) {
@@ -97,10 +96,10 @@ void Input::UpdateKeyState(int action, KeyCode key) {
   else if (event == InputEvent::RELEASE)
     keyState.down = false;
 
-  for (auto &callback : keyState.callbacks)
-    callback(event);
+  keyState.callbacks.CallAll(event);
 }
 
+// Update KeyStates like LSHIFT, RSHIFT and SHIFT
 void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both) {
   auto event = static_cast<InputEvent>(action);
   auto &pressedState = keyStates[pressed],
@@ -110,22 +109,24 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, 
     pressedState.down = true;
     bothState.down = true;
 
-    if (!otherState.down)
-      for (auto &callback : bothState.callbacks)
-        callback(event);
+    if (!otherState.down) {
+      // Left button down and right button is not, so trigger bothState's
+      // callbacks
+      bothState.callbacks.CallAll(event);
+    }
   }
   else if (event == InputEvent::RELEASE) {
     pressedState.down = false;
 
     if (!otherState.down) {
+      // Both are released
       bothState.down = false;
-      for (auto &callback : bothState.callbacks)
-        callback(event);
+      // Call bothState's callbacks to notify notify that its state changed
+      bothState.callbacks.CallAll(event);
     }
   }
 
-  for (auto &callback : pressedState.callbacks)
-    callback(event);
+  pressedState.callbacks.CallAll(event);
 }
 
 #define KEY_CASE2(glfwLetter, letter) case GLFW_KEY_##glfwLetter: UpdateKeyState(action, KeyCode::letter); break;
@@ -134,9 +135,7 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, 
 
 #define NUM_KEY_CASE(number) case GLFW_KEY_##number: UpdateKeyState(action, KeyCode::NUM##number); break;
 
-void Input::OnKey(GLFWwindow* window, int key, int /* scanCode */, int action, int /* mods */) {
-  window = window;
-
+void Input::OnKey(GLFWwindow* /* window */, int key, int /* scanCode */, int action, int /* mods */) {
   switch (key) {
     KEY_CASE(Q) KEY_CASE(W) KEY_CASE(E) KEY_CASE(R) KEY_CASE(T) KEY_CASE(Y) KEY_CASE(U) KEY_CASE(I) KEY_CASE(O) KEY_CASE(P)
     KEY_CASE(A) KEY_CASE(S) KEY_CASE(D) KEY_CASE(F) KEY_CASE(G) KEY_CASE(H) KEY_CASE(J) KEY_CASE(K) KEY_CASE(L)

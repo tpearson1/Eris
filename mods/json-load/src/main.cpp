@@ -56,7 +56,7 @@ class MyGame : public Game {
   Scene scene;
   NNode *tagged, *shape;
   NPointLight *pointLight;
-  KeyState::Registration escapeRegistration;
+  KeyState::RegistrationType escapeRegistration;
 
 public:
   MyGame();

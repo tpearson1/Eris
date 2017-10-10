@@ -46,7 +46,7 @@ void NSpectatorCamera::OnMouseMove(Vec2 pos) {
     auto cam = NCamera::active;
     cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
     cam->transform.Rotate(delta.y, 0.0f, 0.0f);
-    Input::SetMouseMode(MouseMode::DISABLED);
+    // Input::SetMouseMode(MouseMode::DISABLED);
   } else
     Input::SetMouseMode(MouseMode::NORMAL);
 }
@@ -57,7 +57,7 @@ class MyGame : public Game {
   Vec3 rot;
   bool go = false;
   std::list<NMesh *> rend;
-  std::list<KeyState::Registration> keyRegistrations;
+  std::list<KeyState::RegistrationType> keyRegistrations;
 
 public:
   MyGame();

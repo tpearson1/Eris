@@ -67,7 +67,7 @@ void Game::Start() {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    tickManager.Tick(delta);
+    tickManager.CallAll(delta);
     Tick(delta);
 
     window->SwapBuffers();

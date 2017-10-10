@@ -27,13 +27,14 @@ SOFTWARE.
 #ifndef _GAME__GAME_H
 #define _GAME__GAME_H
 
+#include <base/callbacklist.h>
 #include <base/window.h>
-#include <game/tickmanager.h>
 #include <memory>
 
 class NNode;
 
 class Game {
+  using TickManager = CallbackList<void(float), true>;
   TickManager tickManager;
   float elapsedTime = 0.0f;
 

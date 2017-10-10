@@ -57,7 +57,7 @@ void NSpectatorCamera::OnMouseMove(Vec2 pos) {
 class MyGame : public Game {
   Scene scene;
   std::unique_ptr<InstancedMesh> mesh;
-  KeyState::Registration escapeRegistration;
+  KeyState::RegistrationType escapeRegistration;
 
 public:
   MyGame();

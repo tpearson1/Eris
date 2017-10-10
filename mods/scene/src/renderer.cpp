@@ -33,6 +33,10 @@ SOFTWARE.
 Renderer *Renderer::active = nullptr;
 
 void Renderer::Registration::UnregisterUnchecked() {
+  // A renderable object should not unregister itself during the render process
+#ifndef NDEBUG
+  assert(!renderer->currentlyRendering);
+#endif
   auto shaderGroup = renderer->renderItems.find(shader.get());
 
   auto &renderPairs = shaderGroup->second;
@@ -96,7 +100,10 @@ void Renderer::Register(Renderer::Registration &registration,
 }
 
 void Renderer::Render() {
-  for (auto group : renderItems) {
+#ifndef NDEBUG
+  currentlyRendering = true;
+#endif
+  for (auto &group : renderItems) {
     const auto shader = group.first;
     const auto &list = group.second;
     assert(shader);
@@ -109,4 +116,7 @@ void Renderer::Render() {
       if (renderData.visible) renderFunc();
     }
   }
+#ifndef NDEBUG
+  currentlyRendering = false;
+#endif
 }
