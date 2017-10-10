@@ -43,8 +43,9 @@ protected:
 
 public:
   NControllableCamera() {
-    prevPosition = Input::GetMousePosition();
-    moveRegistration = Input::RegisterMouseMoveCallback([this](auto pos) {
+    auto &input = Window::GetActive()->GetInput();
+    prevPosition = input.GetMousePosition();
+    moveRegistration = input.RegisterMouseMoveCallback([this](auto pos) {
       OnMouseMove(pos);
       prevPosition = pos;
     });

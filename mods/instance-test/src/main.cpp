@@ -43,15 +43,16 @@ public:
 };
 
 void NSpectatorCamera::OnMouseMove(Vec2 pos) {
-  if (!Input::IsKeyDown(KeyCode::F)) {
+  auto &input = Window::GetActive()->GetInput();
+  if (!input.IsKeyDown(KeyCode::F)) {
     auto delta = GetMouseMovementChange(pos);
 
     auto cam = NCamera::active;
     cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
     cam->transform.Rotate(delta.y, 0.0f, 0.0f);
-    Input::SetMouseMode(MouseMode::DISABLED);
+    input.SetMouseMode(MouseMode::DISABLED);
   } else
-    Input::SetMouseMode(MouseMode::NORMAL);
+    input.SetMouseMode(MouseMode::NORMAL);
 }
 
 class MyGame : public Game {
@@ -66,15 +67,15 @@ public:
     scene.Render();
 
     float mul = delta * 45.0f;
-    if (Input::IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
+    if (GetInput().IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
 
     Vec3 movement;
-    if (Input::IsKeyDown(KeyCode::W)) movement += Vec3(0.0f, 0.0f, -mul);
-    if (Input::IsKeyDown(KeyCode::S)) movement += Vec3(0.0f, 0.0f, mul);
-    if (Input::IsKeyDown(KeyCode::A)) movement += Vec3(-mul, 0.0f, 0.0f);
-    if (Input::IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
-    if (Input::IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
-    if (Input::IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
+    if (GetInput().IsKeyDown(KeyCode::W)) movement += Vec3(0.0f, 0.0f, -mul);
+    if (GetInput().IsKeyDown(KeyCode::S)) movement += Vec3(0.0f, 0.0f, mul);
+    if (GetInput().IsKeyDown(KeyCode::A)) movement += Vec3(-mul, 0.0f, 0.0f);
+    if (GetInput().IsKeyDown(KeyCode::D)) movement += Vec3(mul, 0.0f, 0.0f);
+    if (GetInput().IsKeyDown(KeyCode::Q)) movement += Vec3(0.0f, -mul, 0.0f);
+    if (GetInput().IsKeyDown(KeyCode::E)) movement += Vec3(0.0f, mul, 0.0f);
     NCamera::active->transform.Translate(NCamera::active->GlobalRotation() *
                                          movement);
   }
@@ -82,7 +83,7 @@ public:
 
 MyGame::MyGame() {
   escapeRegistration =
-      Input::RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
+      GetInput().RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
         if (action == InputEvent::PRESS) Window::GetActive()->Close();
       });
 

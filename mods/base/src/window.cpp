@@ -24,18 +24,19 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <base/gl.h>
-#include <cstdlib>
-#include <iostream>
 #include <window.h>
 
-std::unordered_map<GLFWwindow *, Window *> Window::windowMapping;
+#include <cstdlib>
+#include <iostream>
+
+#include <input.h>
+
 Window *Window::active = nullptr;
 
 void Window::SetViewportSize(IVec2 size) { glViewport(0, 0, size.x, size.y); }
 
 void Window::OnResize(GLFWwindow *glfwWindow, int width, int height) {
-  auto window = windowMapping[glfwWindow];
+  auto window = GetWindowFromGLFWwindow(glfwWindow);
   window->size = {width, height};
 
   if (!window->IsActive()) {
@@ -73,6 +74,13 @@ Window::Window(IVec2 _size) {
   glfwSetFramebufferSizeCallback(window, OnResize);
   if (activeTmp && activeTmp != this)
     activeTmp->MakeActive();
+
+  // Associate this Window with the GLFWwindow
+  glfwSetWindowUserPointer(window, this);
+
+  input = std::make_unique<Input>(window);
 }
+
+Window::~Window() { Close(); }
 
 void Window::Close() { glfwSetWindowShouldClose(window, true); }

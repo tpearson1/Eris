@@ -27,9 +27,10 @@ SOFTWARE.
 #ifndef _GAME__GAME_H
 #define _GAME__GAME_H
 
+#include <memory>
+
 #include <base/callbacklist.h>
 #include <base/window.h>
-#include <memory>
 
 class NNode;
 
@@ -38,7 +39,7 @@ class Game {
   TickManager tickManager;
   float elapsedTime = 0.0f;
 
-  std::unique_ptr<class Input> inputHandler;
+  std::unique_ptr<Window> window;
 
 protected:
   virtual void Initialize() {}
@@ -54,7 +55,11 @@ public:
 
   float GetElapsedTime() { return elapsedTime; }
 
-  std::unique_ptr<Window> window;
+  Window *GetWindow() { return window.get(); }
+  const Window *GetWindow() const { return window.get(); }
+
+  Input &GetInput() { return window->GetInput(); }
+  const Input &GetInput() const { return window->GetInput(); }
 };
 
 #endif // _GAME__GAME_H

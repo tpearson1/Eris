@@ -38,7 +38,6 @@ Game::Game() {
   }
 
   window = std::make_unique<Window>(IVec2{640, 480});
-  inputHandler = std::make_unique<Input>(window.get());
 
   auto errorCode = GLEW::Setup();
   if (errorCode != GLEW_OK) {

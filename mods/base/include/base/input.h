@@ -27,14 +27,16 @@ SOFTWARE.
 #ifndef _BASE__INPUT_H
 #define _BASE__INPUT_H
 
-#include <base/callbacklist.h>
-#include <base/window.h>
 #include <functional>
 #include <list>
-#include <math/vec.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <base/callbacklist.h>
+#include <base/gl.h>
+
+#include <math/vec.h>
 
 enum class InputEvent {
   PRESS = GLFW_PRESS,
@@ -86,73 +88,73 @@ enum class MouseButton : int {
 };
 
 class Input {
-  Window *window;
+  GLFWwindow *window;
 
-  static void OnKey(struct GLFWwindow *window, int key, int scanCode, int action, int mods);
-  // static void OnChar(struct GLFWwindow *window, unsigned codePoint);
-  static void OnMouseButton(GLFWwindow *window, int button, int action, int mods);
-  static void OnMouseMove(GLFWwindow *window, double xPos, double yPos);
-  static void OnMouseScroll(GLFWwindow *window, double xOffset, double yOffset);
+  void OnKey(int key, int scanCode, int action);
+  /* void OnChar(unsigned codePoint); */
+  void OnMouseButton(int button, int action);
+  void OnMouseMove(double xPos, double yPos);
+  void OnMouseScroll(double xOffset, double yOffset);
 
-  static std::unordered_map<KeyCode, KeyState> keyStates;
+  std::unordered_map<KeyCode, KeyState> keyStates;
 
-  using MouseButtonCallbacks = CallbackList<void(InputEvent, int), true>;
+  using MouseButtonCallbacks = CallbackList<void(InputEvent), true>;
   using MouseButtonCallback = MouseButtonCallbacks::Function;
 
-  static std::unordered_map<MouseButton, MouseButtonCallbacks> mouseButtonCallbacks;
-  static CallbackList<void(Vec2), true> mouseMoveCallbacks, mouseScrollCallbacks;
+  std::unordered_map<MouseButton, MouseButtonCallbacks> mouseButtonCallbacks;
+  CallbackList<void(Vec2), true> mouseMoveCallbacks, mouseScrollCallbacks;
 
-  static struct GLFWcursor *cursor;
+  struct GLFWcursor *cursor = nullptr;
 
-  static void UpdateKeyState(int action, KeyCode key);
-  static void UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both);
+  void UpdateKeyState(int action, KeyCode key);
+  void UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both);
 
   template <typename FuncSig>
   using MouseRegistration = Registration<CallbackList<FuncSig, true>>;
 
 public:
-  Input(Window *w);
+  Input(GLFWwindow *w);
   ~Input();
 
-  static bool IsKeyDown(KeyCode code)
+  bool IsKeyDown(KeyCode code)
     { return keyStates[code].down; }
 
-  static int GetKey(int key)
-    { return glfwGetKey(Window::GetActive()->window, key); }
+  int GetKey(int key)
+    { return glfwGetKey(window, key); }
 
-  static void GetKeyName(int key, std::string &out)
+  void GetKeyName(int key, std::string &out)
     { out = glfwGetKeyName(key, 0); }
 
-  using MouseButtonRegistration = MouseRegistration<void(InputEvent, int)>;
+  using MouseButtonRegistration = MouseRegistration<void(InputEvent)>;
   using MouseMoveRegistration = MouseRegistration<void(Vec2)>;
   using MouseScrollRegistration = MouseRegistration<void(Vec2)>;
 
-  static KeyState::RegistrationType RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
+  KeyState::RegistrationType RegisterKeyCallback(KeyCode key, KeyState::Callback callback) {
     return KeyState::RegistrationType{callback, keyStates[key].callbacks};
   }
 
-  static void SetCursor(const std::string &path);
+  void SetCursor(const std::string &path);
 
-  static int GetMouseButton(int button)
-    { return glfwGetMouseButton(Window::GetActive()->window, button); }
+  int GetMouseButton(int button)
+    { return glfwGetMouseButton(window, button); }
 
-  static Vec2 GetMousePosition();
+  Vec2 GetMousePosition();
 
-  static void SetMousePosition(Vec2 pos)
-    { glfwSetCursorPos(Window::GetActive()->window, pos.x, pos.y); }
+  void SetMousePosition(Vec2 pos)
+    { glfwSetCursorPos(window, pos.x, pos.y); }
 
-  static void SetMouseMode(MouseMode mode)
-    { glfwSetInputMode(Window::GetActive()->window, GLFW_CURSOR, (int)mode); }
+  void SetMouseMode(MouseMode mode)
+    { glfwSetInputMode(window, GLFW_CURSOR, (int)mode); }
 
-  static MouseButtonRegistration RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
+  MouseButtonRegistration RegisterMouseButtonCallback(MouseButtonCallback callback, MouseButton button) {
     return {callback, mouseButtonCallbacks[button]};
   }
 
-  static MouseMoveRegistration RegisterMouseMoveCallback(MouseMoveRegistration::Callback callback) {
+  MouseMoveRegistration RegisterMouseMoveCallback(MouseMoveRegistration::Callback callback) {
     return {callback, mouseMoveCallbacks};
   }
 
-  static MouseScrollRegistration RegisterMouseScrollCallback(MouseScrollRegistration::Callback callback) {
+  MouseScrollRegistration RegisterMouseScrollCallback(MouseScrollRegistration::Callback callback) {
     return {callback, mouseScrollCallbacks};
   }
 };

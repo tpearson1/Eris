@@ -30,43 +30,52 @@ SOFTWARE.
 #include <iostream>
 
 #include <image.h>
+#include <window.h>
 
 #include <core/statics.h>
 
-std::unordered_map<MouseButton, Input::MouseButtonCallbacks> Input::mouseButtonCallbacks;
-CallbackList<void(Vec2), true> Input::mouseMoveCallbacks, Input::mouseScrollCallbacks;
-
-std::unordered_map<KeyCode, KeyState> Input::keyStates;
-
-struct GLFWcursor *Input::cursor = nullptr;
-
-void Input::OnMouseButton(GLFWwindow * /* window */, int button, int action, int mods) {
-  auto &callbackList = mouseButtonCallbacks[static_cast<MouseButton>(button)];
-  callbackList.CallAll(static_cast<InputEvent>(action), mods);
+static Input &GetInputFromWindow(GLFWwindow *window) {
+  return GetWindowFromGLFWwindow(window)->GetInput();
 }
 
-void Input::OnMouseMove(GLFWwindow * /* window */, double xPos, double yPos) {
+void Input::OnMouseButton(int button, int action) {
+  auto &callbackList = mouseButtonCallbacks[static_cast<MouseButton>(button)];
+  callbackList.CallAll(static_cast<InputEvent>(action));
+}
+
+void Input::OnMouseMove(double xPos, double yPos) {
   mouseMoveCallbacks.CallAll(
       Vec2{static_cast<float>(xPos), static_cast<float>(yPos)});
 }
 
-void Input::OnMouseScroll(GLFWwindow * /* window */, double xOffset, double yOffset) {
+void Input::OnMouseScroll(double xOffset, double yOffset) {
   mouseScrollCallbacks.CallAll(
       Vec2{static_cast<float>(xOffset), static_cast<float>(yOffset)});
 }
 
-Input::Input(Window *w) : window(w) {
-  glfwSetCursorPosCallback(w->window, Input::OnMouseMove);
-  glfwSetMouseButtonCallback(w->window, Input::OnMouseButton);
-  glfwSetScrollCallback(w->window, Input::OnMouseScroll);
+Input::Input(GLFWwindow *w) : window(w) {
+  glfwSetCursorPosCallback(window, [](auto win, auto x, auto y) {
+    GetInputFromWindow(win).OnMouseMove(x, y);
+  });
+  glfwSetMouseButtonCallback(
+      window, [](auto win, auto button, auto action, auto /* modifiers */) {
+        GetInputFromWindow(win).OnMouseButton(button, action);
+      });
+  glfwSetScrollCallback(window, [](auto win, auto x, auto y) {
+    GetInputFromWindow(win).OnMouseScroll(x, y);
+  });
 
-  glfwSetKeyCallback(w->window, Input::OnKey);
-  // glfwSetCharCallback(w->window, Input::OnChar);
+  glfwSetKeyCallback(window, [](auto win, auto key, auto scanCode,
+                                   auto action, auto /* modifiers */) {
+    GetInputFromWindow(win).OnKey(key, scanCode, action);
+  });
+  /* glfwSetCharCallback(window, [](auto win, auto codePoint) { */
+  /*   GetInputFromWindow(win).OnChar(codePoint); */
+  /* }); */
 }
 
 Input::~Input() {
-  if (cursor)
-    glfwDestroyCursor(cursor);
+  if (cursor) glfwDestroyCursor(cursor);
 }
 
 void Input::SetCursor(const std::string &path) {
@@ -78,16 +87,15 @@ void Input::SetCursor(const std::string &path) {
   image.height = r.size.y;
   image.pixels = r.data.data();
 
-  if (cursor)
-    glfwDestroyCursor(cursor);
+  if (cursor) glfwDestroyCursor(cursor);
 
   cursor = glfwCreateCursor(&image, 0, 0);
-  glfwSetCursor(Window::GetActive()->window, cursor);
+  glfwSetCursor(window, cursor);
 }
 
 Vec2 Input::GetMousePosition() {
   double x, y;
-  glfwGetCursorPos(Window::GetActive()->window, &x, &y);
+  glfwGetCursorPos(window, &x, &y);
   return {static_cast<float>(x), static_cast<float>(y)};
 }
 
@@ -103,10 +111,10 @@ void Input::UpdateKeyState(int action, KeyCode key) {
 }
 
 // Update KeyStates like LSHIFT, RSHIFT and SHIFT
-void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, KeyCode both) {
+void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other,
+                                    KeyCode both) {
   auto event = static_cast<InputEvent>(action);
-  auto &pressedState = keyStates[pressed],
-       &bothState = keyStates[both],
+  auto &pressedState = keyStates[pressed], &bothState = keyStates[both],
        &otherState = keyStates[other];
   if (event == InputEvent::PRESS) {
     pressedState.down = true;
@@ -117,8 +125,7 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, 
       // callbacks
       bothState.callbacks.CallAll(event);
     }
-  }
-  else if (event == InputEvent::RELEASE) {
+  } else if (event == InputEvent::RELEASE) {
     pressedState.down = false;
 
     if (!otherState.down) {
@@ -132,13 +139,17 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other, 
   pressedState.callbacks.CallAll(event);
 }
 
-#define KEY_CASE2(glfwLetter, letter) case GLFW_KEY_##glfwLetter: UpdateKeyState(action, KeyCode::letter); break;
-
+#define KEY_CASE2(glfwLetter, letter)                                          \
+  case GLFW_KEY_##glfwLetter:                                                  \
+    UpdateKeyState(action, KeyCode::letter);\
+    break;
 #define KEY_CASE(letter) KEY_CASE2(letter, letter)
 
-#define NUM_KEY_CASE(number) case GLFW_KEY_##number: UpdateKeyState(action, KeyCode::NUM##number); break;
-
-void Input::OnKey(GLFWwindow* /* window */, int key, int /* scanCode */, int action, int /* mods */) {
+#define NUM_KEY_CASE(number)                                                   \
+  case GLFW_KEY_##number:                                                      \
+    UpdateKeyState(action, KeyCode::NUM##number);                              \
+    break;
+void Input::OnKey(int key, int /* scanCode */, int action) {
   switch (key) {
     KEY_CASE(Q) KEY_CASE(W) KEY_CASE(E) KEY_CASE(R) KEY_CASE(T) KEY_CASE(Y) KEY_CASE(U) KEY_CASE(I) KEY_CASE(O) KEY_CASE(P)
     KEY_CASE(A) KEY_CASE(S) KEY_CASE(D) KEY_CASE(F) KEY_CASE(G) KEY_CASE(H) KEY_CASE(J) KEY_CASE(K) KEY_CASE(L)
@@ -180,7 +191,7 @@ void Input::OnKey(GLFWwindow* /* window */, int key, int /* scanCode */, int act
   }
 }
 
-// void Input::OnChar(GLFWwindow* window, unsigned codePoint) {
-//   window = window;
+// void Input::OnChar(unsigned codePoint) {
+//
 // }
 

@@ -27,13 +27,16 @@ SOFTWARE.
 #ifndef _BASE__WINDOW_H
 #define _BASE__WINDOW_H
 
-#include <base/gl.h>
 #include <functional>
 #include <list>
-#include <math/vec.h>
 #include <unordered_map>
 
-struct GLFWwindow;
+#include <base/gl.h>
+
+#include <math/vec.h>
+
+
+class Input;
 
 /*
  * Class for creating and manipulating a window
@@ -56,6 +59,11 @@ class Window {
   IVec2 size;
 
   /*
+   * Handles all input to the window
+   */
+  std::unique_ptr<Input> input;
+
+  /*
    * The GLFW representation of the window
    */
   GLFWwindow *window;
@@ -69,7 +77,7 @@ public:
   IVec2 GetSize() const { return size; }
 
   Window(IVec2 size);
-  ~Window() { Close(); }
+  ~Window();
 
   static Window *GetActive() { return active; }
 
@@ -104,7 +112,13 @@ public:
     resizeCallbacks.erase(it);
   }
 
-  friend class Input;
+  Input &GetInput() const { return *input; }
 };
+
+inline Window *GetWindowFromGLFWwindow(GLFWwindow *window) {
+  // Windows store a pointer to themselves upon construction.
+  // This is how to retrieve it
+  return reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
+}
 
 #endif // _BASE__WINDOW_H
