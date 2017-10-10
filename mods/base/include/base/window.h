@@ -31,10 +31,10 @@ SOFTWARE.
 #include <list>
 #include <unordered_map>
 
+#include <base/callbacklist.h>
 #include <base/gl.h>
 
 #include <math/vec.h>
-
 
 class Input;
 
@@ -51,10 +51,12 @@ class Window {
   Window(const Window &other) = delete;
   Window &operator=(const Window &other) = delete;
 
-  using ResizeCallback = std::function<void(IVec2)>;
-  std::list<ResizeCallback> resizeCallbacks;
+  using ResizeCallbacks = CallbackList<void(IVec2), true>;
+  ResizeCallbacks resizeCallbacks;
+  using ResizeCallback = ResizeCallbacks::Function;
+  using ResizeRegistration = Registration<ResizeCallbacks>;
 
-  static void OnResize(GLFWwindow *window, int width, int height);
+  void OnResize(int width, int height);
 
   IVec2 size;
 
@@ -68,7 +70,7 @@ class Window {
    */
   GLFWwindow *window;
 
-  static void SetViewportSize(IVec2 size);
+  static void SetActiveWindowViewportSize(IVec2 size);
 
 public:
   /*
@@ -103,13 +105,8 @@ public:
    */
   void Close();
 
-  auto RegisterResizeCallback(ResizeCallback callback) {
-    resizeCallbacks.push_front(callback);
-    return resizeCallbacks.begin();
-  }
-
-  void UnregisterResizeCallback(std::list<ResizeCallback>::iterator it) {
-    resizeCallbacks.erase(it);
+  ResizeRegistration RegisterResizeCallback(ResizeCallback callback) {
+    return {callback, resizeCallbacks};
   }
 
   Input &GetInput() const { return *input; }

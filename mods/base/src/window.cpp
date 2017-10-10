@@ -33,21 +33,22 @@ SOFTWARE.
 
 Window *Window::active = nullptr;
 
-void Window::SetViewportSize(IVec2 size) { glViewport(0, 0, size.x, size.y); }
+void Window::SetActiveWindowViewportSize(IVec2 size) {
+  glViewport(0, 0, size.x, size.y);
+}
 
-void Window::OnResize(GLFWwindow *glfwWindow, int width, int height) {
-  auto window = GetWindowFromGLFWwindow(glfwWindow);
-  window->size = {width, height};
+void Window::OnResize(int width, int height) {
+  size = {width, height};
 
-  if (!window->IsActive()) {
+  if (!IsActive()) {
     auto cachedActive = GetActive();
-    window->MakeActive();
-    SetViewportSize(window->size);
+    MakeActive();
+    SetActiveWindowViewportSize(size);
     cachedActive->MakeActive();
   } else
-    SetViewportSize(window->size);
+    SetActiveWindowViewportSize(size);
 
-  for (auto &callback : window->resizeCallbacks) callback(window->size);
+  resizeCallbacks.CallAll(size);
 }
 
 Window::Window(IVec2 _size) {
@@ -71,9 +72,10 @@ Window::Window(IVec2 _size) {
 
   auto activeTmp = active;
   MakeActive();
-  glfwSetFramebufferSizeCallback(window, OnResize);
-  if (activeTmp && activeTmp != this)
-    activeTmp->MakeActive();
+  glfwSetFramebufferSizeCallback(window, [](auto win, auto w, auto h) {
+    GetWindowFromGLFWwindow(win)->OnResize(w, h);
+  });
+  if (activeTmp && activeTmp != this) activeTmp->MakeActive();
 
   // Associate this Window with the GLFWwindow
   glfwSetWindowUserPointer(window, this);
