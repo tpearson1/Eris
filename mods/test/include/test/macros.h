@@ -94,9 +94,11 @@ struct name<Type, Void<decltype(expr)>> : public std::true_type {};
  */
 #define STATIC_INIT \
 static void CONCAT(SIH, __LINE__)();\
+namespace {\
 struct CONCAT(SI, __LINE__) {\
   CONCAT(SI, __LINE__)() { CONCAT(SIH, __LINE__)(); }\
 } ANONYMOUS_VARIABLE(staticInitInst);\
+}\
 static void CONCAT(SIH, __LINE__)()
 
 #endif // _TEST__MACROS_H
