@@ -61,9 +61,14 @@ struct JSONImpl<NDirectionalLight> {
   static void Write(const NDirectionalLight &value, JSON::Writer &writer);
 };
 
+struct LightingConfig;
+
 class LightManager {
   std::list<NPointLight *> pointLights;
   std::list<NDirectionalLight *> directionalLights;
+
+  void SetDirectionalLights(const LightingConfig &config);
+  void SetPointLights(Vec3 location, const LightingConfig &config);
 
 public:
   static std::unique_ptr<LightManager> active;

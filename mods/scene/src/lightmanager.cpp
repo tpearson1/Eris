@@ -31,14 +31,14 @@ SOFTWARE.
 std::unique_ptr<LightManager> LightManager::active;
 
 void NPointLight::SetUniformData(const std::string &prefix) const {
-  const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform(prefix + ".location"), transform.Location());
-  cur->SetUniform(cur->GetUniform(prefix + ".ambient"), ambient);
-  cur->SetUniform(cur->GetUniform(prefix + ".diffuse"), diffuse);
-  cur->SetUniform(cur->GetUniform(prefix + ".specular"), specular);
-  cur->SetUniform(cur->GetUniform(prefix + ".constant"), constant);
-  cur->SetUniform(cur->GetUniform(prefix + ".linear"), linear);
-  cur->SetUniform(cur->GetUniform(prefix + ".quadratic"), quadratic);
+  auto s = Shader::Current();
+  s->GetUniform(prefix + ".location").Set(transform.Location());
+  s->GetUniform(prefix + ".ambient").Set(ambient);
+  s->GetUniform(prefix + ".diffuse").Set(diffuse);
+  s->GetUniform(prefix + ".specular").Set(specular);
+  s->GetUniform(prefix + ".constant").Set(constant);
+  s->GetUniform(prefix + ".linear").Set(linear);
+  s->GetUniform(prefix + ".quadratic").Set(quadratic);
 }
 
 void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data) {
@@ -70,11 +70,11 @@ void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer
 }
 
 void NDirectionalLight::SetUniformData(const std::string &prefix) const {
-  const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform(prefix + ".direction"), GlobalRotation() * Vec3::front);
-  cur->SetUniform(cur->GetUniform(prefix + ".ambient"), ambient);
-  cur->SetUniform(cur->GetUniform(prefix + ".diffuse"), diffuse);
-  cur->SetUniform(cur->GetUniform(prefix + ".specular"), specular);
+  auto s = Shader::Current();
+  s->GetUniform(prefix + ".direction").Set(GlobalRotation() * Vec3::front);
+  s->GetUniform(prefix + ".ambient").Set(ambient);
+  s->GetUniform(prefix + ".diffuse").Set(diffuse);
+  s->GetUniform(prefix + ".specular").Set(specular);
 }
 
 void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data) {
@@ -96,15 +96,15 @@ void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Wr
   JSON::WritePair("specular", value.specular, writer);
 }
 
-void LightManager::SetUniformsForClosestLights(Vec3 location,
-                                               const LightingConfig &config) {
-  const auto *cur = Shader::Current();
-  cur->SetUniform(cur->GetUniform("cameraLocation"),
-                  NCamera::active->transform.Location());
-  GLint numPointLights = std::min(config.maxPointLights, pointLights.size());
-  cur->SetUniform(cur->GetUniform("numPointLights"), numPointLights);
+void LightManager::SetDirectionalLights(const LightingConfig &config) {
+  const auto *s = Shader::Current();
+  assert(s);
+
+  // The variables we would set should not be present in the shader
+  if (config.maxDirectionalLights == 0) return;
+
   GLint numDirLights = std::min(config.maxDirectionalLights, directionalLights.size());
-  cur->SetUniform(cur->GetUniform("numDirectionalLights"), numDirLights);
+  Shader::Current()->GetUniform("numDirectionalLights").Set(numDirLights);
 
   auto dirIt = directionalLights.begin();
   for (auto i = 0; i < numDirLights; i++, dirIt++) {
@@ -112,6 +112,17 @@ void LightManager::SetUniformsForClosestLights(Vec3 location,
     iss << "directionalLights[" << i << ']';
     (*dirIt)->SetUniformData(iss.str());
   }
+}
+
+void LightManager::SetPointLights(Vec3 location, const LightingConfig &config) {
+  const auto *s = Shader::Current();
+  assert(s);
+
+  // The variables we would set should not be present in the shader
+  if (config.maxPointLights == 0) return;
+
+  GLint numPointLights = std::min(config.maxPointLights, pointLights.size());
+  s->GetUniform("numPointLights").Set(numPointLights);
 
   // Order point lights by distance to objects
   pointLights.sort([&location](const auto &lhs, const auto &rhs) {
@@ -125,5 +136,17 @@ void LightManager::SetUniformsForClosestLights(Vec3 location,
     iss << "pointLights[" << i << ']';
     (*pointIt)->SetUniformData(iss.str());
   }
+}
+
+void LightManager::SetUniformsForClosestLights(Vec3 location,
+                                               const LightingConfig &config) {
+  const auto *s = Shader::Current();
+  assert(s);
+
+  assert(NCamera::active);
+  s->GetUniform("cameraLocation").Set(NCamera::active->transform.Location());
+
+  SetDirectionalLights(config);
+  SetPointLights(location, config);
 }
 

@@ -30,7 +30,7 @@ SOFTWARE.
 #include <base/mesh.h>
 #include <memory>
 
-class Transform;
+class Shader;
 
 class MeshRenderer {
   std::unique_ptr<Mesh> mesh;
@@ -38,14 +38,23 @@ class MeshRenderer {
 protected:
   std::vector<VertexAttribute> vertexAttributes;
 
+  virtual void GetUniforms(const Shader *) {}
+
 public:
   const Mesh *GetMesh() { return mesh.get(); }
 
   void SetMeshAndSetupAttributes(std::unique_ptr<Mesh> _mesh);
 
+  void SetShader(const Shader *s) {
+    assert(s);
+    GetUniforms(s);
+  }
+
   virtual void PreRender() const {}
 
   void Draw() { mesh->Draw(); }
+
+  virtual ~MeshRenderer() {}
 };
 
 #endif // _SCENE__MESH_RENDERER_H

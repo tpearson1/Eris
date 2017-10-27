@@ -27,10 +27,11 @@ SOFTWARE.
 #ifndef _BASE__SHADER_H
 #define _BASE__SHADER_H
 
-#include <unordered_map>
-#include <math/vec.h>
-#include <math/mat.h>
 #include <base/gl.h>
+#include <cassert>
+#include <math/mat.h>
+#include <math/vec.h>
+#include <unordered_map>
 
 /*
  * Class for loading and using a GLSL shader
@@ -55,11 +56,202 @@ public:
     Shader::Definitions definitions;
   };
 
+  struct Uniform {
+#ifdef NDEBUG
+    Uniform() = default;
+    Uniform(GLint loc) : location(loc) {}
+#define SHADER_UNIFORM_SET_ASSERTS
+#else
+    Uniform() : valid(false) {}
+    Uniform(GLint loc, const Shader *s)
+        : valid(true), owner(s), location(loc) {}
+
+#define SHADER_UNIFORM_SET_ASSERTS \
+assert(valid);\
+assert(owner == Shader::Current());
+#endif // ifdef NDEBUG
+
+    void Set(GLfloat v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1f(location, v);
+    }
+
+    void Set(Vec2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2f(location, v.x, v.y);
+    }
+
+    void Set(Vec3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3f(location, v.x, v.y, v.z);
+    }
+
+    void Set(Vec4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4f(location, v.x, v.y, v.z, v.w);
+    }
+
+    void Set(GLint v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1i(location, v);
+    }
+
+    void Set(IVec2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2i(location, v.x, v.y);
+    }
+
+    void Set(IVec3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3i(location, v.x, v.y, v.z);
+    }
+
+    void Set(IVec4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4i(location, v.x, v.y, v.z, v.w);
+    }
+
+    void Set(GLuint v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1ui(location, v);
+    }
+
+    void Set(UVec2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2ui(location, v.x, v.y);
+    }
+
+    void Set(UVec3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3ui(location, v.x, v.y, v.z);
+    }
+
+    void Set(UVec4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4ui(location, v.x, v.y, v.z, v.w);
+    }
+
+    void Set1(GLsizei count, const GLfloat *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1fv(location, count, v);
+    }
+
+    void Set2(GLsizei count, const GLfloat *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2fv(location, count, v);
+    }
+
+    void Set3(GLsizei count, const GLfloat *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3fv(location, count, v);
+    }
+
+    void Set4(GLsizei count, const GLfloat *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4fv(location, count, v);
+    }
+
+    void Set1(GLsizei count, const GLint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1iv(location, count, v);
+    }
+
+    void Set2(GLsizei count, const GLint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2iv(location, count, v);
+    }
+
+    void Set3(GLsizei count, const GLint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3iv(location, count, v);
+    }
+
+    void Set4(GLsizei count, const GLint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4iv(location, count, v);
+    }
+
+    void Set1(GLsizei count, const GLuint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform1uiv(location, count, v);
+    }
+
+    void Set2(GLsizei count, const GLuint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform2uiv(location, count, v);
+    }
+
+    void Set3(GLsizei count, const GLuint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform3uiv(location, count, v);
+    }
+
+    void Set4(GLsizei count, const GLuint *v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniform4uiv(location, count, v);
+    }
+
+    void SetMatrix2(GLsizei count, GLboolean transpose, Mat2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix2fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix3(GLsizei count, GLboolean transpose, Mat3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix3fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix4(GLsizei count, GLboolean transpose, Mat4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix4fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix2x3(GLsizei count, GLboolean transpose, Mat2x3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix2x3fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix3x2(GLsizei count, GLboolean transpose, Mat3x2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix3x2fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix2x4(GLsizei count, GLboolean transpose, Mat2x4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix2x4fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix4x2(GLsizei count, GLboolean transpose, Mat4x2 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix4x2fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix3x4(GLsizei count, GLboolean transpose, Mat3x4 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix3x4fv(location, count, transpose, &v[0][0]);
+    }
+
+    void SetMatrix4x3(GLsizei count, GLboolean transpose, Mat4x3 v) const {
+      SHADER_UNIFORM_SET_ASSERTS
+      glUniformMatrix4x3fv(location, count, transpose, &v[0][0]);
+    }
+
+  private:
+#ifndef NDEBUG
+    bool valid;
+    const Shader *owner;
+#endif
+    GLint location;
+
+    friend class Shader;
+  };
+
   GLuint ID() const { return id; }
 
   Shader() {}
-  ~Shader()
-    { if (id) glDeleteProgram(id); }
+  ~Shader() {
+    if (id) glDeleteProgram(id);
+  }
 
   bool Load(const Settings &settings);
 
@@ -68,90 +260,36 @@ public:
    * @param name The name of the variable
    * @returns a handle to the uniform
    */
-  GLint GetUniform(const std::string &name) const { return glGetUniformLocation(id, name.c_str()); }
+  Uniform GetUniform(const std::string &name) const {
+    auto loc = glGetUniformLocation(id, name.c_str());
+    // If the location is -1, the uniform name is not a uniform variable name in
+    // the shader.
+    // Structs must be set for each field, and arrays must have each
+    // value set individually.
+    assert(loc != -1);
+#ifdef NDEBUG
+    return loc;
+#else
+    return {loc, this};
+#endif
+  }
 
   /*
    * Makes this shader active
    */
-  void Use() const { current = this; glUseProgram(id); }
+  void Use() const {
+    current = this;
+    glUseProgram(id);
+  }
 
   bool IsCurrent() const { return current == this; }
   static const Shader *Current() { return current; }
-
-  /*
-   * Sets uniform variables in the shader
-   */
-  static void SetUniform(GLint location, GLfloat v)
-    { glUniform1f(location, v); }
-  static void SetUniform(GLint location, Vec2 v)
-    { glUniform2f(location, v.x, v.y); }
-  static void SetUniform(GLint location, Vec3 v)
-    { glUniform3f(location, v.x, v.y, v.z); }
-  static void SetUniform(GLint location, Vec4 v)
-    { glUniform4f(location, v.x, v.y, v.z, v.w); }
-  static void SetUniform(GLint location, GLint v)
-    { glUniform1i(location, v); }
-  static void SetUniform(GLint location, IVec2 v)
-    { glUniform2i(location, v.x, v.y); }
-  static void SetUniform(GLint location, IVec3 v)
-    { glUniform3i(location, v.x, v.y, v.z); }
-  static void SetUniform(GLint location, IVec4 v)
-    { glUniform4i(location, v.x, v.y, v.z, v.w); }
-  static void SetUniform(GLint location, GLuint v)
-    { glUniform1ui(location, v); }
-  static void SetUniform(GLint location, UVec2 v)
-    { glUniform2ui(location, v.x, v.y); }
-  static void SetUniform(GLint location, UVec3 v)
-    { glUniform3ui(location, v.x, v.y, v.z); }
-  static void SetUniform(GLint location, UVec4 v)
-    { glUniform4ui(location, v.x, v.y, v.z, v.w); }
-  static void SetUniform1(GLint location, GLsizei count, const GLfloat *v)
-    { glUniform1fv(location, count, v); }
-  static void SetUniform2(GLint location, GLsizei count, const GLfloat *v)
-    { glUniform2fv(location, count, v); }
-  static void SetUniform3(GLint location, GLsizei count, const GLfloat *v)
-    { glUniform3fv(location, count, v); }
-  static void SetUniform4(GLint location, GLsizei count, const GLfloat *v)
-    { glUniform4fv(location, count, v); }
-  static void SetUniform1(GLint location, GLsizei count, const GLint *v)
-    { glUniform1iv(location, count, v); }
-  static void SetUniform2(GLint location, GLsizei count, const GLint *v)
-    { glUniform2iv(location, count, v); }
-  static void SetUniform3(GLint location, GLsizei count, const GLint *v)
-    { glUniform3iv(location, count, v); }
-  static void SetUniform4(GLint location, GLsizei count, const GLint *v)
-    { glUniform4iv(location, count, v); }
-  static void SetUniform1(GLint location, GLsizei count, const GLuint *v)
-    { glUniform1uiv(location, count, v); }
-  static void SetUniform2(GLint location, GLsizei count, const GLuint *v)
-    { glUniform2uiv(location, count, v); }
-  static void SetUniform3(GLint location, GLsizei count, const GLuint *v)
-    { glUniform3uiv(location, count, v); }
-  static void SetUniform4(GLint location, GLsizei count, const GLuint *v)
-    { glUniform4uiv(location, count, v); }
-  static void SetUniformMatrix2(GLint location, GLsizei count, GLboolean transpose, Mat2 v)
-    { glUniformMatrix2fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix3(GLint location, GLsizei count, GLboolean transpose, Mat3 v)
-    { glUniformMatrix3fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix4(GLint location, GLsizei count, GLboolean transpose, Mat4 v)
-    { glUniformMatrix4fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix2x3(GLint location, GLsizei count, GLboolean transpose, Mat2x3 v)
-    { glUniformMatrix2x3fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix3x2(GLint location, GLsizei count, GLboolean transpose, Mat3x2 v)
-    { glUniformMatrix3x2fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix2x4(GLint location, GLsizei count, GLboolean transpose, Mat2x4 v)
-    { glUniformMatrix2x4fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix4x2(GLint location, GLsizei count, GLboolean transpose, Mat4x2 v)
-    { glUniformMatrix4x2fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix3x4(GLint location, GLsizei count, GLboolean transpose, Mat3x4 v)
-    { glUniformMatrix3x4fv(location, count, transpose, &v[0][0]); }
-  static void SetUniformMatrix4x3(GLint location, GLsizei count, GLboolean transpose, Mat4x3 v)
-    { glUniformMatrix4x3fv(location, count, transpose, &v[0][0]); }
 };
 
 template <>
 struct JSONImpl<Shader::Settings> {
-  static void Read(Shader::Settings &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Read(Shader::Settings &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
   static void Write(const Shader::Settings &value, JSON::Writer &writer);
 };
 

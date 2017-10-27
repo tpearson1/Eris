@@ -55,13 +55,17 @@ struct AddTransformation : public ConfigBase {
     SetupAddTransformation(matrices);
   }
 
+  virtual void GetUniforms(const Shader *s) override {
+    ConfigBase::GetUniforms(s);
+    vpUniform = s->GetUniform("VP");
+  }
+
   virtual void PreRender() const override {
     ConfigBase::PreRender();
 
     auto camera = NCamera::active;
     auto VP = camera->ProjectionMatrix() * camera->ViewMatrix();
-    Shader::SetUniformMatrix4(Shader::Current()->GetUniform("VP"), 1, false,
-                              VP);
+    vpUniform.SetMatrix4(1, false, VP);
   }
 
   static void Read(AddTransformation &in, const JSON::Value &value,
@@ -76,6 +80,9 @@ struct AddTransformation : public ConfigBase {
     JSON::GetMember(transformations, "transformations", object, data);
     in.SetupAddTransformation(transformations);
   }
+
+private:
+  Shader::Uniform vpUniform;
 };
 }
 }

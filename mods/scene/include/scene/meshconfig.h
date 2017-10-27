@@ -68,10 +68,13 @@ struct Standard : public ConfigBase {
 };
 
 struct Single : public MeshRenderer {
+  virtual void GetUniforms(const Shader *s) override {
+    mvpUniform = s->GetUniform("MVP");
+  }
+
   virtual void PreRender() const override {
-    auto shaderMVP = Shader::Current()->GetUniform("MVP");
     auto mvp = NCamera::active->Matrix(globalTransform.Matrix());
-    Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, mvp);
+    mvpUniform.SetMatrix4(1, GL_FALSE, mvp);
   }
 
   const Transform &GetGlobalTransform() const { return globalTransform; }
@@ -79,6 +82,8 @@ struct Single : public MeshRenderer {
 
 private:
   Transform globalTransform;
+
+  Shader::Uniform mvpUniform;
 };
 
 using Generator = std::shared_ptr<Standard<Single>> (*)(
@@ -118,20 +123,25 @@ struct NamedTexturePair {
 template <typename ConfigBase>
 struct AddTextures : public ConfigBase {
   std::vector<NamedTexturePair> textures;
+  std::vector<Shader::Uniform> textureUniforms;
 
   template <typename... Args>
   AddTextures(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
+  virtual void GetUniforms(const Shader *s) override {
+    ConfigBase::GetUniforms(s);
+    textureUniforms.reserve(textures.size());
+    for (auto &pair : textures)
+      textureUniforms.push_back(s->GetUniform(pair.uniform));
+  }
+
   virtual void PreRender() const override {
     ConfigBase::PreRender();
 
-    int i = 0;
-    for (auto &pair : textures) {
+    for (std::size_t i = 0; i < textureUniforms.size(); i++) {
       glActiveTexture(GL_TEXTURE0 + i);
-      glBindTexture(GL_TEXTURE_2D, pair.texture->ID());
-      auto sampler = Shader::Current()->GetUniform(pair.uniform);
-      Shader::SetUniform(sampler, 0);
-      i++;
+      glBindTexture(GL_TEXTURE_2D, textures[i].texture->ID());
+      textureUniforms[i].Set(static_cast<GLint>(i));
     }
   }
 
@@ -155,6 +165,13 @@ struct MakeLit : public ConfigBase {
   template <typename... Args>
   MakeLit(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
+  virtual void GetUniforms(const Shader *s) override {
+    ConfigBase::GetUniforms(s);
+    specularUniform = s->GetUniform("material.specular");
+    shininessUniform = s->GetUniform("material.shininess");
+    modelUniform = s->GetUniform("model");
+  }
+
   virtual void PreRender() const override {
     ConfigBase::PreRender();
 
@@ -163,10 +180,9 @@ struct MakeLit : public ConfigBase {
     LightManager::active->SetUniformsForClosestLights(t.Location(),
                                                       *lightingConfig);
 
-    const auto *cur = Shader::Current();
-    cur->SetUniform(cur->GetUniform("material.specular"), specular);
-    cur->SetUniform(cur->GetUniform("material.shininess"), shininess);
-    cur->SetUniformMatrix4(cur->GetUniform("model"), 1, false, t.Matrix());
+    specularUniform.Set(specular);
+    shininessUniform.Set(shininess);
+    modelUniform.SetMatrix4(1, false, t.Matrix());
   }
 
   static void Read(MakeLit &in, const JSON::Value &value,
@@ -184,6 +200,9 @@ struct MakeLit : public ConfigBase {
     JSON::GetMember(in.lightingConfig->maxPointLights, "max-point-lights",
                     object, data);
   }
+
+private:
+  Shader::Uniform specularUniform, shininessUniform, modelUniform;
 };
 }
 
