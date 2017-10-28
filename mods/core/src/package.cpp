@@ -208,12 +208,14 @@ bool Package::Run(const RunOptions &options) {
   std::string libPath = path + "lib" + name + ".so";
   if (!options.quiet)
     std::clog << TermColor::FG_GREEN << "-- Running '" << name << '\'' << TermColor::FG_DEFAULT << '\n';
-  int ret;
+  bool ret = true;
   do {
     restartOptions = RestartOptions();
     Library lib;
-    if (!lib.Open(libPath))
+    if (!lib.Open(libPath)) {
+      std::cerr << "Unable to open library for the package\n";
       return false;
+    }
 
     active = this;
 
