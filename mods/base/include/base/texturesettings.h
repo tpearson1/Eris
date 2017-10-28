@@ -32,31 +32,31 @@ SOFTWARE.
 #include <base/gl.h>
 
 enum class TextureType : GLenum {
-  TEX_1D = GL_TEXTURE_1D,
-  TEX_2D = GL_TEXTURE_2D,
-  TEX_3D = GL_TEXTURE_3D,
-  RECTANGLE = GL_TEXTURE_RECTANGLE,
-  BUFFER = GL_TEXTURE_BUFFER,
-  CUBEMAP = GL_TEXTURE_CUBE_MAP,
-  TEX_1D_ARRAY = GL_TEXTURE_1D_ARRAY,
-  TEX_2D_ARRAY = GL_TEXTURE_2D_ARRAY,
-  CUBEMAP_ARRAY = GL_TEXTURE_CUBE_MAP_ARRAY,
-  TEX_2D_MULTISAMPLE = GL_TEXTURE_2D_MULTISAMPLE,
-  TEX_2D_MULTISAMPLE_ARRAY = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+  Tex1D = GL_TEXTURE_1D,
+  Tex2D = GL_TEXTURE_2D,
+  Tex3D = GL_TEXTURE_3D,
+  Rectangle = GL_TEXTURE_RECTANGLE,
+  Buffer = GL_TEXTURE_BUFFER,
+  Cubemap = GL_TEXTURE_CUBE_MAP,
+  Tex1DArray = GL_TEXTURE_1D_ARRAY,
+  Tex2DArray = GL_TEXTURE_2D_ARRAY,
+  CubemapArray = GL_TEXTURE_CUBE_MAP_ARRAY,
+  Tex2DMultisample = GL_TEXTURE_2D_MULTISAMPLE,
+  Tex2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
 
 enum class TextureShrinkType : GLint {
-  NEAREST_MIPMAP_NEAREST = GL_NEAREST_MIPMAP_NEAREST,
-  LINEAR_MIPMAP_NEAREST = GL_LINEAR_MIPMAP_NEAREST,
-  NEAREST_MIPMAP_LINEAR = GL_NEAREST_MIPMAP_LINEAR,
-  LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR,
-  NEAREST = GL_NEAREST,
-  LINEAR = GL_LINEAR
+  NearestMipmapNearest = GL_NEAREST_MIPMAP_NEAREST,
+  LinearMipmapNearest = GL_LINEAR_MIPMAP_NEAREST,
+  NearestMipmapLinear = GL_NEAREST_MIPMAP_LINEAR,
+  LinearMipmapLinear = GL_LINEAR_MIPMAP_LINEAR,
+  Nearest = GL_NEAREST,
+  Linear = GL_LINEAR
 };
 
 enum class TextureEnlargeType : GLint {
-  NEAREST = GL_NEAREST,
-  LINEAR = GL_LINEAR
+  Nearest = GL_NEAREST,
+  Linear = GL_LINEAR
 };
 
 struct TextureSettings {
@@ -66,10 +66,10 @@ struct TextureSettings {
 
   std::string path;
 
-  TextureType type = TextureType::TEX_2D;
+  TextureType type = TextureType::Tex2D;
 
-  TextureShrinkType shrinkFilter = TextureShrinkType::LINEAR;
-  TextureEnlargeType enlargeFilter = TextureEnlargeType::LINEAR;
+  TextureShrinkType shrinkFilter = TextureShrinkType::Linear;
+  TextureEnlargeType enlargeFilter = TextureEnlargeType::Linear;
 
   static TextureSettings nearest, linear;
 };

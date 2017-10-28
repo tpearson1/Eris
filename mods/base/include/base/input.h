@@ -39,8 +39,8 @@ SOFTWARE.
 #include <math/vec.h>
 
 enum class InputEvent {
-  PRESS = GLFW_PRESS,
-  RELEASE = GLFW_RELEASE
+  Press = GLFW_PRESS,
+  Release = GLFW_RELEASE
 };
 
 struct KeyState {
@@ -58,33 +58,33 @@ enum class KeyCode {
   Q, W, E, R, T, Y, U, I, O, P,
   A, S, D, F, G, H, J, K, L,
   Z, X, C, V, B, N, M,
-  NUM0, NUM1, NUM2, NUM3,
-  NUM4, NUM5, NUM6, NUM7,
-  NUM8, NUM9,
-  SHIFT, LSHIFT, RSHIFT,
-  CTRL, LCTRL, RCTRL,
-  ALT, LALT, RALT,
-  SPACE, BACKSPACE,
-  LEFT, RIGHT, UP, DOWN,
-  ESCAPE, LBRACKET, RBRACKET,
-  SEMICOLON, APOSTROPHE,
-  COMMA, PERIOD, SLASH, BACKSLASH,
-  MINUS, EQUALS, CAPS_LOCK, TAB,
-  GRAVE, ENTER,
+  Num0, Num1, Num2, Num3,
+  Num4, Num5, Num6, Num7,
+  Num8, Num9,
+  Shift, LShift, RShift,
+  Ctrl, LCtrl, RCtrl,
+  Alt, LAlt, RAlt,
+  Space, Backspace,
+  Left, Right, Up, Down,
+  Escape, LBracket, RBracket,
+  Semicolon, Apostrophe,
+  Comma, Period, Slash, Backslash,
+  Minus, Equals, CapsLock, Tab,
+  Grave, Enter,
 
-  ANY
+  Any
 };
 
 enum class MouseMode : int {
-  NORMAL = GLFW_CURSOR_NORMAL,
-  HIDDEN = GLFW_CURSOR_HIDDEN,
-  DISABLED = GLFW_CURSOR_DISABLED
+  Normal = GLFW_CURSOR_NORMAL,
+  Hidden = GLFW_CURSOR_HIDDEN,
+  Disabled = GLFW_CURSOR_DISABLED
 };
 
 enum class MouseButton : int {
-  LEFT = GLFW_MOUSE_BUTTON_LEFT,
-  RIGHT = GLFW_MOUSE_BUTTON_RIGHT,
-  MIDDLE = GLFW_MOUSE_BUTTON_MIDDLE
+  Left = GLFW_MOUSE_BUTTON_LEFT,
+  Right = GLFW_MOUSE_BUTTON_RIGHT,
+  Middle = GLFW_MOUSE_BUTTON_MIDDLE
 };
 
 class Input {

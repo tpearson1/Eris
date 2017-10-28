@@ -71,7 +71,7 @@ void Texture::Load(const RawImage &raw, const TextureSettings &settings) {
 void Texture::CreateForFramebuffer(IVec2 _size) {
   size = _size;
   auto settings =
-      TextureSettings(TextureType::TEX_2D, TextureShrinkType::NEAREST,
-                      TextureEnlargeType::NEAREST);
+      TextureSettings{TextureType::Tex2D, TextureShrinkType::Nearest,
+                      TextureEnlargeType::Nearest};
   id = Generate(settings, GL_RGB, size, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 }

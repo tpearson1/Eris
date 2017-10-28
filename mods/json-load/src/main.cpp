@@ -48,9 +48,9 @@ void NSpectatorCamera::OnMouseMove(Vec2 pos) {
     auto cam = NCamera::active;
     cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
     cam->transform.Rotate(delta.y, 0.0f, 0.0f);
-    input.SetMouseMode(MouseMode::DISABLED);
+    input.SetMouseMode(MouseMode::Disabled);
   } else
-    input.SetMouseMode(MouseMode::NORMAL);
+    input.SetMouseMode(MouseMode::Normal);
 }
 
 class MyGame : public Game {
@@ -71,7 +71,7 @@ public:
     shape->transform.Rotate(30.0f * delta, 60.0f * delta, 0.0f);
 
     float mul = delta * 45.0f;
-    if (GetInput().IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
+    if (GetInput().IsKeyDown(KeyCode::Shift)) mul *= 4.0f;
 
     Vec3 movement;
     if (GetInput().IsKeyDown(KeyCode::W)) movement += Vec3(0.0f, 0.0f, -mul);
@@ -85,13 +85,12 @@ public:
   }
 };
 
-void OnMouseScroll(Vec2 delta) { NCamera::active->fov -= delta.y * 0.1f; }
-
 MyGame::MyGame() {
-  GetInput().RegisterMouseScrollCallback(OnMouseScroll);
+  GetInput().RegisterMouseScrollCallback(
+      [](Vec2 delta) { NCamera::active->fov -= delta.y * 0.1f; });
   escapeRegistration =
-      GetInput().RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-        if (action == InputEvent::PRESS) Window::GetActive()->Close();
+      GetInput().RegisterKeyCallback(KeyCode::Escape, [](InputEvent action) {
+        if (action == InputEvent::Press) Window::GetActive()->Close();
       });
 
   auto tm = std::make_unique<TagManager>();

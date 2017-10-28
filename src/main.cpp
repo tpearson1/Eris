@@ -83,9 +83,15 @@ static int HandlePackage(const LoadInfo &info) {
 
   Package::Data data{lo};
   {
+    const auto path = "mods/" + info.name;
+    if (!Directory::Exists(path)) {
+      std::cerr << "Package could not be found\n";
+      return -1;
+    }
+
     auto typeManager = std::make_shared<JSON::TypeManager>();
     JSON::Document doc;
-    JSON::GetDataFromFile(doc, "mods/" + info.name + "/package.json");
+    JSON::GetDataFromFile(doc, path + "/package.json");
     JSON::ReadData readData{typeManager};
     JSON::Read(data, doc, readData);
   }

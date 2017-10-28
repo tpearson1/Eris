@@ -102,21 +102,21 @@ Vec2 Input::GetMousePosition() {
 void Input::UpdateKeyState(int action, KeyCode key) {
   auto event = static_cast<InputEvent>(action);
   auto &keyState = keyStates[key];
-  if (event == InputEvent::PRESS)
+  if (event == InputEvent::Press)
     keyState.down = true;
-  else if (event == InputEvent::RELEASE)
+  else if (event == InputEvent::Release)
     keyState.down = false;
 
   keyState.callbacks.CallAll(event);
 }
 
-// Update KeyStates like LSHIFT, RSHIFT and SHIFT
+// Update KeyStates like LShift, RShift and Shift
 void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other,
                                     KeyCode both) {
   auto event = static_cast<InputEvent>(action);
   auto &pressedState = keyStates[pressed], &bothState = keyStates[both],
        &otherState = keyStates[other];
-  if (event == InputEvent::PRESS) {
+  if (event == InputEvent::Press) {
     pressedState.down = true;
     bothState.down = true;
 
@@ -125,7 +125,7 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other,
       // callbacks
       bothState.callbacks.CallAll(event);
     }
-  } else if (event == InputEvent::RELEASE) {
+  } else if (event == InputEvent::Release) {
     pressedState.down = false;
 
     if (!otherState.down) {
@@ -147,7 +147,7 @@ void Input::UpdateLeftRightKeyState(int action, KeyCode pressed, KeyCode other,
 
 #define NUM_KEY_CASE(number)                                                   \
   case GLFW_KEY_##number:                                                      \
-    UpdateKeyState(action, KeyCode::NUM##number);                              \
+    UpdateKeyState(action, KeyCode::Num##number);                              \
     break;
 void Input::OnKey(int key, int /* scanCode */, int action) {
   switch (key) {
@@ -158,35 +158,35 @@ void Input::OnKey(int key, int /* scanCode */, int action) {
     NUM_KEY_CASE(3) NUM_KEY_CASE(4) NUM_KEY_CASE(5)
     NUM_KEY_CASE(6) NUM_KEY_CASE(7) NUM_KEY_CASE(8)
     NUM_KEY_CASE(9)
-    KEY_CASE(SPACE) KEY_CASE(BACKSPACE)
-    KEY_CASE(LEFT) KEY_CASE(RIGHT) KEY_CASE(UP) KEY_CASE(DOWN)
-    KEY_CASE(ESCAPE) KEY_CASE(SEMICOLON) KEY_CASE(APOSTROPHE)
-    KEY_CASE(COMMA) KEY_CASE(PERIOD)
-    KEY_CASE(SLASH) KEY_CASE(BACKSLASH)
-    KEY_CASE(MINUS)
-    KEY_CASE(CAPS_LOCK)
-    KEY_CASE(TAB)
-    KEY_CASE(ENTER)
-    KEY_CASE2(RIGHT_BRACKET, RBRACKET)
-    KEY_CASE2(EQUAL, EQUALS)
-    KEY_CASE2(GRAVE_ACCENT, GRAVE)
+    KEY_CASE2(SPACE, Space) KEY_CASE2(BACKSPACE, Backspace)
+    KEY_CASE2(LEFT, Left) KEY_CASE2(RIGHT, Right) KEY_CASE2(UP, Up) KEY_CASE2(DOWN, Down)
+    KEY_CASE2(ESCAPE, Escape) KEY_CASE2(SEMICOLON, Semicolon) KEY_CASE2(APOSTROPHE, Apostrophe)
+    KEY_CASE2(COMMA, Comma) KEY_CASE2(PERIOD, Period)
+    KEY_CASE2(SLASH, Slash) KEY_CASE2(BACKSLASH, Backslash)
+    KEY_CASE2(MINUS, Minus)
+    KEY_CASE2(CAPS_LOCK, CapsLock)
+    KEY_CASE2(TAB, Tab)
+    KEY_CASE2(ENTER, Enter)
+    KEY_CASE2(RIGHT_BRACKET, RBracket)
+    KEY_CASE2(EQUAL, Equals)
+    KEY_CASE2(GRAVE_ACCENT, Grave)
     case GLFW_KEY_LEFT_SHIFT:
-      UpdateLeftRightKeyState(action, KeyCode::LSHIFT, KeyCode::RSHIFT, KeyCode::SHIFT);
+      UpdateLeftRightKeyState(action, KeyCode::LShift, KeyCode::RShift, KeyCode::Shift);
       break;
     case GLFW_KEY_RIGHT_SHIFT:
-      UpdateLeftRightKeyState(action, KeyCode::RSHIFT, KeyCode::LSHIFT, KeyCode::SHIFT);
+      UpdateLeftRightKeyState(action, KeyCode::RShift, KeyCode::LShift, KeyCode::Shift);
       break;
     case GLFW_KEY_LEFT_CONTROL:
-      UpdateLeftRightKeyState(action, KeyCode::LCTRL, KeyCode::RCTRL, KeyCode::CTRL);
+      UpdateLeftRightKeyState(action, KeyCode::LCtrl, KeyCode::RCtrl, KeyCode::Ctrl);
       break;
     case GLFW_KEY_RIGHT_CONTROL:
-      UpdateLeftRightKeyState(action, KeyCode::RCTRL, KeyCode::LCTRL, KeyCode::CTRL);
+      UpdateLeftRightKeyState(action, KeyCode::RCtrl, KeyCode::LCtrl, KeyCode::Ctrl);
       break;
     case GLFW_KEY_LEFT_ALT:
-      UpdateLeftRightKeyState(action, KeyCode::LALT, KeyCode::RALT, KeyCode::ALT);
+      UpdateLeftRightKeyState(action, KeyCode::LAlt, KeyCode::RAlt, KeyCode::Alt);
       break;
     case GLFW_KEY_RIGHT_ALT:
-      UpdateLeftRightKeyState(action, KeyCode::RALT, KeyCode::LALT, KeyCode::ALT);
+      UpdateLeftRightKeyState(action, KeyCode::RAlt, KeyCode::LAlt, KeyCode::Alt);
       break;
   }
 }
@@ -194,4 +194,3 @@ void Input::OnKey(int key, int /* scanCode */, int action) {
 // void Input::OnChar(unsigned codePoint) {
 //
 // }
-

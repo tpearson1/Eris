@@ -46,9 +46,9 @@ void NSpectatorCamera::OnMouseMove(Vec2 pos) {
     auto cam = NCamera::active;
     cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
     cam->transform.Rotate(delta.y, 0.0f, 0.0f);
-    // Window::GetActive()->GetInput().SetMouseMode(MouseMode::DISABLED);
+    // Window::GetActive()->GetInput().SetMouseMode(MouseMode::Disabled);
   } else
-    Window::GetActive()->GetInput().SetMouseMode(MouseMode::NORMAL);
+    Window::GetActive()->GetInput().SetMouseMode(MouseMode::Normal);
 }
 
 class MyGame : public Game {
@@ -83,7 +83,7 @@ public:
     }
 
     float mul = delta * 45.0f;
-    if (GetInput().IsKeyDown(KeyCode::SHIFT)) mul *= 4.0f;
+    if (GetInput().IsKeyDown(KeyCode::Shift)) mul *= 4.0f;
 
     Vec3 movement;
     if (GetInput().IsKeyDown(KeyCode::W)) movement += Vec3(0.0f, 0.0f, -mul);
@@ -99,20 +99,20 @@ public:
 
 MyGame::MyGame() {
   keyRegistrations.emplace_back(
-      GetInput().RegisterKeyCallback(KeyCode::ESCAPE, [](InputEvent action) {
-        if (action == InputEvent::PRESS) Window::GetActive()->Close();
+      GetInput().RegisterKeyCallback(KeyCode::Escape, [](InputEvent action) {
+        if (action == InputEvent::Press) Window::GetActive()->Close();
       }));
 
   keyRegistrations.emplace_back(
       GetInput().RegisterKeyCallback(KeyCode::U, [this](InputEvent action) {
-        if (action == InputEvent::PRESS) go = !go;
+        if (action == InputEvent::Press) go = !go;
       }));
 
   keyRegistrations.emplace_back(
       GetInput().RegisterKeyCallback(KeyCode::I, [this](InputEvent action) {
-        if (action != InputEvent::PRESS) return;
+        if (action != InputEvent::Press) return;
 
-        if (GetInput().IsKeyDown(KeyCode::SHIFT))
+        if (GetInput().IsKeyDown(KeyCode::Shift))
           rot.x -= 30.0f;
         else
           rot.x += 30.0f;
@@ -120,9 +120,9 @@ MyGame::MyGame() {
 
   keyRegistrations.emplace_back(
       GetInput().RegisterKeyCallback(KeyCode::O, [this](InputEvent action) {
-        if (action != InputEvent::PRESS) return;
+        if (action != InputEvent::Press) return;
 
-        if (GetInput().IsKeyDown(KeyCode::SHIFT))
+        if (GetInput().IsKeyDown(KeyCode::Shift))
           rot.y -= 30.0f;
         else
           rot.y += 30.0f;
@@ -130,9 +130,9 @@ MyGame::MyGame() {
 
   keyRegistrations.emplace_back(
       GetInput().RegisterKeyCallback(KeyCode::P, [this](InputEvent action) {
-        if (action != InputEvent::PRESS) return;
+        if (action != InputEvent::Press) return;
 
-        if (GetInput().IsKeyDown(KeyCode::SHIFT))
+        if (GetInput().IsKeyDown(KeyCode::Shift))
           rot.z -= 30.0f;
         else
           rot.z += 30.0f;

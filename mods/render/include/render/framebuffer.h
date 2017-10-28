@@ -31,54 +31,65 @@ SOFTWARE.
 #include <base/texture.h>
 
 enum class FramebufferTarget : GLenum {
-  BOTH = GL_FRAMEBUFFER,
-  READ = GL_READ_FRAMEBUFFER,
-  WRITE = GL_DRAW_FRAMEBUFFER
+  Both = GL_FRAMEBUFFER,
+  Read = GL_READ_FRAMEBUFFER,
+  Write = GL_DRAW_FRAMEBUFFER
 };
 
 class Renderbuffer {
   GLuint id = 0;
+
 public:
   GLuint ID() const { return id; }
 
-  void Generate()
-    { glGenRenderbuffers(1, &id); }
+  void Generate() { glGenRenderbuffers(1, &id); }
 
-  ~Renderbuffer()
-    { if (id) glDeleteRenderbuffers(1, &id); }
+  ~Renderbuffer() {
+    if (id) glDeleteRenderbuffers(1, &id);
+  }
 
-  void Bind()
-    { glBindRenderbuffer(GL_RENDERBUFFER, id); }
+  void Bind() { glBindRenderbuffer(GL_RENDERBUFFER, id); }
 
-  void Initialize(GLenum internalFormat, int width = Window::GetActive()->width, int height = Window::GetActive()->height)
-    { glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height); }
+  void Initialize(GLenum internalFormat,
+                  IVec2 size = Window::GetActive()->GetSize()) {
+    glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, size.x, size.y);
+  }
 };
 
 class Framebuffer {
   GLuint id = 0;
+
 public:
   GLuint ID() const { return id; }
 
-  void Generate()
-    { glGenFramebuffers(1, &id); }
+  void Generate() { glGenFramebuffers(1, &id); }
 
-  ~Framebuffer()
-    { if (id) glDeleteFramebuffers(1, &id); }
+  ~Framebuffer() {
+    if (id) glDeleteFramebuffers(1, &id);
+  }
 
-  void Bind(FramebufferTarget target = FramebufferTarget::BOTH) const
-    { glBindFramebuffer((GLenum)target, id); }
+  void Bind(FramebufferTarget target = FramebufferTarget::Both) const {
+    glBindFramebuffer(static_cast<GLenum>(target), id);
+  }
 
-  void AttachTexture(const Texture &tex, GLenum type, GLint mipmapLevel = 0, FramebufferTarget target = FramebufferTarget::BOTH)
-    { glFramebufferTexture2D((GLenum)target, type, (GLenum)tex.Settings().type, tex.ID(), mipmapLevel); }
+  void AttachTexture(const Texture &tex, GLenum type, GLint mipmapLevel = 0,
+                     FramebufferTarget target = FramebufferTarget::Both) {
+    glFramebufferTexture2D(static_cast<GLenum>(target), type,
+                           static_cast<GLenum>(tex.Settings().type), tex.ID(),
+                           mipmapLevel);
+  }
 
-  void AttachRenderbuffer(const Renderbuffer &buffer, FramebufferTarget target = FramebufferTarget::BOTH)
-    { glFramebufferRenderbuffer((GLenum)target, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, buffer.ID()); }
+  void AttachRenderbuffer(const Renderbuffer &buffer,
+                          FramebufferTarget target = FramebufferTarget::Both) {
+    glFramebufferRenderbuffer((GLenum)target, GL_DEPTH_STENCIL_ATTACHMENT,
+                              GL_RENDERBUFFER, buffer.ID());
+  }
 
-  void BindDefault()
-    { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+  void BindDefault() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-  bool Complete(FramebufferTarget target = FramebufferTarget::BOTH) const
-    { return glCheckFramebufferStatus((GLenum)target) == GL_FRAMEBUFFER_COMPLETE; }
+  bool Complete(FramebufferTarget target = FramebufferTarget::Both) const {
+    return glCheckFramebufferStatus((GLenum)target) == GL_FRAMEBUFFER_COMPLETE;
+  }
 };
 
 #endif // _RENDER__FRAMEBUFFER_H
