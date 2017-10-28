@@ -52,7 +52,7 @@ std::vector<GLfloat> Sprite::TexCoords() const {
 
 #define FAIL_IF(expr, failMessage) {\
 if (expr) {\
-  std::cerr << "> JSON: Sprite sheet at '" << path << "' has error: " << (failMessage) << '\n';\
+  std::cerr << "JSON: Sprite sheet at '" << path << "' has error: " << (failMessage) << '\n';\
   return false;\
 }}
 

@@ -36,27 +36,27 @@ bool RawImage::Load(const std::string &path, bool flip) {
   // We need to use c-style file reading as libpng accepts a c-style file pointer
   FILE *fp = fopen((::buildPath + path).c_str(), "rb");
   if (!fp) {
-    std::cerr << "> Unable to open image file: " << path << '\n';
+    std::cerr << "Unable to open image file: " << path << '\n';
     return false;
   }
 
   png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if (!png) {
-    std::cerr << "> Unable to create png read struct\n";
+    std::cerr << "Unable to create png read struct\n";
     fclose(fp);
     return false;
   }
 
   png_infop info = png_create_info_struct(png);
   if (!info) {
-    std::cerr << "> Unable to create png info struct\n";
+    std::cerr << "Unable to create png info struct\n";
     png_destroy_read_struct(&png, NULL, NULL);
     fclose(fp);
     return false;
   }
 
   if (setjmp(png_jmpbuf(png))) {
-    std::cerr << "> Unable to set jump\n";
+    std::cerr << "Unable to set jump\n";
     png_destroy_read_struct(&png, &info, NULL);
     fclose(fp);
     return false;

@@ -24,27 +24,23 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <library.h>
 #include <iostream>
+#include <library.h>
 #if defined(__linux__)
 #include <dlfcn.h>
 #else
-#error Class 'Library' only supported on linux
+#error Class 'Library' currently only supported on linux
 #endif
 #include <statics.h>
 
 void Library::Close() {
-  if (open)
-    dlclose(handle);
+  if (open) dlclose(handle);
 }
 
 bool Library::Open(const std::string &libraryPath) {
   path = ::buildPath + libraryPath;
   handle = dlopen(path.c_str(), RTLD_NOW);
-  if (!handle) {
-    std::cerr << "> Couldn't load shared library at " << path << ": " << dlerror() << '\n';
-    return false;
-  }
+  if (!handle) return false;
   open = true;
   return true;
 }
@@ -52,7 +48,9 @@ bool Library::Open(const std::string &libraryPath) {
 void *Library::GetSymbol(const std::string &name, bool quiet) {
   void *sym = dlsym(handle, name.c_str());
   if (!sym && !quiet)
-    std::cerr << "> Unable to get symbol '" << name << "' from shared library at '" << path << "'\n"
-              "Error: " << dlerror() << '\n';
+    std::cerr << "Unable to get symbol '" << name
+              << "' from shared library at '" << path
+              << "'\nError: "
+              << dlerror() << '\n';
   return sym;
 }

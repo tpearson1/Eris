@@ -24,24 +24,27 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <shader.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <cstring>
 #include <core/file.h>
 #include <core/statics.h>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <shader.h>
+#include <sstream>
 
 const Shader *Shader::current;
 
-void JSONImpl<Shader::Settings>::Write(const Shader::Settings &value, JSON::Writer &writer) {
+void JSONImpl<Shader::Settings>::Write(const Shader::Settings &value,
+                                       JSON::Writer &writer) {
   auto obj = JSON::ObjectEncloser{writer};
   JSON::WritePair("vertex", value.vertexFilePath, writer);
   JSON::WritePair("vertex", value.fragmentFilePath, writer);
   JSON::WritePair("definitions", value.definitions, writer);
 }
 
-void JSONImpl<Shader::Settings>::Read(Shader::Settings &out, const JSON::Value &value, const JSON::ReadData &data) {
+void JSONImpl<Shader::Settings>::Read(Shader::Settings &out,
+                                      const JSON::Value &value,
+                                      const JSON::ReadData &data) {
   auto t = Trace::Pusher{data.trace, "Shader::Settings"};
   const auto &object = JSON::GetObject(value, data);
 
@@ -66,13 +69,13 @@ static void CompileShader(GLuint shaderID, const std::string &source) {
     std::vector<char> errorMessage(infoLogLength + 1);
     glGetShaderInfoLog(shaderID, infoLogLength, NULL, &errorMessage[0]);
     if (errorMessage[0])
-      std::cerr << "> " << &errorMessage[0] << "|\n";
+      std::cerr << "Shader could not be compiled: '" << &errorMessage[0]
+                << "'\n";
   }
 }
 
 bool Shader::Load(const Settings &settings) {
-  if (id)
-    glDeleteProgram(id);
+  if (id) glDeleteProgram(id);
 
   // Create the shaders
   GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -115,7 +118,8 @@ bool Shader::Load(const Settings &settings) {
     std::vector<char> programErrorMessage(infoLogLength + 1);
     glGetProgramInfoLog(id, infoLogLength, NULL, &programErrorMessage[0]);
     if (programErrorMessage[0])
-      std::cerr << "> " << &programErrorMessage[0] << "|\n";
+      std::cerr << "Shader could not be created: '" << &programErrorMessage[0]
+                << "'\n";
   }
 
   glDetachShader(id, vertexShaderID);
@@ -126,4 +130,3 @@ bool Shader::Load(const Settings &settings) {
 
   return true;
 }
-
