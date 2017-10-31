@@ -27,29 +27,12 @@ SOFTWARE.
 #include <base/resources.h>
 #include <core/file.h>
 #include <game/game.h>
-#include <game/controllablecamera.h>
+#include <game/spectatorcamera.h>
 #include <scene/camera.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
-
-class NSpectatorCamera : public NControllableCamera {
-public:
-  virtual void OnMouseMove(Vec2 pos) override;
-};
-
-void NSpectatorCamera::OnMouseMove(Vec2 pos) {
-  if (!Window::GetActive()->GetInput().IsKeyDown(KeyCode::F)) {
-    auto delta = GetMouseMovementChange(pos);
-
-    auto cam = NCamera::active;
-    cam->transform.RotateGlobal(0.0f, -delta.x, 0.0f);
-    cam->transform.Rotate(delta.y, 0.0f, 0.0f);
-    // Window::GetActive()->GetInput().SetMouseMode(MouseMode::Disabled);
-  } else
-    Window::GetActive()->GetInput().SetMouseMode(MouseMode::Normal);
-}
 
 class MyGame : public Game {
   Scene scene;

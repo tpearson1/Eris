@@ -24,29 +24,28 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _GAME__CONTROLLABLE_CAMERA_H
-#define _GAME__CONTROLLABLE_CAMERA_H
+#include <spectatorcamera.h>
 
-#include <base/input.h>
-#include <scene/camera.h>
+void NSpectatorCamera::OnMouseMove(Vec2 pos) {
+  auto &input = GetInput();
 
-class NControllableCamera : public NCamera {
-  Vec2 prevPosition;
-  Input::MouseMoveRegistration moveRegistration;
-  Input &input;
-
-protected:
-  virtual void OnMouseMove(Vec2 mousePosition) = 0;
-
-  Vec2 GetMouseMovementChange(Vec2 mousePosition) const {
-    return mousePosition - prevPosition;
+  if (input.IsKeyDown(KeyCode::F)) {
+    if (disableMouseOnFreeze)
+      input.SetMouseMode(MouseMode::Disabled);
+    else
+      input.SetMouseMode(MouseMode::Normal);
+    return;
   }
 
-public:
-  NControllableCamera(Input &i = Window::GetActive()->GetInput());
+  auto delta = GetMouseMovementChange(pos);
+  auto change = delta * sensitivity;
 
-  Input &GetInput() { return input; }
-  const Input &GetInput() const { return input; }
-};
+  auto cam = NCamera::active;
+  cam->transform.RotateGlobal(0.0f, -change.x, 0.0f);
+  cam->transform.Rotate(change.y, 0.0f, 0.0f);
 
-#endif // _GAME__CONTROLLABLE_CAMERA_H
+  if (mouseDisabled)
+    input.SetMouseMode(MouseMode::Disabled);
+  else
+    input.SetMouseMode(MouseMode::Normal);
+}

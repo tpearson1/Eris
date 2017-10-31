@@ -24,29 +24,21 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _GAME__CONTROLLABLE_CAMERA_H
-#define _GAME__CONTROLLABLE_CAMERA_H
+#ifndef _GAME__SPECTATOR_CAMERA_H
+#define _GAME__SPECTATOR_CAMERA_H
 
-#include <base/input.h>
-#include <scene/camera.h>
+#include <game/controllablecamera.h>
 
-class NControllableCamera : public NCamera {
-  Vec2 prevPosition;
-  Input::MouseMoveRegistration moveRegistration;
-  Input &input;
-
-protected:
-  virtual void OnMouseMove(Vec2 mousePosition) = 0;
-
-  Vec2 GetMouseMovementChange(Vec2 mousePosition) const {
-    return mousePosition - prevPosition;
-  }
-
+class NSpectatorCamera : public NControllableCamera {
 public:
-  NControllableCamera(Input &i = Window::GetActive()->GetInput());
+  virtual void OnMouseMove(Vec2 pos) override;
 
-  Input &GetInput() { return input; }
-  const Input &GetInput() const { return input; }
+  bool mouseDisabled = true;
+
+  KeyCode freezeCamera = KeyCode::F;
+  bool disableMouseOnFreeze = false;
+
+  float sensitivity = 1.0f;
 };
 
-#endif // _GAME__CONTROLLABLE_CAMERA_H
+#endif // _GAME__SPECTATOR_CAMERA_H

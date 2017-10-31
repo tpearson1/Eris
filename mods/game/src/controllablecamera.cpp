@@ -24,29 +24,12 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _GAME__CONTROLLABLE_CAMERA_H
-#define _GAME__CONTROLLABLE_CAMERA_H
+#include <controllablecamera.h>
 
-#include <base/input.h>
-#include <scene/camera.h>
-
-class NControllableCamera : public NCamera {
-  Vec2 prevPosition;
-  Input::MouseMoveRegistration moveRegistration;
-  Input &input;
-
-protected:
-  virtual void OnMouseMove(Vec2 mousePosition) = 0;
-
-  Vec2 GetMouseMovementChange(Vec2 mousePosition) const {
-    return mousePosition - prevPosition;
-  }
-
-public:
-  NControllableCamera(Input &i = Window::GetActive()->GetInput());
-
-  Input &GetInput() { return input; }
-  const Input &GetInput() const { return input; }
-};
-
-#endif // _GAME__CONTROLLABLE_CAMERA_H
+NControllableCamera::NControllableCamera(Input &i) : input(i) {
+  prevPosition = input.GetMousePosition();
+  moveRegistration = input.RegisterMouseMoveCallback([this](auto pos) {
+    OnMouseMove(pos);
+    prevPosition = pos;
+  });
+}

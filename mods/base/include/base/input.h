@@ -116,6 +116,8 @@ public:
   Input(GLFWwindow *w);
   ~Input();
 
+  Input(Input &) = delete;
+
   bool IsKeyDown(KeyCode code)
     { return keyStates[code].down; }
 
