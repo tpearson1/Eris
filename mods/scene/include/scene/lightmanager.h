@@ -29,64 +29,93 @@ SOFTWARE.
 
 #include <list>
 #include <memory>
+
+#include <base/registration.h>
 #include <scene/node.h>
+
+class NPointLight;
+class NDirectionalLight;
+
+struct LightingConfig;
+
+class LightManager {
+  using PointLightList = std::list<NPointLight *>;
+  using DirectionalLightList = std::list<NDirectionalLight *>;
+
+  PointLightList pointLights;
+  DirectionalLightList directionalLights;
+
+  void SetDirectionalLights(const LightingConfig &config);
+  void SetPointLights(Vec3 location, const LightingConfig &config);
+
+  static std::unique_ptr<LightManager> active;
+
+public:
+  using PointLightRegistration = Registration<PointLightList>;
+  using DirectionalLightRegistration = Registration<DirectionalLightList>;
+
+  static LightManager *Active() { return active.get(); }
+  static void SetActive(std::unique_ptr<LightManager> m) {
+    active = std::move(m);
+  }
+
+  PointLightRegistration Register(NPointLight *light) {
+    return {light, pointLights};
+  }
+
+  DirectionalLightRegistration Register(NDirectionalLight *light) {
+    return {light, directionalLights};
+  }
+
+  using PointSizeType = std::list<NPointLight *>::size_type;
+  using DirSizeType = std::list<NDirectionalLight *>::size_type;
+  void SetUniformsForClosestLights(Vec3 location,
+                                   const struct LightingConfig &lightingConfig);
+};
 
 struct NLight : public NNode {
   virtual void SetUniformData(const std::string &prefix) const = 0;
 };
 
-struct NPointLight : public NLight {
+class NPointLight : public NLight {
+  LightManager::PointLightRegistration registration;
+
+public:
   virtual void SetUniformData(const std::string &prefix) const override;
 
   Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
   float constant = 1.0f, linear, quadratic;
+
+  void Register(LightManager &manager) {
+    registration = manager.Register(this);
+  }
 };
 
 template <>
 struct JSONImpl<NPointLight> {
-  static void Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Read(NPointLight &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
   static void Write(const NPointLight &value, JSON::Writer &writer);
 };
 
 class NDirectionalLight : public NLight {
+  LightManager::DirectionalLightRegistration registration;
+
 public:
   virtual void SetUniformData(const std::string &prefix) const override;
 
   Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
+
+  void Register(LightManager &manager) {
+    registration = manager.Register(this);
+  }
 };
 
 template <>
 struct JSONImpl<NDirectionalLight> {
-  static void Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data);
+  static void Read(NDirectionalLight &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
   static void Write(const NDirectionalLight &value, JSON::Writer &writer);
-};
-
-struct LightingConfig;
-
-class LightManager {
-  std::list<NPointLight *> pointLights;
-  std::list<NDirectionalLight *> directionalLights;
-
-  void SetDirectionalLights(const LightingConfig &config);
-  void SetPointLights(Vec3 location, const LightingConfig &config);
-
-public:
-  static std::unique_ptr<LightManager> active;
-
-  auto RegisterPointLight(NPointLight *light)
-    { pointLights.push_front(light); return pointLights.front(); }
-
-  auto RegisterDirectionalLight(NDirectionalLight *light)
-    { directionalLights.push_front(light); return directionalLights.front(); }
-
-  void Unregister(std::list<NPointLight *>::iterator it)
-    { pointLights.erase(it); }
-  void Unregister(std::list<NDirectionalLight *>::iterator it)
-    { directionalLights.erase(it); }
-
-  using PointSizeType = std::list<NPointLight *>::size_type;
-  using DirSizeType = std::list<NDirectionalLight *>::size_type;
-  void SetUniformsForClosestLights(Vec3 location, const struct LightingConfig &lightingConfig);
 };
 
 struct LightingConfig {
@@ -95,4 +124,3 @@ struct LightingConfig {
 };
 
 #endif // _SCENE__LIGHT_MANAGER_H
-

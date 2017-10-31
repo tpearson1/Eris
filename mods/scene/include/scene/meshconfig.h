@@ -177,7 +177,8 @@ struct MakeLit : public ConfigBase {
 
     const auto t = this->GetGlobalTransform();
 
-    LightManager::active->SetUniformsForClosestLights(t.Location(),
+    assert(LightManager::Active());
+    LightManager::Active()->SetUniformsForClosestLights(t.Location(),
                                                       *lightingConfig);
 
     specularUniform.Set(specular);

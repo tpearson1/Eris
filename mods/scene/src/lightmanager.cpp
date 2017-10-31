@@ -54,8 +54,9 @@ void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, con
 
   JSON::GetMember<NNode>(out, "NNode", object, data);
 
-  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have its static member 'active' set");
-  LightManager::active->RegisterPointLight(&out);
+  auto lightManager = LightManager::Active();
+  JSON::ParseAssert(lightManager, data, "Class 'LightManager' must have its static member 'active' set");
+  out.Register(*lightManager);
 }
 
 void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer) {
@@ -85,8 +86,9 @@ void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value
   JSON::GetMember(out.diffuse, "diffuse", object, data);
   JSON::GetMember(out.specular, "specular", object, data);
 
-  JSON::ParseAssert(LightManager::active.get(), data, "Class 'LightManager' must have its static member 'active' set");
-  LightManager::active->RegisterDirectionalLight(&out);
+  auto lightManager = LightManager::Active();
+  JSON::ParseAssert(lightManager, data, "Class 'LightManager' must have its static member 'active' set");
+  out.Register(*lightManager);
 }
 
 void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Writer &writer) {
@@ -149,4 +151,3 @@ void LightManager::SetUniformsForClosestLights(Vec3 location,
   SetDirectionalLights(config);
   SetPointLights(location, config);
 }
-

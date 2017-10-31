@@ -31,7 +31,7 @@ SOFTWARE.
 #include <list>
 #include <unordered_map>
 
-#include <base/callbacklist.h>
+#include <base/registration.h>
 #include <base/gl.h>
 
 #include <math/vec.h>

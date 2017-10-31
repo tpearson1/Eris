@@ -29,13 +29,16 @@ SOFTWARE.
 
 #include <memory>
 
-#include <base/callbacklist.h>
+#include <base/registration.h>
 #include <base/window.h>
 
 class NNode;
 
 class Game {
   using TickManager = CallbackList<void(float), true>;
+  using TickFunction = TickManager::Function;
+  using TickRegistration = Registration<TickManager>;
+
   TickManager tickManager;
   float elapsedTime = 0.0f;
 
@@ -49,7 +52,9 @@ public:
   Game();
   virtual ~Game();
 
-  TickManager &GetTickManager() { return tickManager; }
+  TickRegistration RegisterTick(TickFunction func) {
+    return {func, tickManager};
+  }
 
   void Start();
 

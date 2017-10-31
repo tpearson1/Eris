@@ -33,8 +33,8 @@ SOFTWARE.
 #include <unordered_map>
 #include <vector>
 
-#include <base/callbacklist.h>
 #include <base/gl.h>
+#include <base/registration.h>
 
 #include <math/vec.h>
 

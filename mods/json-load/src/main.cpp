@@ -89,7 +89,7 @@ MyGame::MyGame() {
 
   scene.SetActive();
 
-  LightManager::active = std::make_unique<LightManager>();
+  LightManager::SetActive(std::make_unique<LightManager>());
 
   {
     using namespace MeshRenderConfigs;
