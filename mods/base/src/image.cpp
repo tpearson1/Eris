@@ -25,22 +25,25 @@ SOFTWARE.
 */
 
 #include <image.h>
+
+#include <cstdio>
 #include <cstring>
 #include <iostream>
-#include <cstdio>
+
 #include <core/statics.h>
 #include <png.h>
 
 bool RawImage::Load(const std::string &path, bool flip) {
-  // Read the vertex shader code from the file
-  // We need to use c-style file reading as libpng accepts a c-style file pointer
+  // We need to use c-style file reading as libpng accepts a c-style file
+  // pointer
   FILE *fp = fopen((::buildPath + path).c_str(), "rb");
   if (!fp) {
     std::cerr << "Unable to open image file: " << path << '\n';
     return false;
   }
 
-  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  png_structp png =
+      png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if (!png) {
     std::cerr << "Unable to create png read struct\n";
     fclose(fp);
@@ -70,22 +73,18 @@ bool RawImage::Load(const std::string &path, bool flip) {
   png_byte colorType = png_get_color_type(png, info);
   png_byte bitDepth = png_get_bit_depth(png, info);
 
-  if (bitDepth == 16)
-    png_set_strip_16(png);
+  if (bitDepth == 16) png_set_strip_16(png);
 
-  if (colorType == PNG_COLOR_TYPE_PALETTE)
-    png_set_palette_to_rgb(png);
+  if (colorType == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
 
   // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16 bit depth
   if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8)
     png_set_expand_gray_1_2_4_to_8(png);
 
-  if (png_get_valid(png, info, PNG_INFO_tRNS))
-    png_set_tRNS_to_alpha(png);
+  if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
 
   // These color types don't have an alpha channel so we fill it with 0xff
-  if (colorType == PNG_COLOR_TYPE_RGB ||
-      colorType == PNG_COLOR_TYPE_GRAY ||
+  if (colorType == PNG_COLOR_TYPE_RGB || colorType == PNG_COLOR_TYPE_GRAY ||
       colorType == PNG_COLOR_TYPE_PALETTE)
     png_set_filler(png, 0xff, PNG_FILLER_AFTER);
 
@@ -98,8 +97,7 @@ bool RawImage::Load(const std::string &path, bool flip) {
   int rowBytes = png_get_rowbytes(png, info);
   png_bytep rowPointers[size.y];
 
-  for (int y = 0; y < size.y; y++)
-    rowPointers[y] = new png_byte[rowBytes];
+  for (int y = 0; y < size.y; y++) rowPointers[y] = new png_byte[rowBytes];
 
   png_read_image(png, rowPointers);
 
@@ -116,8 +114,7 @@ bool RawImage::Load(const std::string &path, bool flip) {
       memcpy(tmp + (rowBytes * row), rowPointers[i], rowBytes);
       delete[] rowPointers[i];
     }
-  }
-  else {
+  } else {
     for (int i = 0; i < size.y; i++) {
       memcpy(tmp + (rowBytes * i), rowPointers[i], rowBytes);
       delete[] rowPointers[i];
