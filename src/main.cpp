@@ -109,6 +109,7 @@ static int HandlePackage(const LoadInfo &info) {
 
   if (info.test || info.testRecursive) {
     Package::TestOptions to;
+    to.args = info.args;
     to.compileTests = info.compile;
     to.recursive = info.testRecursive;
     to.quiet = info.quiet;

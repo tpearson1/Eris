@@ -48,6 +48,15 @@ public:
     callbackList.push_front(func);
     return std::begin(callbackList);
   }
+
+  using iterator = typename FunctionList::iterator;
+  using const_iterator = typename FunctionList::const_iterator;
+
+  iterator begin() { return std::begin(callbackList); }
+  const_iterator begin() const { return std::begin(callbackList); }
+
+  iterator end() { return std::end(callbackList); }
+  const_iterator end() const { return std::end(callbackList); }
 };
 } // namespace Detail
 

@@ -256,7 +256,7 @@ static bool CompileTest(const Package *package, bool quiet) {
   return !result;
 }
 
-static bool RunTest(const std::string &packageName, bool quiet) {
+static bool RunTest(const std::string &packageName, bool quiet, const std::vector<std::string> &args) {
   auto file = "mods/" + packageName + "/tests/tests";
   auto testsPresent = File::Exists(file);
   if (!testsPresent) {
@@ -268,7 +268,12 @@ static bool RunTest(const std::string &packageName, bool quiet) {
   if (!quiet)
     std::clog << TermColor::FG_GREEN << "-- Running Tests for '" << packageName << '\'' << TermColor::FG_DEFAULT << '\n';
 
-  auto result = File::Exists(file) ? WEXITSTATUS(std::system((::buildPath + file).c_str())) : 0;
+  std::ostringstream command;
+  command << ::buildPath << file;
+  command << ' ';
+  for (const auto &arg : args) command << arg;
+
+  auto result = File::Exists(file) ? WEXITSTATUS(std::system(command.str().c_str())) : 0;
 
   if (!quiet)
     std::clog << TermColor::FG_GREEN << "-- Finished Running Tests for '" << packageName << '\'' << TermColor::FG_DEFAULT << '\n';
@@ -308,11 +313,11 @@ bool Package::Test(const TestOptions &options) {
 
   if (options.recursive) {
     for (auto &it : loaded) {
-      if (!RunTest(it.second->name, options.quiet))
+      if (!RunTest(it.second->name, options.quiet, options.args))
         return false;
     }
   }
-  else if (!RunTest(name, options.quiet))
+  else if (!RunTest(name, options.quiet, options.args))
     return false;
 
   return true;

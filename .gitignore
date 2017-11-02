@@ -4,6 +4,7 @@
 *.so
 /load
 build
+/mods/**/test/tests
 
 # Temporary or configuration files/directories
 *~

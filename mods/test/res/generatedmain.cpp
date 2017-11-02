@@ -24,6 +24,5 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <test/test.h>
-
-GENERATE_TEST_MAIN(1)
+#define CATCH_CONFIG_MAIN
+#include <catch.hpp>

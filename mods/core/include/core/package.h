@@ -166,6 +166,7 @@ public:
   bool Run(const RunOptions &options);
 
   struct TestOptions {
+    std::vector<std::string> args;
     bool compileTests = true;
     bool recursive = false;
     bool quiet = false;
