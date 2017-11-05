@@ -18,6 +18,9 @@ all: $(TARGET)
 	@: # Prevent make from outputting 'Nothing to be done for...'
 
 generatedmain.o: generatedmain.cpp
+ifndef SILENT
+	$(info Compiling test runner)
+endif
 	g++ $(CXXFLAGS) -I../include -c -MMD $< -o $@
 
 $(BUILD_DIR)/%.cpp.o: $(MOD_PATH)/tests/%.cpp

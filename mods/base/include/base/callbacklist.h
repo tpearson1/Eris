@@ -57,6 +57,8 @@ public:
 
   iterator end() { return std::end(callbackList); }
   const_iterator end() const { return std::end(callbackList); }
+
+  auto Size() const { return callbackList.size(); }
 };
 } // namespace Detail
 
@@ -99,6 +101,12 @@ class CallbackList<FuncSig, true> : public Detail::CallbackListBase<FuncSig> {
 
   bool inCallAll = false;
 
+  void UnregisterPending() {
+    for (auto reg : toUnregister)
+      this->callbackList.erase(reg);
+    toUnregister.clear();
+  }
+
 public:
   template <typename... Args>
   void CallAll(Args &&... args) {
@@ -108,12 +116,6 @@ public:
     inCallAll = false;
 
     UnregisterPending();
-  }
-
-  void UnregisterPending() {
-    for (auto reg : toUnregister)
-      this->callbackList.erase(reg);
-    toUnregister.clear();
   }
 
   void Unregister(typename Base::Registration registration) {

@@ -15,5 +15,4 @@ cat <<EOF > $test_dir/$1.cpp
 
 TEST_CASE("always successful") {
 }
-
 EOF
