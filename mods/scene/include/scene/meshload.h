@@ -56,12 +56,12 @@ struct MeshData {
   MeshData(const aiMesh *mesh) { Load(mesh); }
   MeshData(const std::string &path) { Load(path); }
 
-  NMesh *GenerateNMesh(const std::shared_ptr<const Shader> &shader,
+  NMesh *GenerateNMesh(const std::shared_ptr<Shader> &shader,
                        const std::shared_ptr<SingleConfigType> &mr,
                        unsigned instanceCount);
 
   std::unique_ptr<InstancedMesh>
-  GenerateInstancedMesh(const std::shared_ptr<const Shader> &shader,
+  GenerateInstancedMesh(const std::shared_ptr<Shader> &shader,
                         const std::shared_ptr<InstancedConfigType> &mr,
                         unsigned instanceCount);
 

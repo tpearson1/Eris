@@ -37,9 +37,9 @@ class Drawable {
 
 public:
   Drawable() = default;
-  Drawable(const std::shared_ptr<const Shader> &s) { Register(s); }
+  Drawable(const std::shared_ptr<Shader> &s) { Register(s); }
 
-  void Register(const std::shared_ptr<const Shader> &s);
+  void Register(const std::shared_ptr<Shader> &s);
 
   Drawable(const Drawable &other);
   Drawable &operator=(const Drawable &other);
@@ -47,17 +47,14 @@ public:
   Drawable(Drawable &&other);
   Drawable &operator=(Drawable &&other);
 
-  bool GetVisible() const {
-    return registration.GetRenderData().visible;
-  }
+  bool GetVisible() const { return registration.GetRenderData().visible; }
 
   void SetVisible(bool visible) { registration.SetRenderData({visible}); }
 
-  std::shared_ptr<const Shader> GetShader() const {
-    return registration.GetShader();
-  };
+  Shader *GetShader() { return registration.GetShader(); };
+  const Shader *GetShader() const { return registration.GetShader(); };
 
-  void SetShader(const std::shared_ptr<const Shader> &s) {
+  void SetShader(const std::shared_ptr<Shader> &s) {
     registration.ChangeShader(s);
   }
 

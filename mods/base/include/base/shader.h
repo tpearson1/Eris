@@ -46,7 +46,7 @@ class Shader {
    * The current shader. May not be accurate if someone directly called
    * glUseProgram and not through this class
    */
-  static const Shader *current;
+  static Shader *current;
 
 public:
   using Definitions = std::unordered_map<std::string, std::string>;
@@ -71,167 +71,167 @@ assert(valid);\
 assert(owner == Shader::Current());
 #endif // ifdef NDEBUG
 
-    void Set(GLfloat v) const {
+    void Set(GLfloat v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1f(location, v);
     }
 
-    void Set(Vec2 v) const {
+    void Set(Vec2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2f(location, v.x, v.y);
     }
 
-    void Set(Vec3 v) const {
+    void Set(Vec3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3f(location, v.x, v.y, v.z);
     }
 
-    void Set(Vec4 v) const {
+    void Set(Vec4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4f(location, v.x, v.y, v.z, v.w);
     }
 
-    void Set(GLint v) const {
+    void Set(GLint v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1i(location, v);
     }
 
-    void Set(IVec2 v) const {
+    void Set(IVec2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2i(location, v.x, v.y);
     }
 
-    void Set(IVec3 v) const {
+    void Set(IVec3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3i(location, v.x, v.y, v.z);
     }
 
-    void Set(IVec4 v) const {
+    void Set(IVec4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4i(location, v.x, v.y, v.z, v.w);
     }
 
-    void Set(GLuint v) const {
+    void Set(GLuint v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1ui(location, v);
     }
 
-    void Set(UVec2 v) const {
+    void Set(UVec2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2ui(location, v.x, v.y);
     }
 
-    void Set(UVec3 v) const {
+    void Set(UVec3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3ui(location, v.x, v.y, v.z);
     }
 
-    void Set(UVec4 v) const {
+    void Set(UVec4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4ui(location, v.x, v.y, v.z, v.w);
     }
 
-    void Set1(GLsizei count, const GLfloat *v) const {
+    void Set1(GLsizei count, const GLfloat *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1fv(location, count, v);
     }
 
-    void Set2(GLsizei count, const GLfloat *v) const {
+    void Set2(GLsizei count, const GLfloat *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2fv(location, count, v);
     }
 
-    void Set3(GLsizei count, const GLfloat *v) const {
+    void Set3(GLsizei count, const GLfloat *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3fv(location, count, v);
     }
 
-    void Set4(GLsizei count, const GLfloat *v) const {
+    void Set4(GLsizei count, const GLfloat *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4fv(location, count, v);
     }
 
-    void Set1(GLsizei count, const GLint *v) const {
+    void Set1(GLsizei count, const GLint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1iv(location, count, v);
     }
 
-    void Set2(GLsizei count, const GLint *v) const {
+    void Set2(GLsizei count, const GLint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2iv(location, count, v);
     }
 
-    void Set3(GLsizei count, const GLint *v) const {
+    void Set3(GLsizei count, const GLint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3iv(location, count, v);
     }
 
-    void Set4(GLsizei count, const GLint *v) const {
+    void Set4(GLsizei count, const GLint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4iv(location, count, v);
     }
 
-    void Set1(GLsizei count, const GLuint *v) const {
+    void Set1(GLsizei count, const GLuint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform1uiv(location, count, v);
     }
 
-    void Set2(GLsizei count, const GLuint *v) const {
+    void Set2(GLsizei count, const GLuint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform2uiv(location, count, v);
     }
 
-    void Set3(GLsizei count, const GLuint *v) const {
+    void Set3(GLsizei count, const GLuint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform3uiv(location, count, v);
     }
 
-    void Set4(GLsizei count, const GLuint *v) const {
+    void Set4(GLsizei count, const GLuint *v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniform4uiv(location, count, v);
     }
 
-    void SetMatrix2(GLsizei count, GLboolean transpose, Mat2 v) const {
+    void SetMatrix2(GLsizei count, GLboolean transpose, Mat2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix2fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix3(GLsizei count, GLboolean transpose, Mat3 v) const {
+    void SetMatrix3(GLsizei count, GLboolean transpose, Mat3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix3fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix4(GLsizei count, GLboolean transpose, Mat4 v) const {
+    void SetMatrix4(GLsizei count, GLboolean transpose, Mat4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix4fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix2x3(GLsizei count, GLboolean transpose, Mat2x3 v) const {
+    void SetMatrix2x3(GLsizei count, GLboolean transpose, Mat2x3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix2x3fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix3x2(GLsizei count, GLboolean transpose, Mat3x2 v) const {
+    void SetMatrix3x2(GLsizei count, GLboolean transpose, Mat3x2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix3x2fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix2x4(GLsizei count, GLboolean transpose, Mat2x4 v) const {
+    void SetMatrix2x4(GLsizei count, GLboolean transpose, Mat2x4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix2x4fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix4x2(GLsizei count, GLboolean transpose, Mat4x2 v) const {
+    void SetMatrix4x2(GLsizei count, GLboolean transpose, Mat4x2 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix4x2fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix3x4(GLsizei count, GLboolean transpose, Mat3x4 v) const {
+    void SetMatrix3x4(GLsizei count, GLboolean transpose, Mat3x4 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix3x4fv(location, count, transpose, &v[0][0]);
     }
 
-    void SetMatrix4x3(GLsizei count, GLboolean transpose, Mat4x3 v) const {
+    void SetMatrix4x3(GLsizei count, GLboolean transpose, Mat4x3 v) {
       SHADER_UNIFORM_SET_ASSERTS
       glUniformMatrix4x3fv(location, count, transpose, &v[0][0]);
     }
@@ -260,7 +260,7 @@ assert(owner == Shader::Current());
    * @param name The name of the variable
    * @returns a handle to the uniform
    */
-  Uniform GetUniform(const std::string &name) const {
+  Uniform GetUniform(const std::string &name) {
     auto loc = glGetUniformLocation(id, name.c_str());
     // If the location is -1, the uniform name is not a uniform variable name in
     // the shader.
@@ -277,13 +277,13 @@ assert(owner == Shader::Current());
   /*
    * Makes this shader active
    */
-  void Use() const {
+  void Use() {
     current = this;
     glUseProgram(id);
   }
 
   bool IsCurrent() const { return current == this; }
-  static const Shader *Current() { return current; }
+  static Shader *Current() { return current; }
 };
 
 template <>

@@ -55,12 +55,12 @@ struct AddTransformation : public ConfigBase {
     SetupAddTransformation(matrices);
   }
 
-  virtual void GetUniforms(const Shader *s) override {
+  virtual void GetUniforms(Shader &s) override {
     ConfigBase::GetUniforms(s);
-    vpUniform = s->GetUniform("VP");
+    vpUniform = s.GetUniform("VP");
   }
 
-  virtual void PreRender() const override {
+  virtual void PreRender() override {
     ConfigBase::PreRender();
 
     auto camera = NCamera::active;
@@ -84,7 +84,7 @@ struct AddTransformation : public ConfigBase {
 private:
   Shader::Uniform vpUniform;
 };
-}
-}
+} // namespace Instanced
+} // namespace MeshRenderConfigs
 
 #endif // _SCENE__INSTANCED_MESH_CONFIG_H

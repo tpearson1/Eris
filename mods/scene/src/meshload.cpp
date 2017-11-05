@@ -33,8 +33,9 @@ SOFTWARE.
 #include <test/macros.h>
 
 NMesh *
-MeshData::GenerateNMesh(const std::shared_ptr<const Shader> &shader,
+MeshData::GenerateNMesh(const std::shared_ptr<Shader> &shader,
                         const std::shared_ptr<MeshData::SingleConfigType> &mr,
+
                         unsigned instanceCount) {
   if (!successful) return nullptr;
 
@@ -50,7 +51,7 @@ MeshData::GenerateNMesh(const std::shared_ptr<const Shader> &shader,
 }
 
 std::unique_ptr<InstancedMesh> MeshData::GenerateInstancedMesh(
-    const std::shared_ptr<const Shader> &shader,
+    const std::shared_ptr<Shader> &shader,
     const std::shared_ptr<MeshData::InstancedConfigType> &mr,
     unsigned instanceCount) {
   if (!successful) return nullptr;

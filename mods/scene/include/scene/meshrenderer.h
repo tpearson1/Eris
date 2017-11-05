@@ -38,19 +38,16 @@ class MeshRenderer {
 protected:
   std::vector<VertexAttribute> vertexAttributes;
 
-  virtual void GetUniforms(const Shader *) {}
+  virtual void GetUniforms(Shader &) {}
 
 public:
   const Mesh *GetMesh() { return mesh.get(); }
 
   void SetMeshAndSetupAttributes(std::unique_ptr<Mesh> _mesh);
 
-  void SetShader(const Shader *s) {
-    assert(s);
-    GetUniforms(s);
-  }
+  void SetShader(Shader &s) { GetUniforms(s); }
 
-  virtual void PreRender() const {}
+  virtual void PreRender() {}
 
   void Draw() { mesh->Draw(); }
 

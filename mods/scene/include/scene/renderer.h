@@ -38,7 +38,7 @@ class Renderer {
   using RenderFunction = std::function<void()>;
   using RenderPair = std::pair<RenderFunction, RenderData>;
 
-  std::unordered_map<const Shader *, std::list<RenderPair>> renderItems;
+  std::unordered_map<Shader *, std::list<RenderPair>> renderItems;
 
   // Used for debug purposes to check that a 'Registration' is not unregistered
   // during a 'Render'
@@ -48,7 +48,7 @@ class Renderer {
 
 public:
   class Registration {
-    std::shared_ptr<const Shader> shader;
+    std::shared_ptr<Shader> shader;
     using It = typename std::list<RenderPair>::iterator;
     std::unique_ptr<It> it;
     Renderer *renderer;
@@ -87,8 +87,9 @@ public:
       (*it)->second = changed;
     }
 
-    std::shared_ptr<const Shader> GetShader() const { return shader; }
-    void ChangeShader(const std::shared_ptr<const Shader> &changed);
+    Shader *GetShader() { return shader.get(); }
+    const Shader *GetShader() const { return shader.get(); }
+    void ChangeShader(const std::shared_ptr<Shader> &changed);
 
     bool Registered() const { return static_cast<bool>(it); }
 
@@ -108,8 +109,7 @@ public:
 
   // A single class instance SHOULD NOT register two functions with the same
   // RenderData object!
-  void Register(Registration &registration,
-                const std::shared_ptr<const Shader> &s);
+  void Register(Registration &registration, const std::shared_ptr<Shader> &s);
 
   void Render();
 };

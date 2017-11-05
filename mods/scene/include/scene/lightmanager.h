@@ -73,15 +73,13 @@ public:
                                    const struct LightingConfig &lightingConfig);
 };
 
-struct NLight : public NNode {
-  virtual void SetUniformData(const std::string &prefix) const = 0;
-};
+struct NLight : public NNode {};
 
 class NPointLight : public NLight {
   LightManager::PointLightRegistration registration;
 
 public:
-  virtual void SetUniformData(const std::string &prefix) const override;
+  void SetUniformData(const std::string &prefix) const;
 
   Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
   float constant = 1.0f, linear, quadratic;
@@ -102,7 +100,7 @@ class NDirectionalLight : public NLight {
   LightManager::DirectionalLightRegistration registration;
 
 public:
-  virtual void SetUniformData(const std::string &prefix) const override;
+  void SetUniformData(const std::string &prefix) const;
 
   Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
 

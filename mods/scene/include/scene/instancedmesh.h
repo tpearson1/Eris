@@ -34,12 +34,12 @@ class InstancedMesh : public Drawable {
   std::shared_ptr<MeshRenderer> meshRenderer;
 
 public:
-  InstancedMesh(const std::shared_ptr<const Shader> &s) : Drawable(s) {}
+  InstancedMesh(const std::shared_ptr<Shader> &s) : Drawable(s) {}
 
   MeshRenderer *GetMeshRenderer() const { return meshRenderer.get(); }
   void SetMeshRenderer(std::shared_ptr<MeshRenderer> mr) {
     meshRenderer = mr;
-    meshRenderer->SetShader(GetShader().get());
+    meshRenderer->SetShader(*GetShader());
   }
 
   virtual void Draw() const override;

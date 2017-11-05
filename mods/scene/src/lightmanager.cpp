@@ -99,7 +99,7 @@ void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Wr
 }
 
 void LightManager::SetDirectionalLights(const LightingConfig &config) {
-  const auto *s = Shader::Current();
+  auto s = Shader::Current();
   assert(s);
 
   // The variables we would set should not be present in the shader
@@ -117,7 +117,7 @@ void LightManager::SetDirectionalLights(const LightingConfig &config) {
 }
 
 void LightManager::SetPointLights(Vec3 location, const LightingConfig &config) {
-  const auto *s = Shader::Current();
+  auto s = Shader::Current();
   assert(s);
 
   // The variables we would set should not be present in the shader
@@ -142,7 +142,7 @@ void LightManager::SetPointLights(Vec3 location, const LightingConfig &config) {
 
 void LightManager::SetUniformsForClosestLights(Vec3 location,
                                                const LightingConfig &config) {
-  const auto *s = Shader::Current();
+  auto s = Shader::Current();
   assert(s);
 
   assert(NCamera::active);

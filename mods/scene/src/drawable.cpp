@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <drawable.h>
 
-void Drawable::Register(const std::shared_ptr<const Shader> &s) {
+void Drawable::Register(const std::shared_ptr<Shader> &s) {
   assert(Renderer::active);
   Renderer::active->Register(registration, s);
   registration.SetDrawFunction([this] { Draw(); });

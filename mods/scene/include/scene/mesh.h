@@ -42,10 +42,10 @@ public:
   ConfigType *GetMeshRenderer() const { return meshRenderer.get(); }
   void SetMeshRenderer(const std::shared_ptr<ConfigType> &mr) {
     meshRenderer = mr;
-    mr->SetShader(GetShader().get());
+    mr->SetShader(*GetShader());
   }
 
-  NMesh(const std::shared_ptr<const Shader> &s) : Drawable(s) {}
+  NMesh(const std::shared_ptr<Shader> &s) : Drawable(s) {}
 
   virtual void Draw() const override;
 };

@@ -32,7 +32,7 @@ SOFTWARE.
 #include <shader.h>
 #include <sstream>
 
-const Shader *Shader::current;
+Shader *Shader::current;
 
 void JSONImpl<Shader::Settings>::Write(const Shader::Settings &value,
                                        JSON::Writer &writer) {

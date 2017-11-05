@@ -68,11 +68,11 @@ struct Standard : public ConfigBase {
 };
 
 struct Single : public MeshRenderer {
-  virtual void GetUniforms(const Shader *s) override {
-    mvpUniform = s->GetUniform("MVP");
+  virtual void GetUniforms(Shader &s) override {
+    mvpUniform = s.GetUniform("MVP");
   }
 
-  virtual void PreRender() const override {
+  virtual void PreRender() override {
     auto mvp = NCamera::active->Matrix(globalTransform.Matrix());
     mvpUniform.SetMatrix4(1, GL_FALSE, mvp);
   }
@@ -128,14 +128,14 @@ struct AddTextures : public ConfigBase {
   template <typename... Args>
   AddTextures(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
-  virtual void GetUniforms(const Shader *s) override {
+  virtual void GetUniforms(Shader &s) override {
     ConfigBase::GetUniforms(s);
     textureUniforms.reserve(textures.size());
     for (auto &pair : textures)
-      textureUniforms.push_back(s->GetUniform(pair.uniform));
+      textureUniforms.push_back(s.GetUniform(pair.uniform));
   }
 
-  virtual void PreRender() const override {
+  virtual void PreRender() override {
     ConfigBase::PreRender();
 
     for (std::size_t i = 0; i < textureUniforms.size(); i++) {
@@ -165,14 +165,14 @@ struct MakeLit : public ConfigBase {
   template <typename... Args>
   MakeLit(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
 
-  virtual void GetUniforms(const Shader *s) override {
+  virtual void GetUniforms(Shader &s) override {
     ConfigBase::GetUniforms(s);
-    specularUniform = s->GetUniform("material.specular");
-    shininessUniform = s->GetUniform("material.shininess");
-    modelUniform = s->GetUniform("model");
+    specularUniform = s.GetUniform("material.specular");
+    shininessUniform = s.GetUniform("material.shininess");
+    modelUniform = s.GetUniform("model");
   }
 
-  virtual void PreRender() const override {
+  virtual void PreRender() override {
     ConfigBase::PreRender();
 
     const auto t = this->GetGlobalTransform();

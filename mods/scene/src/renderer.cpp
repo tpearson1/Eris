@@ -33,7 +33,7 @@ SOFTWARE.
 Renderer *Renderer::active = nullptr;
 
 void Renderer::Registration::UnregisterUnchecked() {
-  // A renderable object should not unregister itself during the render process
+// A renderable object should not unregister itself during the render process
 #ifndef NDEBUG
   assert(!renderer->currentlyRendering);
 #endif
@@ -52,7 +52,8 @@ void Renderer::Registration::UnregisterUnchecked() {
   it = nullptr;
 }
 
-void Renderer::Registration::CreateFrom(const Registration &other, RenderFunction newRenderFunc) {
+void Renderer::Registration::CreateFrom(const Registration &other,
+                                        RenderFunction newRenderFunc) {
   if (this == &other) return;
   if (Registered()) UnregisterUnchecked();
 
@@ -61,7 +62,8 @@ void Renderer::Registration::CreateFrom(const Registration &other, RenderFunctio
   SetDrawFunction(newRenderFunc);
 }
 
-void Renderer::Registration::CreateFrom(Registration &&other, RenderFunction newRenderFunc) {
+void Renderer::Registration::CreateFrom(Registration &&other,
+                                        RenderFunction newRenderFunc) {
   if (this == &other) return;
   if (Registered()) UnregisterUnchecked();
 
@@ -73,7 +75,7 @@ void Renderer::Registration::CreateFrom(Registration &&other, RenderFunction new
 }
 
 void Renderer::Registration::ChangeShader(
-    const std::shared_ptr<const Shader> &changed) {
+    const std::shared_ptr<Shader> &changed) {
   assert(it);
   if (changed == shader) return;
 
@@ -90,7 +92,7 @@ void Renderer::Registration::ChangeShader(
 }
 
 void Renderer::Register(Renderer::Registration &registration,
-                        const std::shared_ptr<const Shader> &s) {
+                        const std::shared_ptr<Shader> &s) {
   registration.SetRenderer(this);
   registration.shader = s;
 
@@ -104,7 +106,7 @@ void Renderer::Render() {
   currentlyRendering = true;
 #endif
   for (auto &group : renderItems) {
-    const auto shader = group.first;
+    auto shader = group.first;
     const auto &list = group.second;
     assert(shader);
     shader->Use();
