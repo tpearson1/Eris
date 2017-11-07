@@ -29,7 +29,7 @@ SOFTWARE.
 #include <game/spectatorcamera.h>
 #include <game/game.h>
 #include <scene/camera.h>
-#include <scene/lightmanager.h>
+#include <scene/pointlight.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
 #include <scene/scene.h>

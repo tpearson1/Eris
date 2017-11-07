@@ -24,10 +24,12 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#include <camera.h>
-#include <lightmanager.h>
-#include <meshload.h>
 #include <scene.h>
+
+#include <camera.h>
+#include <directionallight.h>
+#include <meshload.h>
+#include <pointlight.h>
 #include <tagmanager.h>
 
 void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value,
@@ -46,9 +48,10 @@ void JSONImpl<Scene>::Read(Scene &out, const JSON::Value &value,
   for (auto it = nodesArr.Begin(); it != nodesArr.End(); it++) {
     const auto type = JSON::Read<std::string>(*it, data);
 
-    JSON::ParseAssert(++it != nodesArr.End(), data, "Member 'nodes' in 'Scene' "
-                                                    "object must have data "
-                                                    "after each type string");
+    JSON::ParseAssert(++it != nodesArr.End(), data,
+                      "Member 'nodes' in 'Scene' "
+                      "object must have data "
+                      "after each type string");
 
     const auto funcIt = data.typeManager->find(type);
     if (funcIt == std::end(*data.typeManager)) {

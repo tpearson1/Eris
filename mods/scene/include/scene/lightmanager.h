@@ -73,49 +73,6 @@ public:
                                    const struct LightingConfig &lightingConfig);
 };
 
-struct NLight : public NNode {};
-
-class NPointLight : public NLight {
-  LightManager::PointLightRegistration registration;
-
-public:
-  void SetUniformData(const std::string &prefix) const;
-
-  Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
-  float constant = 1.0f, linear, quadratic;
-
-  void Register(LightManager &manager) {
-    registration = manager.Register(this);
-  }
-};
-
-template <>
-struct JSONImpl<NPointLight> {
-  static void Read(NPointLight &out, const JSON::Value &value,
-                   const JSON::ReadData &data);
-  static void Write(const NPointLight &value, JSON::Writer &writer);
-};
-
-class NDirectionalLight : public NLight {
-  LightManager::DirectionalLightRegistration registration;
-
-public:
-  void SetUniformData(const std::string &prefix) const;
-
-  Vec3 ambient = Vec3::one * 0.1f, diffuse, specular;
-
-  void Register(LightManager &manager) {
-    registration = manager.Register(this);
-  }
-};
-
-template <>
-struct JSONImpl<NDirectionalLight> {
-  static void Read(NDirectionalLight &out, const JSON::Value &value,
-                   const JSON::ReadData &data);
-  static void Write(const NDirectionalLight &value, JSON::Writer &writer);
-};
-
 struct LightingConfig {
   LightManager::DirSizeType maxDirectionalLights;
   LightManager::PointSizeType maxPointLights;

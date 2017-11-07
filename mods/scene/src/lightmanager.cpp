@@ -25,78 +25,14 @@ SOFTWARE.
 */
 
 #include <lightmanager.h>
+
+#include <pointlight.h>
+#include <directionallight.h>
+
 #include <base/shader.h>
 #include <scene/camera.h>
 
 std::unique_ptr<LightManager> LightManager::active;
-
-void NPointLight::SetUniformData(const std::string &prefix) const {
-  auto s = Shader::Current();
-  s->GetUniform(prefix + ".location").Set(transform.Location());
-  s->GetUniform(prefix + ".ambient").Set(ambient);
-  s->GetUniform(prefix + ".diffuse").Set(diffuse);
-  s->GetUniform(prefix + ".specular").Set(specular);
-  s->GetUniform(prefix + ".constant").Set(constant);
-  s->GetUniform(prefix + ".linear").Set(linear);
-  s->GetUniform(prefix + ".quadratic").Set(quadratic);
-}
-
-void JSONImpl<NPointLight>::Read(NPointLight &out, const JSON::Value &value, const JSON::ReadData &data) {
-  auto t = Trace::Pusher{data.trace, "NPointLight"};
-  const auto &object = JSON::GetObject(value, data);
-
-  JSON::TryGetMember(out.ambient, "ambient", object, Vec3::one * 0.1f, data);
-  JSON::GetMember(out.diffuse, "diffuse", object, data);
-  JSON::GetMember(out.specular, "specular", object, data);
-  JSON::TryGetMember(out.constant, "constant", object, 1.0f,  data);
-  JSON::GetMember(out.linear, "linear", object, data);
-  JSON::GetMember(out.quadratic, "quadratic", object, data);
-
-  JSON::GetMember<NNode>(out, "NNode", object, data);
-
-  auto lightManager = LightManager::Active();
-  JSON::ParseAssert(lightManager, data, "Class 'LightManager' must have its static member 'active' set");
-  out.Register(*lightManager);
-}
-
-void JSONImpl<NPointLight>::Write(const NPointLight &value, JSON::Writer &writer) {
-  auto obj = JSON::ObjectEncloser{writer};
-  JSON::Write(static_cast<const NNode &>(value), writer);
-  JSON::WritePair("ambient", value.ambient, writer);
-  JSON::WritePair("diffuse", value.diffuse, writer);
-  JSON::WritePair("specular", value.specular, writer);
-  JSON::WritePair("constant", value.constant, writer);
-  JSON::WritePair("linear", value.linear, writer);
-  JSON::WritePair("quadratic", value.quadratic, writer);
-}
-
-void NDirectionalLight::SetUniformData(const std::string &prefix) const {
-  auto s = Shader::Current();
-  s->GetUniform(prefix + ".direction").Set(GlobalRotation() * Vec3::front);
-  s->GetUniform(prefix + ".ambient").Set(ambient);
-  s->GetUniform(prefix + ".diffuse").Set(diffuse);
-  s->GetUniform(prefix + ".specular").Set(specular);
-}
-
-void JSONImpl<NDirectionalLight>::Read(NDirectionalLight &out, const JSON::Value &value, const JSON::ReadData &data) {
-  auto t = Trace::Pusher{data.trace, "NDirectionalLight"};
-  const auto &object = JSON::GetObject(value, data);
-
-  JSON::TryGetMember(out.ambient, "ambient", object, Vec3::one * 0.1f, data);
-  JSON::GetMember(out.diffuse, "diffuse", object, data);
-  JSON::GetMember(out.specular, "specular", object, data);
-
-  auto lightManager = LightManager::Active();
-  JSON::ParseAssert(lightManager, data, "Class 'LightManager' must have its static member 'active' set");
-  out.Register(*lightManager);
-}
-
-void JSONImpl<NDirectionalLight>::Write(const NDirectionalLight &value, JSON::Writer &writer) {
-  auto obj = JSON::ObjectEncloser{writer};
-  JSON::WritePair("ambient", value.ambient, writer);
-  JSON::WritePair("diffuse", value.diffuse, writer);
-  JSON::WritePair("specular", value.specular, writer);
-}
 
 void LightManager::SetDirectionalLights(const LightingConfig &config) {
   auto s = Shader::Current();
