@@ -1,4 +1,4 @@
-CXXFLAGS:=-g -Og -Wall -Wextra -Wfatal-errors -fpic
+CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Wfatal-errors -fpic
 INCLUDE_DIRS:=$(INCLUDE) -I$(MOD)/include/$(MOD) -I$(MOD)/include -I$(MOD)/src/include
 
 BUILD_DIR:=$(MOD)/build

@@ -27,11 +27,14 @@ SOFTWARE.
 #ifndef _SCENE__MESH_CONFIG_H
 #define _SCENE__MESH_CONFIG_H
 
-#include <base/resources.h>
-#include <base/texture.h>
+#include <tuple>
+
 #include <scene/camera.h>
 #include <scene/lightmanager.h>
 #include <scene/meshrenderer.h>
+
+#include <base/resources.h>
+#include <base/texture.h>
 #include <test/macros.h>
 
 namespace MeshRenderConfigs {
@@ -86,8 +89,8 @@ private:
   Shader::Uniform mvpUniform;
 };
 
-using Generator = std::shared_ptr<Standard<Single>> (*)(
-    const JSON::Value &, const JSON::ReadData &);
+using Generator = std::shared_ptr<Standard<Single>> (*)(const JSON::Value &,
+                                                        const JSON::ReadData &);
 
 extern std::unordered_map<std::string, Generator> configurationGenerators;
 
@@ -95,7 +98,8 @@ IS_VALID_EXPR(HasReadStaticMemberFunction, Type::Read)
 
 template <typename ConfigType>
 Generator MakeGenerator() {
-  return [](const auto &value, const auto &data) -> std::shared_ptr<Standard<Single>> {
+  return [](const auto &value,
+            const auto &data) -> std::shared_ptr<Standard<Single>> {
     auto c = std::make_shared<ConfigType>();
     static_assert(HasReadStaticMemberFunction<ConfigType>::value,
                   "Must have static member 'Read' to use 'MakeGenerator'");
@@ -103,17 +107,6 @@ Generator MakeGenerator() {
     return c;
   };
 }
-
-// TODO: Refactor for if constexpr when updating to C++17
-template <typename T>
-inline std::enable_if_t<HasReadStaticMemberFunction<T>::value>
-TryCallRead(T &in, const JSON::Value &value, const JSON::ReadData &data) {
-  T::Read(in, value, data);
-}
-
-template <typename T>
-inline std::enable_if_t<!HasReadStaticMemberFunction<T>::value>
-TryCallRead(T &, const JSON::Value &, const JSON::ReadData &) {}
 
 struct NamedTexturePair {
   std::string uniform;
@@ -151,7 +144,8 @@ struct AddTextures : public ConfigBase {
         Trace::Pusher{data.trace, "MeshRenderConfigs::AddTextures<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data);
+    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
+      ConfigBase::Read(in, value, data);
     JSON::GetMember(in.textures, "textures", object, data);
   }
 };
@@ -179,7 +173,7 @@ struct MakeLit : public ConfigBase {
 
     assert(LightManager::Active());
     LightManager::Active()->SetUniformsForClosestLights(t.Location(),
-                                                      *lightingConfig);
+                                                        *lightingConfig);
 
     specularUniform.Set(specular);
     shininessUniform.Set(shininess);
@@ -191,7 +185,8 @@ struct MakeLit : public ConfigBase {
     auto t = Trace::Pusher{data.trace, "MeshRenderConfigs::MakeLit<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data);
+    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
+      ConfigBase::Read(in, value, data);
 
     JSON::GetMember(in.specular, "specular", object, data);
     JSON::GetMember(in.shininess, "shininess", object, data);
@@ -205,7 +200,7 @@ struct MakeLit : public ConfigBase {
 private:
   Shader::Uniform specularUniform, shininessUniform, modelUniform;
 };
-}
+} // namespace MeshRenderConfigs
 
 template <>
 struct JSONImpl<MeshRenderConfigs::NamedTexturePair> {

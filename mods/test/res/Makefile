@@ -2,7 +2,7 @@ MOD_PATH:=../../$(MOD)
 BUILD_DIR:=$(MOD_PATH)/tests/build
 
 INCLUDE_DIRS:=$(INCLUDE) -I../include -I$(MOD_PATH)/include/$(MOD) -I$(MOD_PATH)/include
-CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors
+CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Werror -Wfatal-errors
 LINK_FLAGS:=-Wall
 
 SOURCES:=$(wildcard $(MOD_PATH)/tests/**/*.cpp $(MOD_PATH)/tests/*.cpp)

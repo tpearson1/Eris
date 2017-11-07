@@ -50,10 +50,6 @@ SOFTWARE.
   #define COUNTER __LINE__
 #endif
 
-// Used in template metaprogramming with SFINAE
-template <typename... Exprs>
-using Void = void;
-
 /*
  * Sometimes helpful when using a comma confuses the preprocesssor
  */
@@ -79,7 +75,7 @@ using Void = void;
 template <typename Type, typename = void>\
 struct name : public std::false_type {};\
 template <typename Type>\
-struct name<Type, Void<decltype(expr)>> : public std::true_type {};
+struct name<Type, std::void_t<decltype(expr)>> : public std::true_type {};
 
 /*
  * Suffixes 'str' with a counter, to create an anonymous variable.

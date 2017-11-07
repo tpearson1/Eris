@@ -1,4 +1,4 @@
-CXXFLAGS:=-g -Og -Wall -Wextra -Werror -Wfatal-errors -Isrc/include -Imods/core/include
+CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Werror -Wfatal-errors -Isrc/include -Imods/core/include
 LDFLAGS:=-Wall
 LIBS:=mods/core/libcore.so
 

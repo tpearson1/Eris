@@ -74,7 +74,8 @@ struct AddTransformation : public ConfigBase {
                            "MeshRenderConfigs::AddTransformation<T>::Read"};
     const auto &object = JSON::GetObject(value, data);
 
-    TryCallRead<ConfigBase>(in, value, data);
+    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
+      ConfigBase::Read(in, value, data);
 
     std::vector<Transform> transformations;
     JSON::GetMember(transformations, "transformations", object, data);

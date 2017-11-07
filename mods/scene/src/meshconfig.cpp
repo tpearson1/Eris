@@ -39,4 +39,3 @@ void JSONImpl<MeshRenderConfigs::NamedTexturePair>::Read(
   auto textureStr = JSON::GetMember<std::string>("texture", object, data);
   out.texture = Resources::active->textures.Get(textureStr);
 }
-
