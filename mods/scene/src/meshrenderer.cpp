@@ -30,6 +30,7 @@ void MeshRenderer::SetMeshAndSetupAttributes(std::unique_ptr<Mesh> _mesh) {
   mesh = std::move(_mesh);
   assert(mesh);
 
+  Setup();
   mesh->Setup([this] {
     for (auto &va : vertexAttributes) va.Setup();
   });

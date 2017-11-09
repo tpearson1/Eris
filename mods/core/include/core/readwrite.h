@@ -42,6 +42,8 @@ SOFTWARE.
 
 #include <core/trace.h>
 
+#include <test/macros.h>
+
 #ifndef FUNC_NAME
 #define FUNC_NAME __PRETTY_FUNTION__
 #endif
@@ -298,6 +300,20 @@ template <typename T>
 void Write(const T &value, Writer &writer) {
   JSONImpl<T>::Write(value, writer);
 }
+
+
+IS_VALID_EXPR(ImplementsReadImpl, JSONImpl<Type>::Read)
+IS_VALID_EXPR(ImplementsWriteImpl, JSONImpl<Type>::Write)
+
+/*
+ * These will be false for reference types because
+ * JSONImpl<T &> is not specialized by default
+ */
+template <typename T>
+inline constexpr bool implementsRead = ImplementsReadImpl<T>::value;
+
+template <typename T>
+inline constexpr bool implementsWrite = ImplementsWriteImpl<T>::value;
 
 /*
  * Write a JSON key-value pair

@@ -27,8 +27,6 @@ SOFTWARE.
 #ifndef _SCENE__MESH_CONFIG_H
 #define _SCENE__MESH_CONFIG_H
 
-#include <tuple>
-
 #include <scene/camera.h>
 #include <scene/lightmanager.h>
 #include <scene/meshrenderer.h>
@@ -38,50 +36,116 @@ SOFTWARE.
 #include <test/macros.h>
 
 namespace MeshRenderConfigs {
-template <typename ConfigBase>
-struct UV : public ConfigBase {
-  template <typename... Args>
-  UV(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
+IS_VALID_EXPR(ImplementsSetCompose, &Type::SetCompose)
+IS_VALID_EXPR(ImplementsGetUniforms, &Type::GetUniforms)
+IS_VALID_EXPR(ImplementsPreRender, &Type::PreRender)
+IS_VALID_EXPR(ImplementsSetup, &Type::Setup)
 
-  void SetupUV(const std::vector<GLfloat> &uvs) {
-    this->vertexAttributes.emplace_back(1, 2, 0, uvs);
+template <typename... Configs>
+class Compose : public MeshRenderer, public Configs... {
+  template <typename C>
+  void TryCallSetCompose() {
+    if constexpr (ImplementsSetCompose<C>::value)
+      static_cast<C *>(this)->SetCompose();
   }
-};
 
-template <typename ConfigBase>
-struct Normal : public ConfigBase {
-  template <typename... Args>
-  Normal(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
-
-  void SetupNormal(const std::vector<GLfloat> &normals) {
-    this->vertexAttributes.emplace_back(0, 3, 0, normals);
+  template <typename C>
+  void TryCallGetUniforms(Shader &s) {
+    if constexpr (ImplementsGetUniforms<C>::value)
+      static_cast<C *>(this)->GetUniforms(s);
   }
-};
 
-template <typename ConfigBase>
-struct Standard : public ConfigBase {
-  template <typename... Args>
-  Standard(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
-
-  void SetupStandard(const std::vector<GLfloat> &uvs,
-                     const std::vector<GLfloat> &normals) {
-    this->vertexAttributes.emplace_back(1, 2, 0, uvs);
-    this->vertexAttributes.emplace_back(2, 3, 0, normals);
+  template <typename C>
+  void TryCallPreRender() {
+    if constexpr (ImplementsPreRender<C>::value)
+      static_cast<C *>(this)->PreRender();
   }
-};
 
-struct Single : public MeshRenderer {
+  template <typename C>
+  void TryCallSetup() {
+    if constexpr (ImplementsSetup<C>::value)
+      static_cast<C *>(this)->Setup(vertexAttributes);
+  }
+
+public:
+  template <typename C>
+  auto &Get() {
+    return *static_cast<C *>(this);
+  }
+
+  template <typename C>
+  auto &Get() const {
+    return *static_cast<C *>(this);
+  }
+
+  IS_VALID_EXPR(CanGetImpl,
+                std::declval<Compose<Configs...>>().template Get<Type>())
+
+  template <typename Type>
+  static inline constexpr bool canGet = CanGetImpl<Type>::value;
+
+  template <typename Func>
+  void ForEach(Func func) {
+    (..., func(Get<Configs>()));
+  }
+
+  Compose() { (..., TryCallSetCompose<Configs>()); }
+
   virtual void GetUniforms(Shader &s) override {
-    mvpUniform = s.GetUniform("MVP");
+    (..., TryCallGetUniforms<Configs>(s));
   }
 
-  virtual void PreRender() override {
-    auto mvp = NCamera::active->Matrix(globalTransform.Matrix());
-    mvpUniform.SetMatrix4(1, GL_FALSE, mvp);
+  virtual void PreRender() override { (..., TryCallPreRender<Configs>()); }
+
+  virtual void Setup() override { (..., TryCallSetup<Configs>()); }
+};
+} // namespace MeshRenderConfigs
+
+template <typename... Configs>
+struct JSONImpl<MeshRenderConfigs::Compose<Configs...>> {
+  static void Read(MeshRenderConfigs::Compose<Configs...> &out,
+                   const JSON::Value &value, const JSON::ReadData &data) {
+    auto t =
+        Trace::Pusher{data.trace, "MeshRenderConfigs::Compose<Configs...>"};
+
+    out.ForEach([&](auto &config) {
+      using ConfigType = std::remove_reference_t<decltype(config)>;
+      if constexpr (JSON::implementsRead<ConfigType>)
+        JSONImpl<ConfigType>::Read(config, value, data);
+    });
   }
+};
+
+namespace MeshRenderConfigs {
+struct UV {
+  std::vector<GLfloat> uvs;
+  void Setup(std::vector<VertexAttribute> &attributes);
+};
+
+struct Normal {
+  std::vector<GLfloat> normals;
+  void Setup(std::vector<VertexAttribute> &attributes);
+};
+
+struct Standard {
+  std::vector<GLfloat> uvs, normals;
+  void Setup(std::vector<VertexAttribute> &attributes);
+};
+
+struct Single {
+  void GetUniforms(Shader &s) { mvpUniform = s.GetUniform("MVP"); }
+
+  void PreRender();
 
   const Transform &GetGlobalTransform() const { return globalTransform; }
   void SetGlobalTransform(const Transform &t) { globalTransform = t; }
+
+  template <typename... Configs>
+  static Single &Get(Compose<Configs...> &compose) {
+    static_assert(Compose<Configs...>::template canGet<Single>,
+                  "Cannot get class 'MeshRenderConfigs::Single'");
+    return compose.template Get<Single>();
+  }
 
 private:
   Transform globalTransform;
@@ -89,22 +153,26 @@ private:
   Shader::Uniform mvpUniform;
 };
 
-using Generator = std::shared_ptr<Standard<Single>> (*)(const JSON::Value &,
-                                                        const JSON::ReadData &);
+struct GeneratorReturn {
+  std::shared_ptr<MeshRenderer> meshRenderer;
+  Single &single;
+  Standard &standard;
+};
+
+using Generator = GeneratorReturn (*)(const JSON::Value &,
+                                      const JSON::ReadData &);
 
 extern std::unordered_map<std::string, Generator> configurationGenerators;
 
-IS_VALID_EXPR(HasReadStaticMemberFunction, Type::Read)
-
 template <typename ConfigType>
 Generator MakeGenerator() {
-  return [](const auto &value,
-            const auto &data) -> std::shared_ptr<Standard<Single>> {
+  static_assert(JSON::implementsRead<ConfigType>,
+                "Must implement 'JSONImpl<T>::Read' for type to use "
+                "'MakeGenerator'");
+  return [](const auto &value, const auto &data) -> GeneratorReturn {
     auto c = std::make_shared<ConfigType>();
-    static_assert(HasReadStaticMemberFunction<ConfigType>::value,
-                  "Must have static member 'Read' to use 'MakeGenerator'");
-    ConfigType::Read(*c, value, data);
-    return c;
+    JSONImpl<ConfigType>::Read(*c, value, data);
+    return {c, c->template Get<Single>(), c->template Get<Standard>()};
   };
 }
 
@@ -113,89 +181,30 @@ struct NamedTexturePair {
   std::shared_ptr<Texture> texture;
 };
 
-template <typename ConfigBase>
-struct AddTextures : public ConfigBase {
+struct Textures {
   std::vector<NamedTexturePair> textures;
   std::vector<Shader::Uniform> textureUniforms;
 
-  template <typename... Args>
-  AddTextures(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
+  void GetUniforms(Shader &s);
 
-  virtual void GetUniforms(Shader &s) override {
-    ConfigBase::GetUniforms(s);
-    textureUniforms.reserve(textures.size());
-    for (auto &pair : textures)
-      textureUniforms.push_back(s.GetUniform(pair.uniform));
-  }
-
-  virtual void PreRender() override {
-    ConfigBase::PreRender();
-
-    for (std::size_t i = 0; i < textureUniforms.size(); i++) {
-      glActiveTexture(GL_TEXTURE0 + i);
-      glBindTexture(GL_TEXTURE_2D, textures[i].texture->ID());
-      textureUniforms[i].Set(static_cast<GLint>(i));
-    }
-  }
-
-  static void Read(AddTextures &in, const JSON::Value &value,
-                   const JSON::ReadData &data) {
-    auto t =
-        Trace::Pusher{data.trace, "MeshRenderConfigs::AddTextures<T>::Read"};
-    const auto &object = JSON::GetObject(value, data);
-
-    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
-      ConfigBase::Read(in, value, data);
-    JSON::GetMember(in.textures, "textures", object, data);
-  }
+  void PreRender();
 };
 
-template <typename ConfigBase>
-struct MakeLit : public ConfigBase {
+struct Lit {
   std::shared_ptr<LightingConfig> lightingConfig;
   Vec3 specular = Vec3::one * 0.5f;
   float shininess = 32.0f;
 
-  template <typename... Args>
-  MakeLit(Args &&... args) : ConfigBase(std::forward<Args>(args)...) {}
+  Single *single = nullptr;
 
-  virtual void GetUniforms(Shader &s) override {
-    ConfigBase::GetUniforms(s);
-    specularUniform = s.GetUniform("material.specular");
-    shininessUniform = s.GetUniform("material.shininess");
-    modelUniform = s.GetUniform("model");
+  template <typename Composed>
+  void SetCompose(Composed &c) {
+    if constexpr (c.template canGet<Single>) single = &c.template Get<Single>();
   }
 
-  virtual void PreRender() override {
-    ConfigBase::PreRender();
+  void GetUniforms(Shader &s);
 
-    const auto t = this->GetGlobalTransform();
-
-    assert(LightManager::Active());
-    LightManager::Active()->SetUniformsForClosestLights(t.Location(),
-                                                        *lightingConfig);
-
-    specularUniform.Set(specular);
-    shininessUniform.Set(shininess);
-    modelUniform.SetMatrix4(1, false, t.Matrix());
-  }
-
-  static void Read(MakeLit &in, const JSON::Value &value,
-                   const JSON::ReadData &data) {
-    auto t = Trace::Pusher{data.trace, "MeshRenderConfigs::MakeLit<T>::Read"};
-    const auto &object = JSON::GetObject(value, data);
-
-    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
-      ConfigBase::Read(in, value, data);
-
-    JSON::GetMember(in.specular, "specular", object, data);
-    JSON::GetMember(in.shininess, "shininess", object, data);
-    in.lightingConfig = std::make_shared<LightingConfig>();
-    JSON::GetMember(in.lightingConfig->maxDirectionalLights, "max-dir-lights",
-                    object, data);
-    JSON::GetMember(in.lightingConfig->maxPointLights, "max-point-lights",
-                    object, data);
-  }
+  void PreRender();
 
 private:
   Shader::Uniform specularUniform, shininessUniform, modelUniform;
@@ -206,6 +215,18 @@ template <>
 struct JSONImpl<MeshRenderConfigs::NamedTexturePair> {
   static void Read(MeshRenderConfigs::NamedTexturePair &out,
                    const JSON::Value &value, const JSON::ReadData &data);
+};
+
+template <>
+struct JSONImpl<MeshRenderConfigs::Textures> {
+  static void Read(MeshRenderConfigs::Textures &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
+};
+
+template <>
+struct JSONImpl<MeshRenderConfigs::Lit> {
+  static void Read(MeshRenderConfigs::Lit &out, const JSON::Value &value,
+                   const JSON::ReadData &data);
 };
 
 #endif // _SCENE__MESH_CONFIG_H

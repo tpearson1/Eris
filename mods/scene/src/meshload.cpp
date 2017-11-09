@@ -32,39 +32,42 @@ SOFTWARE.
 #include <meshload.h>
 #include <test/macros.h>
 
-NMesh *
-MeshData::GenerateNMesh(const std::shared_ptr<Shader> &shader,
-                        const std::shared_ptr<MeshData::SingleConfigType> &mr,
-
-                        unsigned instanceCount) {
+NMesh *MeshData::GenerateNMesh(const std::shared_ptr<Shader> &shader,
+                               const std::shared_ptr<MeshRenderer> &mr,
+                               MeshRenderConfigs::Single &single,
+                               MeshData::ConfigType &config,
+                               unsigned instanceCount) {
   if (!successful) return nullptr;
 
-  auto mesh = std::make_unique<Mesh>(verts, indices, instanceCount);
-
-  mr->SetupStandard(uvs, normals);
-  mr->SetMeshAndSetupAttributes(std::move(mesh));
+  GenerateHelper(mr, config, instanceCount);
 
   auto nmesh = new NMesh(shader);
-  nmesh->SetMeshRenderer(mr);
-
+  nmesh->SetMeshRenderer(mr, single);
   return nmesh;
 }
 
-std::unique_ptr<InstancedMesh> MeshData::GenerateInstancedMesh(
-    const std::shared_ptr<Shader> &shader,
-    const std::shared_ptr<MeshData::InstancedConfigType> &mr,
-    unsigned instanceCount) {
+std::unique_ptr<InstancedMesh>
+MeshData::GenerateInstancedMesh(const std::shared_ptr<Shader> &shader,
+                                const std::shared_ptr<MeshRenderer> &mr,
+                                MeshData::ConfigType &config,
+                                unsigned instanceCount) {
   if (!successful) return nullptr;
-
-  auto mesh = std::make_unique<Mesh>(verts, indices, instanceCount);
-
-  mr->SetupStandard(uvs, normals);
-  mr->SetMeshAndSetupAttributes(std::move(mesh));
+  GenerateHelper(mr, config, instanceCount);
 
   auto imesh = std::make_unique<InstancedMesh>(shader);
   imesh->SetMeshRenderer(mr);
-
   return imesh;
+}
+
+void MeshData::GenerateHelper(const std::shared_ptr<MeshRenderer> &mr,
+                              MeshData::ConfigType &config,
+                              unsigned instanceCount) {
+  auto mesh = std::make_unique<Mesh>(verts, indices, instanceCount);
+
+  config.uvs = uvs;
+  config.normals = normals;
+
+  mr->SetMeshAndSetupAttributes(std::move(mesh));
 }
 
 void MeshData::Load(const aiMesh *mesh) {
@@ -141,9 +144,8 @@ static auto ReadMeshConfig(const JSON::Value &value,
       MeshRenderConfigs::configurationGenerators.find(type);
   if (generatorIt == std::end(MeshRenderConfigs::configurationGenerators))
     JSON::ParseError(
-        data,
-        "Configuration generator of type '" + type +
-            "' not found in MeshRenderConfigs::configurationGenerators");
+        data, "Configuration generator of type '" + type +
+                  "' not found in MeshRenderConfigs::configurationGenerators");
 
   const auto dataIt = object.FindMember("data");
   JSON::ParseFailIf(dataIt == object.MemberEnd(), data,
@@ -170,7 +172,8 @@ NMesh *MeshTypeRegistration(const JSON::Value &value,
   auto shader = Resources::active->shaders.Get(shaderStr);
 
   auto nmesh =
-      MeshData(path).GenerateNMesh(shader, std::move(config), instanceCount);
+      MeshData(path).GenerateNMesh(shader, config.meshRenderer, config.single,
+                                   config.standard, instanceCount);
 
   JSON::GetMember<NNode>(*nmesh, "NNode", object, data);
   return nmesh;

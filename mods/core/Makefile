@@ -1,4 +1,4 @@
-INCLUDE_DIRS:=-Iinclude/core -Iinclude -I../rapidjson/include
+INCLUDE_DIRS:=-Iinclude/core -Iinclude -I../rapidjson/include -I../test/include
 CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Werror -Wfatal-errors -fpic
 LDFLAGS:=-Wall -shared
 LIBS:=-ldl

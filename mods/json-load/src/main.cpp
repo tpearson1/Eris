@@ -26,12 +26,12 @@ SOFTWARE.
 
 #include <base/resources.h>
 #include <core/file.h>
-#include <game/spectatorcamera.h>
 #include <game/game.h>
+#include <game/spectatorcamera.h>
 #include <scene/camera.h>
-#include <scene/pointlight.h>
 #include <scene/mesh.h>
 #include <scene/meshconfig.h>
+#include <scene/pointlight.h>
 #include <scene/scene.h>
 #include <scene/tagmanager.h>
 
@@ -91,12 +91,14 @@ MyGame::MyGame() {
 
   LightManager::SetActive(std::make_unique<LightManager>());
 
+
   {
     using namespace MeshRenderConfigs;
+
     configurationGenerators["single-texture"] =
-        MakeGenerator<AddTextures<Standard<Single>>>();
+        MakeGenerator<Compose<Single, Standard, Textures>>();
     configurationGenerators["single-texture-lit"] =
-        MakeGenerator<MakeLit<AddTextures<Standard<Single>>>>();
+        MakeGenerator<Compose<Single, Standard, Textures, Lit>>();
   }
 
   JSON::Document shaders, textures, sceneDoc;

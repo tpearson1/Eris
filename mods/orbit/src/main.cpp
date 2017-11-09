@@ -136,7 +136,7 @@ MyGame::MyGame() {
   {
     using namespace MeshRenderConfigs;
     configurationGenerators["single-texture"] =
-        MakeGenerator<AddTextures<Standard<Single>>>();
+        MakeGenerator<Compose<Single, Standard, Textures>>();
   }
 
   scene.SetActive();

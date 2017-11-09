@@ -32,18 +32,19 @@ SOFTWARE.
 #include <scene/node.h>
 
 class NMesh : public NNode, public Drawable {
-public:
-  using ConfigType = MeshRenderConfigs::Single;
-
-private:
-  std::shared_ptr<ConfigType> meshRenderer;
+  std::shared_ptr<MeshRenderer> meshRenderer;
+  MeshRenderConfigs::Single *single = nullptr;
 
 public:
-  ConfigType *GetMeshRenderer() const { return meshRenderer.get(); }
-  void SetMeshRenderer(const std::shared_ptr<ConfigType> &mr) {
-    meshRenderer = mr;
-    mr->SetShader(*GetShader());
+  MeshRenderer *GetMeshRenderer() const { return meshRenderer.get(); }
+
+  template <typename C>
+  void SetMeshRenderer(const std::shared_ptr<C> &mr) {
+    SetMeshRenderer(mr, mr->template Get<MeshRenderConfigs::Single>());
   }
+
+  void SetMeshRenderer(const std::shared_ptr<MeshRenderer> &mr,
+                       MeshRenderConfigs::Single &single);
 
   NMesh(const std::shared_ptr<Shader> &s) : Drawable(s) {}
 

@@ -1,4 +1,5 @@
-CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Werror -Wfatal-errors -Isrc/include -Imods/core/include
+INCLUDE_DIRS:=-Iinclude -Isrc/include -Imods/core/include -Imods/rapidjson/include -Imods/test/include
+CXXFLAGS:=-g -Og -std=c++1z -Wall -Wextra -Werror -Wfatal-errors
 LDFLAGS:=-Wall
 LIBS:=mods/core/libcore.so
 
@@ -19,7 +20,7 @@ build-core:
 
 $(BUILD_DIR)/%.cpp.o: src/%.cpp
 	@mkdir -p $(BUILD_DIR)
-	g++ $(CXXFLAGS) -c -MMD $< -o $@
+	g++ $(CXXFLAGS) $(INCLUDE_DIRS) -c -MMD $< -o $@
 
 $(TARGET): $(OBJECTS)
 	cd mods/core; $(MAKE) $(J)

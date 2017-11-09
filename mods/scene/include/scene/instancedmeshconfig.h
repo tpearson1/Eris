@@ -37,49 +37,25 @@ SOFTWARE.
 
 namespace MeshRenderConfigs {
 namespace Instanced {
-template <typename ConfigBase>
-struct AddTransformation : public ConfigBase {
-  template <typename... Args>
-  AddTransformation(Args &&... args)
-      : ConfigBase(std::forward<Args>(args)...) {}
-
-  void SetupAddTransformation(const std::vector<Mat4> &transformationMatrices) {
-    this->vertexAttributes.emplace_back(3, 16, 1, transformationMatrices);
+struct Transformation {
+  std::vector<Mat4> transformationMatrices;
+  void Setup(std::vector<VertexAttribute> &attributes) {
+    attributes.emplace_back(3, 16, 1, transformationMatrices);
+    transformationMatrices.clear();
   }
 
-  void SetupAddTransformation(const std::vector<Transform> &transformations) {
-    std::vector<Mat4> matrices;
+  void SetTransforms(const std::vector<Transform> &transformations) {
     std::transform(std::begin(transformations), std::end(transformations),
-                   std::back_inserter(matrices),
+                   std::back_inserter(transformationMatrices),
                    [](auto t) -> Mat4 { return t.Matrix(); });
-    SetupAddTransformation(matrices);
   }
 
-  virtual void GetUniforms(Shader &s) override {
-    ConfigBase::GetUniforms(s);
-    vpUniform = s.GetUniform("VP");
-  }
+  void GetUniforms(Shader &s) { vpUniform = s.GetUniform("VP"); }
 
-  virtual void PreRender() override {
-    ConfigBase::PreRender();
-
+  void PreRender() {
     auto camera = NCamera::active;
     auto VP = camera->ProjectionMatrix() * camera->ViewMatrix();
     vpUniform.SetMatrix4(1, false, VP);
-  }
-
-  static void Read(AddTransformation &in, const JSON::Value &value,
-                   const JSON::ReadData &data) {
-    auto t = Trace::Pusher{data.trace,
-                           "MeshRenderConfigs::AddTransformation<T>::Read"};
-    const auto &object = JSON::GetObject(value, data);
-
-    if constexpr (HasReadStaticMemberFunction<ConfigBase>::value)
-      ConfigBase::Read(in, value, data);
-
-    std::vector<Transform> transformations;
-    JSON::GetMember(transformations, "transformations", object, data);
-    in.SetupAddTransformation(transformations);
   }
 
 private:
@@ -87,5 +63,11 @@ private:
 };
 } // namespace Instanced
 } // namespace MeshRenderConfigs
+
+template <>
+struct JSONImpl<MeshRenderConfigs::Instanced::Transformation> {
+  static void Read(MeshRenderConfigs::Instanced::Transformation &out,
+                   const JSON::Value &value, const JSON::ReadData &data);
+};
 
 #endif // _SCENE__INSTANCED_MESH_CONFIG_H

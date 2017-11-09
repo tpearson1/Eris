@@ -27,46 +27,48 @@ SOFTWARE.
 #ifndef _SCENE__MESH_LOAD_H
 #define _SCENE__MESH_LOAD_H
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <scene/scene.h>
 #include <vector>
 
-class NMesh;
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <scene/mesh.h>
+#include <scene/scene.h>
+
 class MeshRenderer;
 class InstancedMesh;
 
 namespace MeshRenderConfigs {
-template <typename ConfigBase>
-struct Standard;
-
 struct Single;
-}
+struct Standard;
+} // namespace MeshRenderConfigs
 
 struct MeshData {
   std::vector<GLfloat> verts, uvs, normals;
   std::vector<GLuint> indices;
   bool hasUVs = true, successful = true;
 
-  using SingleConfigType =
-      MeshRenderConfigs::Standard<MeshRenderConfigs::Single>;
-  using InstancedConfigType = MeshRenderConfigs::Standard<MeshRenderer>;
+  using ConfigType = MeshRenderConfigs::Standard;
 
   MeshData() {}
   MeshData(const aiMesh *mesh) { Load(mesh); }
   MeshData(const std::string &path) { Load(path); }
 
   NMesh *GenerateNMesh(const std::shared_ptr<Shader> &shader,
-                       const std::shared_ptr<SingleConfigType> &mr,
+                       const std::shared_ptr<MeshRenderer> &mr,
+                       MeshRenderConfigs::Single &single, ConfigType &config,
                        unsigned instanceCount);
 
   std::unique_ptr<InstancedMesh>
   GenerateInstancedMesh(const std::shared_ptr<Shader> &shader,
-                        const std::shared_ptr<InstancedConfigType> &mr,
-                        unsigned instanceCount);
+                        const std::shared_ptr<MeshRenderer> &mr,
+                        ConfigType &config, unsigned instanceCount);
 
   void Load(const aiMesh *mesh);
   void Load(const std::string &path);
+
+private:
+  void GenerateHelper(const std::shared_ptr<MeshRenderer> &mr,
+                      MeshData::ConfigType &config, unsigned instanceCount);
 };
 
 const aiScene *LoadScene(const std::string &path, Assimp::Importer &importer);

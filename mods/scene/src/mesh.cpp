@@ -27,9 +27,16 @@ SOFTWARE.
 #include <mesh.h>
 #include <scene/camera.h>
 
+void NMesh::SetMeshRenderer(const std::shared_ptr<MeshRenderer> &mr,
+                            MeshRenderConfigs::Single &_single) {
+  meshRenderer = mr;
+  single = &_single;
+  mr->SetShader(*GetShader());
+}
+
 void NMesh::Draw() const {
   assert(meshRenderer);
-  meshRenderer->SetGlobalTransform(GlobalTransform());
+  single->SetGlobalTransform(GlobalTransform());
   meshRenderer->PreRender();
   meshRenderer->Draw();
 }

@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <base/resources.h>
 #include <core/file.h>
-#include <game/spectatorcamera.h>
 #include <game/game.h>
+#include <game/spectatorcamera.h>
 #include <scene/camera.h>
 #include <scene/instancedmesh.h>
 #include <scene/instancedmeshconfig.h>
@@ -90,7 +90,7 @@ MyGame::MyGame() {
 
   using namespace MeshRenderConfigs;
   auto config = std::make_shared<
-      Instanced::AddTransformation<AddTextures<Standard<MeshRenderer>>>>();
+      Compose<Instanced::Transformation, Standard, Textures>>();
   config->textures.push_back(
       {"material.diffuse", Resources::active->textures.Get("sphere")});
 
@@ -104,10 +104,10 @@ MyGame::MyGame() {
     for (int j = 0; j < length; j++)
       for (int k = 0; k < height; k++)
         mats.push_back(Mat4::Translate(i * spacing, j * spacing, k * spacing));
-  config->SetupAddTransformation(mats);
+  config->transformationMatrices = mats;
 
   mesh = MeshData{"mods/instance-test/res/sphere.blend"}.GenerateInstancedMesh(
-      Resources::active->shaders.Get("instanced"), config, instanceCount);
+      Resources::active->shaders.Get("instanced"), config, *config, instanceCount);
 }
 
 extern "C" bool InstanceTest_Run() {

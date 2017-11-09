@@ -24,38 +24,16 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
-#ifndef _SCENE__INSTANCED_MESH_RENDERER_H
-#define _SCENE__INSTANCED_MESH_RENDERER_H
+#include <instancedmeshconfig.h>
 
-#include <base/shader.h>
-#include <base/instancedmesh.h>
+void JSONImpl<MeshRenderConfigs::Instanced::Transformation>::Read(
+    MeshRenderConfigs::Instanced::Transformation &out, const JSON::Value &value,
+    const JSON::ReadData &data) {
+  auto t =
+      Trace::Pusher{data.trace, "MeshRenderConfigs::Instanced::Transformation"};
+  const auto &object = JSON::GetObject(value, data);
 
-template <size_t attrCount>
-class CInstancedMeshRenderer : public CComponent {
-  const Ref<InstancedMesh<attrCount>> mesh;
-  bool visible = true;
-
-protected:
-  void _Draw(const Mat4 &global) {
-    if (!visible)
-      return;
-
-    GLint shaderMVP = Shader::Current().GetUniform("MVP");
-    Shader::SetUniformMatrix4(shaderMVP, 1, GL_FALSE, global);
-    mesh->Draw();
-  }
-
-public:
-  CInstancedMeshRenderer() {}
-  CInstancedMeshRenderer(const Ref<InstancedMesh<attrCount>> &m)
-    { Set(m); }
-
-  const Ref<InstancedMesh<attrCount>> Get() { return mesh; }
-  const Ref<const InstancedMesh<attrCount>> Get() const { return mesh; }
-  void Set(const Ref<InstancedMesh<attrCount>> &m) { mesh = m; }
-
-  bool Visible() const { return visible; }
-  void Visible(bool value) { visible = value; }
-};
-
-#endif // _SCENE__INSTANCED_MESH_RENDERER_H
+  std::vector<Transform> transformations;
+  JSON::GetMember(transformations, "transformations", object, data);
+  out.SetTransforms(transformations);
+}

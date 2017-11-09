@@ -55,6 +55,17 @@ SOFTWARE.
  */
 #define COMMA_CHARACTER ,
 
+
+/*
+ * Similar to IS_VALID_EXPR but checks whether the type is valid instead of the
+ * expression
+ */
+#define IS_VALID_TYPE(name, type)\
+template <typename Type, typename = void>\
+struct name : public std::false_type {};\
+template <typename Type>\
+struct name<Type, std::void_t<type>> : public std::true_type {};
+
 /*
  * Macro which defines a template struct with a given name, containing a static
  * boolean member called 'value'. Member 'value' is 'true' if 'expr' is a valid
@@ -72,10 +83,7 @@ SOFTWARE.
  * }
  */
 #define IS_VALID_EXPR(name, expr)\
-template <typename Type, typename = void>\
-struct name : public std::false_type {};\
-template <typename Type>\
-struct name<Type, std::void_t<decltype(expr)>> : public std::true_type {};
+IS_VALID_TYPE(name, decltype(expr))
 
 /*
  * Suffixes 'str' with a counter, to create an anonymous variable.
