@@ -30,7 +30,6 @@ SOFTWARE.
 #include <vector>
 #include <algorithm>
 #include <scene/node.h>
-#include <base/window.h>
 #include <math/mat.h>
 
 class NCamera;

@@ -31,12 +31,21 @@ SOFTWARE.
 #include <list>
 #include <unordered_map>
 
-#include <base/registration.h>
 #include <base/gl.h>
+#include <base/registration.h>
 
 #include <math/vec.h>
 
 class Input;
+
+namespace Monitor {
+using Type = GLFWmonitor;
+
+inline Type *Primary() {
+  if (!GLFW::IsSetup()) GLFW::Setup();
+  return glfwGetPrimaryMonitor();
+}
+} // namespace Monitor
 
 /*
  * Class for creating and manipulating a window
@@ -76,15 +85,22 @@ public:
   /*
    * The size of the window in pixels
    */
-  IVec2 GetSize() const { return size; }
+  IVec2 Size() const { return size; }
 
-  Window(IVec2 size);
+  /*
+   * Constructs a window with the specified size.
+   *
+   * If a monitor is provided (monitor != nullptr) then the window will be made
+   * fullscreen on that monitor.
+   */
+  Window(IVec2 size, Monitor::Type *monitor = nullptr);
   ~Window();
 
-  static Window *GetActive() { return active; }
+  static Window *Active() { return active; }
 
-  bool IsActive() const { return GetActive() == this; }
+  bool IsActive() const { return Active() == this; }
   void MakeActive() {
+    if (IsActive()) return;
     glfwMakeContextCurrent(window);
     active = this;
   }

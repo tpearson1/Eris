@@ -30,7 +30,6 @@ SOFTWARE.
 #include <base/gl.h>
 #include <base/image.h>
 #include <base/texturesettings.h>
-#include <base/window.h>
 
 class Texture {
   GLuint id = 0;

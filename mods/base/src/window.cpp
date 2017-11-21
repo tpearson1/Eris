@@ -41,7 +41,7 @@ void Window::OnResize(int width, int height) {
   size = {width, height};
 
   if (!IsActive()) {
-    auto cachedActive = GetActive();
+    auto cachedActive = Active();
     MakeActive();
     SetActiveWindowViewportSize(size);
     cachedActive->MakeActive();
@@ -51,8 +51,12 @@ void Window::OnResize(int width, int height) {
   resizeCallbacks.CallAll(size);
 }
 
-Window::Window(IVec2 _size) {
-  assert(GLFW::IsSetup());
+Window::Window(IVec2 _size, Monitor::Type *monitor) {
+  if (!GLFW::Setup()) {
+    std::cerr << "Failed to initialize GLFW\n";
+    std::exit(-1);
+  }
+
   size = _size;
 
   glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
@@ -63,7 +67,8 @@ Window::Window(IVec2 _size) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // Open a window and create OpenGL context
-  window = glfwCreateWindow(size.x, size.y, "Game", NULL, NULL);
+  window = glfwCreateWindow(size.x, size.y, "Game", monitor, NULL);
+
   if (!window) {
     std::cerr << "Failed to open window\n";
     glfwTerminate();

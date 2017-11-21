@@ -32,13 +32,6 @@ SOFTWARE.
 #include <scene/node.h>
 
 Game::Game() {
-  if (!GLFW::Setup()) {
-    std::cerr << "Failed to initialize GLFW\n";
-    std::exit(-1);
-  }
-
-  window = std::make_unique<Window>(IVec2{640, 480});
-
   auto errorCode = GLEW::Setup();
   if (errorCode != GLEW_OK) {
     std::cerr << "Failed to initialize GLEW: '" << GLEW::GetError(errorCode)
@@ -56,11 +49,9 @@ Game::Game() {
 Game::~Game() { GLFW::Terminate(); }
 
 void Game::Start() {
-  Initialize();
-
   float delta = 0.0f;
   glfwSetTime(0.0);
-  while (!window->ShouldClose()) {
+  while (!GetWindow()->ShouldClose()) {
     glfwSetTime(0.0);
 
     glfwPollEvents();
@@ -69,7 +60,7 @@ void Game::Start() {
     tickManager.CallAll(delta);
     Tick(delta);
 
-    window->SwapBuffers();
+    GetWindow()->SwapBuffers();
 
     delta = glfwGetTime();
     elapsedTime += delta;

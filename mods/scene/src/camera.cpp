@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <camera.h>
 
+#include <base/window.h>
+
 std::vector<NCamera *> NCamera::all;
 NCamera *NCamera::active = nullptr;
 
@@ -35,7 +37,7 @@ NCamera::~NCamera() {
 }
 
 Mat4 NCamera::ProjectionMatrix() const {
-  const auto windowSize = Window::GetActive()->GetSize();
+  const auto windowSize = Window::Active()->Size();
   float aspect =
       static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
   if (perspective)

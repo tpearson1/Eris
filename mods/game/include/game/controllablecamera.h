@@ -28,6 +28,7 @@ SOFTWARE.
 #define _GAME__CONTROLLABLE_CAMERA_H
 
 #include <base/input.h>
+#include <base/window.h>
 #include <scene/camera.h>
 
 class NControllableCamera : public NCamera {
@@ -43,7 +44,7 @@ protected:
   }
 
 public:
-  NControllableCamera(Input &i = Window::GetActive()->GetInput());
+  NControllableCamera(Input &i = Window::Active()->GetInput());
 
   Input &GetInput() { return input; }
   const Input &GetInput() const { return input; }

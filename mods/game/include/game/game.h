@@ -42,10 +42,7 @@ class Game {
   TickManager tickManager;
   float elapsedTime = 0.0f;
 
-  std::unique_ptr<Window> window;
-
 protected:
-  virtual void Initialize() {}
   virtual void Tick(float /* delta */) {}
 
 public:
@@ -60,11 +57,11 @@ public:
 
   float GetElapsedTime() { return elapsedTime; }
 
-  Window *GetWindow() { return window.get(); }
-  const Window *GetWindow() const { return window.get(); }
+  Window *GetWindow() { return Window::Active(); }
+  const Window *GetWindow() const { return Window::Active(); }
 
-  Input &GetInput() { return window->GetInput(); }
-  const Input &GetInput() const { return window->GetInput(); }
+  Input &GetInput() { return Window::Active()->GetInput(); }
+  const Input &GetInput() const { return Window::Active()->GetInput(); }
 };
 
 #endif // _GAME__GAME_H

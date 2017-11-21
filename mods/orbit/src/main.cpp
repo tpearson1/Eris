@@ -83,7 +83,7 @@ public:
 MyGame::MyGame() {
   keyRegistrations.emplace_back(
       GetInput().RegisterKeyCallback(KeyCode::Escape, [](InputEvent action) {
-        if (action == InputEvent::Press) Window::GetActive()->Close();
+        if (action == InputEvent::Press) Window::Active()->Close();
       }));
 
   keyRegistrations.emplace_back(
@@ -156,6 +156,7 @@ MyGame::MyGame() {
 }
 
 extern "C" bool Orbit_Run() {
+  auto window = std::make_unique<Window>(IVec2{640, 480});
   MyGame().Start();
   return true;
 }

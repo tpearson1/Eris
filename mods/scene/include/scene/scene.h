@@ -30,8 +30,6 @@ SOFTWARE.
 #include <core/readwrite.h>
 #include <scene/renderer.h>
 #include <scene/node.h>
-#include <base/window.h>
-#include <unordered_map>
 
 class Scene {
   std::unique_ptr<Renderer> renderer;

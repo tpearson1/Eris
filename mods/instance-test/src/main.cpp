@@ -66,7 +66,7 @@ public:
 MyGame::MyGame() {
   escapeRegistration =
       GetInput().RegisterKeyCallback(KeyCode::Escape, [](InputEvent action) {
-        if (action == InputEvent::Press) Window::GetActive()->Close();
+        if (action == InputEvent::Press) Window::Active()->Close();
       });
 
   auto resources = std::make_unique<Resources>();
@@ -111,6 +111,7 @@ MyGame::MyGame() {
 }
 
 extern "C" bool InstanceTest_Run() {
+  auto window = std::make_unique<Window>(IVec2{640, 480});
   MyGame().Start();
   return true;
 }

@@ -72,7 +72,7 @@ MyGame::MyGame() {
       [](Vec2 delta) { NCamera::active->fov -= delta.y * 0.1f; });
   escapeRegistration =
       GetInput().RegisterKeyCallback(KeyCode::Escape, [](InputEvent action) {
-        if (action == InputEvent::Press) Window::GetActive()->Close();
+        if (action == InputEvent::Press) Window::Active()->Close();
       });
 
   auto tm = std::make_unique<TagManager>();
@@ -118,6 +118,7 @@ MyGame::MyGame() {
 }
 
 extern "C" bool JsonLoad_Run() {
+  auto window = std::make_unique<Window>(IVec2{640, 480});
   MyGame().Start();
   return true;
 }
